@@ -1,6 +1,10 @@
-# Build Folders (you can keep bin if you'd like, to store dlls and pdbs)
-bin
-obj
-
-# mstest test results
-TestResults
+Mongo2Go/Mongo2Go/bin/
+Mongo2Go/Mongo2GoTests/bin/
+obj/
+*ReSharper*
+*.suo
+*.dotCover
+*.user
+~$*
+*/StyleCop.Cache
+Mongo2Go/packages/

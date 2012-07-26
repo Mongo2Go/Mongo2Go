@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mongo2Go", "Mongo2Go\Mongo2Go.csproj", "{CDD3B6A2-C08E-4E83-A835-B81E889D15FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mongo2GoTests", "Mongo2GoTests\Mongo2GoTests.csproj", "{8C49A22B-3FBE-4865-B6F5-8E79DCA66440}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CDD3B6A2-C08E-4E83-A835-B81E889D15FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDD3B6A2-C08E-4E83-A835-B81E889D15FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDD3B6A2-C08E-4E83-A835-B81E889D15FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDD3B6A2-C08E-4E83-A835-B81E889D15FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C49A22B-3FBE-4865-B6F5-8E79DCA66440}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C49A22B-3FBE-4865-B6F5-8E79DCA66440}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C49A22B-3FBE-4865-B6F5-8E79DCA66440}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C49A22B-3FBE-4865-B6F5-8E79DCA66440}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
