@@ -47,10 +47,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Helper\FileSystem.cs" />
     <Compile Include="Helper\IPortWatcher.cs">
       <DependentUpon>PortWatcher.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\IProcessWatcher.cs">
+      <DependentUpon>ProcessWatcher.cs</DependentUpon>
+    </Compile>
     <Compile Include="Helper\PortWatcher.cs" />
+    <Compile Include="Helper\ProcessWatcher.cs" />
     <Compile Include="MongoDbPortAlreadyTakenException.cs">
       <DependentUpon>MongoDbRunner.cs</DependentUpon>
     </Compile>

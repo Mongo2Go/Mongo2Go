@@ -9,6 +9,7 @@ namespace Mongo2Go
 {
     public class MongoDbRunner : IDisposable
     {
+        private readonly IProcessWatcher _processWatcher;
         private readonly IPortWatcher _portWatcher;
         
         public const string MongoDbProcessName = "mongod";
@@ -16,13 +17,26 @@ namespace Mongo2Go
 
         public bool Running { get; private set; }
 
-        private MongoDbRunner(IPortWatcher portWatcher)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher)
         {
+            _processWatcher = processWatcher;
             _portWatcher = portWatcher;
+
+            if (_processWatcher.IsProcessRunning(MongoDbProcessName))
+            {
+                Running = true;
+                return;
+            }
 
             if (!_portWatcher.IsPortAvailable(MongoDbDefaultPort))
             {
                 throw MongoDbPortAlreadyTakenException();
+            }
+
+            string myFolder = FileSystem.GetCurrentExecutingDirectory().FindFolderRecursively("tools");
+            if (myFolder != null)
+            {
+                
             }
 
             Running = true;
@@ -30,12 +44,12 @@ namespace Mongo2Go
 
         public static MongoDbRunner Start()
         {
-            return new MongoDbRunner(new PortWatcher());
+            return new MongoDbRunner(new ProcessWatcher(),new PortWatcher());
         }
 
-        internal static MongoDbRunner StartForUnitTest(IPortWatcher portWatcher)
+        internal static MongoDbRunner StartForUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher)
         {
-            return new MongoDbRunner(portWatcher);
+            return new MongoDbRunner(processWatcher, portWatcher);
         }
 
         private static MongoDbPortAlreadyTakenException MongoDbPortAlreadyTakenException()
@@ -43,8 +57,6 @@ namespace Mongo2Go
             string message = string.Format(CultureInfo.InvariantCulture, "MongoDB can't be started. The TCP port {0} is already taken.", MongoDbDefaultPort);
             return new MongoDbPortAlreadyTakenException(message);
         }
-
-
 
         #region IDisposable
 
