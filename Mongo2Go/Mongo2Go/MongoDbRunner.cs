@@ -11,50 +11,62 @@ namespace Mongo2Go
     {
         private readonly IProcessWatcher _processWatcher;
         private readonly IPortWatcher _portWatcher;
-        
-        public const string ProcessName = "mongod";
-        public const int DefaultPort = 27017;
+        private readonly IFileSystem _fileSystem;
 
-        public bool Running { get; private set; }
+        private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
+        private const string BinariesSearchPatternDebug = @"tools\mongodb-win32-i386*\bin";
 
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher)
+        public State State { get; private set; }
+
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem)
         {
             _processWatcher = processWatcher;
             _portWatcher = portWatcher;
+            _fileSystem = fileSystem;
 
-            if (_processWatcher.IsProcessRunning(ProcessName))
+            if (_processWatcher.IsProcessRunning(MongoDbDefaults.ProcessName))
             {
-                Running = true;
+                State = State.AlreadyRunning;
                 return;
             }
 
-            if (!_portWatcher.IsPortAvailable(DefaultPort))
+            if (!_portWatcher.IsPortAvailable(MongoDbDefaults.Port))
             {
                 throw MongoDbPortAlreadyTakenException();
             }
 
-            //string myFolder = FileSystem.CurrentExecutingDirectory().FindFolderRecursively("tools");
-            //if (myFolder != null)
-            //{
-                
-            //}
+            // 1st: path when installed via nuget
+            // 2nd: path when started from solution
+            string binariesFolder = FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPattern) ??
+                                    FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPatternDebug);
 
-            Running = true;
+            if (binariesFolder == null)
+            {
+                throw new MonogDbBinariesNotFoundException();
+            }
+
+            _fileSystem.CreateFolder(MongoDbDefaults.DataFolder);
+            _fileSystem.DeleteFile(MongoDbDefaults.Lockfile);
+
+
+            
+
+            State = State.Running;
         }
 
         public static MongoDbRunner Start()
         {
-            return new MongoDbRunner(new ProcessWatcher(),new PortWatcher());
+            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem());
         }
 
-        internal static MongoDbRunner StartForUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher)
+        internal static MongoDbRunner StartForUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem)
         {
-            return new MongoDbRunner(processWatcher, portWatcher);
+            return new MongoDbRunner(processWatcher, portWatcher, fileSystem);
         }
 
         private static MongoDbPortAlreadyTakenException MongoDbPortAlreadyTakenException()
         {
-            string message = string.Format(CultureInfo.InvariantCulture, "MongoDB can't be started. The TCP port {0} is already taken.", DefaultPort);
+            string message = string.Format(CultureInfo.InvariantCulture, "MongoDB can't be started. The TCP port {0} is already taken.", MongoDbDefaults.Port);
             return new MongoDbPortAlreadyTakenException(message);
         }
 
@@ -68,9 +80,9 @@ namespace Mongo2Go
 
         private void Dispose(bool disposing)
         {
-            if (Running && disposing)
+            if (State == State.Running && disposing)
             {
-                
+                // TODO: kill process
             }
         }
 

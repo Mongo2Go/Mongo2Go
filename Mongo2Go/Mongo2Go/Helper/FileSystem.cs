@@ -1,69 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+﻿using System.IO;
 
 namespace Mongo2Go.Helper
 {
-    public static class FileSystem
+    public class FileSystem : IFileSystem
     {
-        private const int MaxLevelOfRecursion = 6;
-
-        public static string CurrentExecutingDirectory()
+        public void CreateFolder(string path)
         {
-            string filePath = new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath;
-            return Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
         }
 
-        public static string FindFolder(this string startPath, string searchPattern)
+        public void DeleteFolder(string path)
         {
-            string currentPath = startPath;
-
-            foreach (var part in searchPattern.Split(new[] { @"\" }, StringSplitOptions.None))
+            if (Directory.Exists(path))
             {
-                string[] matchesDirectory = Directory.GetDirectories(currentPath, part);
-                if (!matchesDirectory.Any())
-                {
-                    return null;
-                }
-                currentPath = matchesDirectory.OrderBy(x => x).Last();
+                Directory.Delete(path);
             }
-
-            return currentPath;
         }
 
-        public static string FindFolderUpwards(this string startPath, string searchPattern)
+        public void DeleteFile(string fullFileName)
         {
-            return FindFolderUpwards(startPath, searchPattern, 0);
-        }
-        
-        private static string FindFolderUpwards(this string startPath, string searchPattern, int currentLevel)
-        {
-            if (startPath == null)
+            if (File.Exists(fullFileName))
             {
-                return null;
+                File.Delete(fullFileName);
             }
-
-            if (currentLevel >= MaxLevelOfRecursion)
-            {
-                return null;
-            }
-
-            string matchingFolder = startPath.FindFolder(searchPattern);
-            return matchingFolder ?? startPath.RemoveLastPart().FindFolderUpwards(searchPattern, currentLevel + 1);
-        }
-
-        internal static string RemoveLastPart(this string path)
-        {
-            if (!path.Contains(@"\"))
-            {
-                return null;
-            }
-
-            List<string> parts = path.Split(new[] {@"\"}, StringSplitOptions.None).ToList();
-            parts.RemoveAt(parts.Count() - 1);
-            return string.Join(@"\", parts.ToArray());
         }
     }
 }
