@@ -12,8 +12,8 @@ namespace Mongo2Go
         private readonly IProcessWatcher _processWatcher;
         private readonly IPortWatcher _portWatcher;
         
-        public const string MongoDbProcessName = "mongod";
-        public const int MongoDbDefaultPort = 27017;
+        public const string ProcessName = "mongod";
+        public const int DefaultPort = 27017;
 
         public bool Running { get; private set; }
 
@@ -22,13 +22,13 @@ namespace Mongo2Go
             _processWatcher = processWatcher;
             _portWatcher = portWatcher;
 
-            if (_processWatcher.IsProcessRunning(MongoDbProcessName))
+            if (_processWatcher.IsProcessRunning(ProcessName))
             {
                 Running = true;
                 return;
             }
 
-            if (!_portWatcher.IsPortAvailable(MongoDbDefaultPort))
+            if (!_portWatcher.IsPortAvailable(DefaultPort))
             {
                 throw MongoDbPortAlreadyTakenException();
             }
@@ -54,7 +54,7 @@ namespace Mongo2Go
 
         private static MongoDbPortAlreadyTakenException MongoDbPortAlreadyTakenException()
         {
-            string message = string.Format(CultureInfo.InvariantCulture, "MongoDB can't be started. The TCP port {0} is already taken.", MongoDbDefaultPort);
+            string message = string.Format(CultureInfo.InvariantCulture, "MongoDB can't be started. The TCP port {0} is already taken.", DefaultPort);
             return new MongoDbPortAlreadyTakenException(message);
         }
 

@@ -25,8 +25,8 @@ namespace Mongo2GoTests.Runner
 
         Because of = () => runner = MongoDbRunner.StartForUnitTest(processMock.Object, portMock.Object);
 
-        It should_check_for_already_running_process                    = () => processMock.Verify(x => x.IsProcessRunning(MongoDbRunner.MongoDbProcessName), Times.Exactly(1));
-        It should_check_the_default_port                               = () => portMock.Verify(x => x.IsPortAvailable(MongoDbRunner.MongoDbDefaultPort), Times.Exactly(1));
+        It should_check_for_already_running_process                    = () => processMock.Verify(x => x.IsProcessRunning(MongoDbRunner.ProcessName), Times.Exactly(1));
+        It should_check_the_default_port                               = () => portMock.Verify(x => x.IsPortAvailable(MongoDbRunner.DefaultPort), Times.Exactly(1));
         //It should_create_the_data_directory_if_not_exist               = () => false.ShouldBeTrue();
         //It should_delete_old_lock_files                                = () => false.ShouldBeTrue();
         It should_return_an_instance_with_property_running_set_to_true = () => runner.Running.ShouldBeTrue();

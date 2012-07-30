@@ -33,7 +33,12 @@ namespace Mongo2Go.Helper
             return currentPath;
         }
 
-        public static string FindFolderUpwards(this string startPath, string searchPattern, int currentLevel = 0)
+        public static string FindFolderUpwards(this string startPath, string searchPattern)
+        {
+            return FindFolderUpwards(startPath, searchPattern, 0);
+        }
+        
+        private static string FindFolderUpwards(this string startPath, string searchPattern, int currentLevel)
         {
             if (startPath == null)
             {
