@@ -48,7 +48,7 @@ namespace Mongo2Go
             _fileSystem.CreateFolder(MongoDbDefaults.DataFolder);
             _fileSystem.DeleteFile(MongoDbDefaults.Lockfile);
 
-
+            
             
 
             State = State.Running;

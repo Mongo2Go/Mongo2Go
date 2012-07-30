@@ -2,26 +2,38 @@
 
 namespace Mongo2Go.Helper
 {
-    public class MongoDbProcess : Process
+    public class MongoDbProcess : IMongoDbProcess
     {
+        private Process _process;
+
         public MongoDbProcess(string binariesFolder)
         {
+            string fileName = binariesFolder + @"\" + MongoDbDefaults.ProcessName;
 
-            StartInfo.FileName = binariesFolder + @"\" + MongoDbDefaults.ProcessName;
-            StartInfo.WorkingDirectory = binariesFolder;
-            StartInfo.CreateNoWindow = true;
-            StartInfo.UseShellExecute = false;
+            ProcessStartInfo startInfo = new ProcessStartInfo(fileName)
+                {
+                    WorkingDirectory = binariesFolder,
+                    //CreateNoWindow = true,
+                    //UseShellExecute = false
+                };
 
-            Start();
+            _process = Process.Start(startInfo);
         }
 
-        public void Shutdown()
+        public void Kill()
         {
-            if (!HasExited)
+            if (_process == null)
             {
-                Kill();
+                return;
             }
-            Dispose();
+
+            if (!_process.HasExited)
+            {
+                _process.Kill();
+            }
+
+            _process.Dispose();
+            _process = null;
         }
     }
 }
