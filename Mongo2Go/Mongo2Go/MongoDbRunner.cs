@@ -33,11 +33,11 @@ namespace Mongo2Go
                 throw MongoDbPortAlreadyTakenException();
             }
 
-            string myFolder = FileSystem.GetCurrentExecutingDirectory().FindFolderRecursively("tools");
-            if (myFolder != null)
-            {
+            //string myFolder = FileSystem.CurrentExecutingDirectory().FindFolderRecursively("tools");
+            //if (myFolder != null)
+            //{
                 
-            }
+            //}
 
             Running = true;
         }

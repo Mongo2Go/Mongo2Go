@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Globalization;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace Mongo2Go.Helper
@@ -9,27 +10,55 @@ namespace Mongo2Go.Helper
     {
         private const int MaxLevelOfRecursion = 6;
 
-        public static string GetCurrentExecutingDirectory()
+        public static string CurrentExecutingDirectory()
         {
             string filePath = new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath;
             return Path.GetDirectoryName(filePath);
         }
 
-        public static string FindFolderRecursively(this string currentPath, string folderName, int currentLevel = 0)
+        public static string FindFolder(this string startPath, string searchPattern)
         {
-            if (currentLevel >= MaxLevelOfRecursion)
+            string currentPath = startPath;
+
+            foreach (var part in searchPattern.Split(new[] { @"\" }, StringSplitOptions.None))
             {
-                //string message = string.Format(CultureInfo.InvariantCulture, "The folder {0} was not found. Last try: {1}", folderName, Path.GetFullPath(currentPath));
-                //throw new FileNotFoundException(message);
+                string[] matchesDirectory = Directory.GetDirectories(currentPath, part);
+                if (!matchesDirectory.Any())
+                {
+                    return null;
+                }
+                currentPath = matchesDirectory.OrderBy(x => x).Last();
+            }
+
+            return currentPath;
+        }
+
+        public static string FindFolderUpwards(this string startPath, string searchPattern, int currentLevel = 0)
+        {
+            if (startPath == null)
+            {
                 return null;
             }
 
-            if (Directory.Exists(currentPath + "\\" + folderName))
+            if (currentLevel >= MaxLevelOfRecursion)
             {
-                return currentPath + "\\" + folderName;
+                return null;
             }
 
-            return FindFolderRecursively(currentPath + "\\..", folderName, currentLevel + 1);
+            string matchingFolder = startPath.FindFolder(searchPattern);
+            return matchingFolder ?? startPath.RemoveLastPart().FindFolderUpwards(searchPattern, currentLevel + 1);
+        }
+
+        internal static string RemoveLastPart(this string path)
+        {
+            if (!path.Contains(@"\"))
+            {
+                return null;
+            }
+
+            List<string> parts = path.Split(new[] {@"\"}, StringSplitOptions.None).ToList();
+            parts.RemoveAt(parts.Count() - 1);
+            return string.Join(@"\", parts.ToArray());
         }
     }
 }

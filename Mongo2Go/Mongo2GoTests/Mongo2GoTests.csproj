@@ -59,7 +59,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="RunnerTests.cs" />
+    <Compile Include="FileSystem\FileSystemTests.cs" />
+    <Compile Include="Runner\RunnerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
