@@ -50,6 +50,7 @@
     <Compile Include="Helper\IFileSystem.cs">
       <DependentUpon>FileSystem.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\IMongoDbProcess.cs" />
     <Compile Include="Helper\MongoDbProcess.cs" />
     <Compile Include="MongoDbDefaults.cs" />
     <Compile Include="MonogDbBinariesNotFoundException.cs">
