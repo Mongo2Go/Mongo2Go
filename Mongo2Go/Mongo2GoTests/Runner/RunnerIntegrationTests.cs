@@ -1,18 +1,19 @@
-﻿using FluentAssertions;
+﻿using System.Linq;
+using FluentAssertions;
 using Machine.Specifications;
 using Mongo2Go;
-using Mongo2Go.Helper;
-using MongoDB.Bson;
 using MongoDB.Driver;
-using Moq;
+using MongoDB.Driver.Linq;
 using It = Machine.Specifications.It;
 
 // ReSharper disable InconsistentNaming
 namespace Mongo2GoTests.Runner
 {
-    //[Ignore("Intergration Test should be started by hand")]
+    #if !DEBUG
+    [Ignore("Intergration Test should be started by hand")]
+    #endif
     [Subject("Runner Integration Test")]
-    public class when_instanciating_a_real_runner : MongoIntegrationTest
+    public class when_using_the_inbuild_serialization : MongoIntegrationTest
     {
         static TestDocument findResult;
         
@@ -20,27 +21,64 @@ namespace Mongo2GoTests.Runner
             {
                 runner = MongoDbRunner.Start();
                 CreateConnection();
-                collection.Insert(TestDocument.DummyData());
+                collection.Insert(TestDocument.DummyData1());
             };
 
         Because of = () => findResult = collection.FindOneAs<TestDocument>();
 
         It should_return_a_result = () => findResult.ShouldNotBeNull();
-        It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData());
+        It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
     }
+
+    #if !DEBUG
+    [Ignore("Intergration Test should be started by hand")]
+    #endif
+    [Subject("Runner Integration Test")]
+    public class when_using_the_new_linq_support : MongoIntegrationTest
+    {
+        static IQueryable<TestDocument> query;
+
+        Establish context = () =>
+        {
+            CreateConnection();
+            collection.Insert(TestDocument.DummyData1());
+            collection.Insert(TestDocument.DummyData2());
+            collection.Insert(TestDocument.DummyData3());
+        };
+
+        Because of = () =>
+            {
+                query = from c in collection.AsQueryable()
+                            where c.StringTest == TestDocument.DummyData2().StringTest || c.StringTest == TestDocument.DummyData3().StringTest
+                            select c;
+                };
+
+        It should_return_two_documents = () => query.Count().ShouldEqual(2);
+        It should_return_document2 = () => query.ElementAt(0).IntTest = TestDocument.DummyData2().IntTest;
+        It should_return_document3 = () => query.ElementAt(1).IntTest = TestDocument.DummyData3().IntTest;
+    }
+
 
     public class MongoIntegrationTest
     {
         internal static MongoDbRunner runner;
-        internal static MongoCollection<BsonDocument> collection;
+        internal static MongoCollection<TestDocument> collection;
 
         internal static void CreateConnection()
         {
+            runner = MongoDbRunner.Start();
+            
             const string connectionString = "mongodb://localhost/?safe=true";
             MongoServer server = MongoServer.Create(connectionString);
             MongoDatabase database = server.GetDatabase("IntegrationTest");
-            collection = database.GetCollection("TestCollection");
+            collection = database.GetCollection<TestDocument>("TestCollection");
         }
+
+        Cleanup stuff = () =>
+            {
+                collection.Drop();
+                runner.Dispose();
+            };
     }
 }
 // ReSharper restore InconsistentNaming

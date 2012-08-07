@@ -22,7 +22,7 @@ namespace Mongo2GoTests.FolderSearch
         static string directory;
 
         Because of = () => directory = startDirectory.FindFolder(searchPattern);
-        It should_find_the_path_with_the_highest_version_number = () => directory.ShouldEqual(mongoDbBinaries);
+        It should_find_the_path_with_the_highest_version_number = () => directory.ShouldEqual(MongoBinaries);
     }
 
     [Subject("FolderSearch")]
@@ -42,8 +42,8 @@ namespace Mongo2GoTests.FolderSearch
         const string searchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
         static string directory;
 
-        Because of = () => directory = locationOfAssembly.FindFolderUpwards(searchPattern);
-        It should_find_the_path_with_the_highest_version_number = () => directory.ShouldEqual(mongoDbBinaries);
+        Because of = () => directory = LocationOfAssembly.FindFolderUpwards(searchPattern);
+        It should_find_the_path_with_the_highest_version_number = () => directory.ShouldEqual(MongoBinaries);
     }
 
     [Subject("FolderSearch")]
@@ -52,7 +52,7 @@ namespace Mongo2GoTests.FolderSearch
         const string searchPattern = @"packages\Mongo2Go*\XXX\mongodb-win32-i386*\bin";
         static string directory;
 
-        Because of = () => directory = locationOfAssembly.FindFolderUpwards(searchPattern);
+        Because of = () => directory = LocationOfAssembly.FindFolderUpwards(searchPattern);
         It should_return_null = () => directory.ShouldBeNull();
     }
 
@@ -76,15 +76,15 @@ namespace Mongo2GoTests.FolderSearch
 
     public class FolderSearchSpec
     {
-        public const string mongoDbBinaries = @"C:\test1\test2\packages\Mongo2Go.1.2.3\tools\mongodb-win32-i386-2.0.7-rc0\bin";
-        public const string mongoDbOlderBinaries = @"C:\test1\test2\packages\Mongo2Go.1.1.1\tools\mongodb-win32-i386-2.0.7-rc0\bin";
-        public const string locationOfAssembly = @"C:\test1\test2\Project\bin";
+        public const string MongoBinaries = @"C:\test1\test2\packages\Mongo2Go.1.2.3\tools\mongodb-win32-i386-2.0.7-rc0\bin";
+        public const string MongoOlderBinaries = @"C:\test1\test2\packages\Mongo2Go.1.1.1\tools\mongodb-win32-i386-2.0.7-rc0\bin";
+        public const string LocationOfAssembly = @"C:\test1\test2\Project\bin";
 
         Establish context = () =>
         {
-            if (!Directory.Exists(mongoDbBinaries)) { Directory.CreateDirectory(mongoDbBinaries); }
-            if (!Directory.Exists(mongoDbOlderBinaries)) { Directory.CreateDirectory(mongoDbOlderBinaries); }
-            if (!Directory.Exists(locationOfAssembly)) { Directory.CreateDirectory(locationOfAssembly); }
+            if (!Directory.Exists(MongoBinaries)) { Directory.CreateDirectory(MongoBinaries); }
+            if (!Directory.Exists(MongoOlderBinaries)) { Directory.CreateDirectory(MongoOlderBinaries); }
+            if (!Directory.Exists(LocationOfAssembly)) { Directory.CreateDirectory(LocationOfAssembly); }
         };
 
         Cleanup stuff = () => { if (Directory.Exists(@"C:\test1")) { Directory.Delete(@"C:\test1", true); }};

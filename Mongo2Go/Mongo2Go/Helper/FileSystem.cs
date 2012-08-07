@@ -16,7 +16,7 @@ namespace Mongo2Go.Helper
         {
             if (Directory.Exists(path))
             {
-                Directory.Delete(path);
+                Directory.Delete(path, true);
             }
         }
 

@@ -91,6 +91,9 @@ namespace Mongo2Go
                 _process.Dispose();
             }
 
+            // finally clean up the data directory we created previously
+            _fileSystem.DeleteFolder(MongoDbDefaults.DataFolder);
+
             Disposed = true;
             State = State.Stopped;
         }

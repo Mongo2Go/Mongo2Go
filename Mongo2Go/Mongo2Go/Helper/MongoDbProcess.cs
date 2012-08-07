@@ -26,7 +26,7 @@ namespace Mongo2Go.Helper
                 {
                     FileName = fileName,
                     Arguments = arguments,
-                    CreateNoWindow = true,
+                    //CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                 };
@@ -89,6 +89,10 @@ namespace Mongo2Go.Helper
                 // we have no "managed resources" - but we leave this switch to avoid an FxCop CA1801 warnig
             }
             Kill();
+
+            // the c# driver takes care of the connections - and totally fails if you kill the database, this is a temporarely workaround
+            Thread.Sleep(1000);
+
             Disposed = true;
         }
 
