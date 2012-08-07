@@ -6,7 +6,6 @@ namespace Mongo2Go
 {
     public class MongoDbRunner : IDisposable
     {
-        private readonly IProcessWatcher _processWatcher;
         private readonly IPortWatcher _portWatcher;
         private readonly IFileSystem _fileSystem;
         private readonly IMongoDbProcess _process;
@@ -16,23 +15,12 @@ namespace Mongo2Go
 
         public bool Disposed { get; private set; }
         public State State { get; private set; }
+        public string ConnectionString { get; private set; }
 
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
+        private MongoDbRunner(IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
         {
-            _processWatcher = processWatcher;
             _portWatcher = portWatcher;
             _fileSystem = fileSystem;
-
-            if (_processWatcher.IsProcessRunning(MongoDbDefaults.ProcessName))
-            {
-                State = State.AlreadyRunning;
-                return;
-            }
-
-            if (!_portWatcher.IsPortAvailable(MongoDbDefaults.Port))
-            {
-                throw MongoDbPortAlreadyTakenException();
-            }
 
             // 1st: path when installed via nuget
             // 2nd: path when started from solution
@@ -44,28 +32,46 @@ namespace Mongo2Go
                 throw new MonogDbBinariesNotFoundException();
             }
 
-            _fileSystem.CreateFolder(MongoDbDefaults.DataFolder);
-            _fileSystem.DeleteFile(MongoDbDefaults.Lockfile);
+            int port = FindOpenPort();
+            string dataDirectory = MongoDbDefaults.DataDirectory + "_" + port;
 
-            _process = processStarter.Start(binariesFolder);
+            _fileSystem.CreateFolder(dataDirectory);
+            _fileSystem.DeleteFile(dataDirectory + "\\" + MongoDbDefaults.Lockfile);
+            _process = processStarter.Start(binariesFolder, dataDirectory, port);
 
+            ConnectionString = string.Format(CultureInfo.InvariantCulture, "mongodb://localhost:{0}/", port);
             State = State.Running;
+}
+
+        private int FindOpenPort()
+        {
+            int port = MongoDbDefaults.Port;
+            do
+            {
+                if (_portWatcher.IsPortAvailable(port))
+                {
+                    break;
+                }
+
+                if (port == MongoDbDefaults.Port + 100) { 
+                    throw new NoFreePortFoundException();
+                }
+
+                ++port;
+
+            } while (true);
+
+            return port;
         }
 
         public static MongoDbRunner Start()
         {
-            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcess(null));
+            return new MongoDbRunner(new PortWatcher(), new FileSystem(), new MongoDbProcess(null));
         }
 
-        internal static MongoDbRunner StartForUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
+        internal static MongoDbRunner StartForUnitTest(IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
         {
-            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter);
-        }
-
-        private static MongoDbPortAlreadyTakenException MongoDbPortAlreadyTakenException()
-        {
-            string message = string.Format(CultureInfo.InvariantCulture, "MongoDB can't be started. The TCP port {0} is already taken.", MongoDbDefaults.Port);
-            return new MongoDbPortAlreadyTakenException(message);
+            return new MongoDbRunner(portWatcher, fileSystem, processStarter);
         }
 
         #region IDisposable
@@ -92,7 +98,7 @@ namespace Mongo2Go
             }
 
             // finally clean up the data directory we created previously
-            _fileSystem.DeleteFolder(MongoDbDefaults.DataFolder);
+            _fileSystem.DeleteFolder(MongoDbDefaults.DataDirectory);
 
             Disposed = true;
             State = State.Stopped;

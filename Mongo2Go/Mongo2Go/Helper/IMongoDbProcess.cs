@@ -4,6 +4,6 @@ namespace Mongo2Go.Helper
 {
     public interface IMongoDbProcess : IDisposable
     {
-        IMongoDbProcess Start(string binariesFolder);
+        IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port);
     }
 }

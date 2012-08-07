@@ -17,10 +17,10 @@ namespace Mongo2Go.Helper
             _process = process;
         }
 
-        public IMongoDbProcess Start(string binariesFolder)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port)
         {
-            string fileName = string.Format(CultureInfo.InvariantCulture, @"{0}\{1}", binariesFolder, MongoDbDefaults.ProcessName);
-            string arguments = string.Format(CultureInfo.InvariantCulture, @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal", MongoDbDefaults.DataFolder, MongoDbDefaults.Port);
+            string fileName         = string.Format(CultureInfo.InvariantCulture, @"{0}\{1}", binariesDirectory, MongoDbDefaults.ExecutableName);
+            string arguments        = string.Format(CultureInfo.InvariantCulture, @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal", dataDirectory, port);
 
             ProcessStartInfo startInfo = new ProcessStartInfo
                 {
