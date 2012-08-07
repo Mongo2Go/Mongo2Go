@@ -28,14 +28,24 @@ namespace Mongo2Go.Helper
                     RedirectStandardOutput = true,
                 };
 
-            bool processReady = false;
-
             Process process = new Process { StartInfo = startInfo };
-            process.OutputDataReceived += (sender, args) => { if (args.Data.Contains(ProcessReadyIdentifier))
+
+            BlockUntilStarted(process);
+
+            return new MongoDbProcess(process);
+        }
+
+        private static void BlockUntilStarted(Process process)
+        {
+            bool processReady = false;
+            process.OutputDataReceived += (sender, args) =>
                 {
-                    processReady = true;
-                } 
-            };
+                    if (!string.IsNullOrEmpty(args.Data) &&
+                        args.Data.Contains(ProcessReadyIdentifier))
+                    {
+                        processReady = true;
+                    }
+                };
 
             process.Start();
             process.BeginOutputReadLine();
@@ -45,8 +55,7 @@ namespace Mongo2Go.Helper
                 Thread.Sleep(100);
             }
 
-
-            return new MongoDbProcess(process);
+            process.CancelOutputRead();
         }
 
         public void Kill()
