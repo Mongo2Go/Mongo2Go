@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
 using Mongo2Go.Helper;
 
 namespace Mongo2Go
@@ -17,6 +14,7 @@ namespace Mongo2Go
         private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
         private const string BinariesSearchPatternDebug = @"tools\mongodb-win32-i386*\bin";
 
+        public bool Disposed { get; private set; }
         public State State { get; private set; }
 
         private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
@@ -80,10 +78,25 @@ namespace Mongo2Go
 
         private void Dispose(bool disposing)
         {
-            if (State == State.Running && disposing)
+            if (Disposed) { return; }
+            if (State != State.Running) { return; }
+
+            if (disposing)
             {
-                _process.Kill();
+                // we have no "managed resources" - but we leave this switch to avoid an FxCop CA1801 warnig
             }
+
+            if (_process != null)
+            {
+                _process.Dispose();
+            }
+
+            Disposed = true;
+        }
+
+        ~MongoDbRunner()
+        {
+            Dispose(false);
         }
 
         #endregion
