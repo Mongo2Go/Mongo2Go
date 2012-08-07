@@ -92,6 +92,7 @@ namespace Mongo2Go
             }
 
             Disposed = true;
+            State = State.Stopped;
         }
 
         ~MongoDbRunner()
