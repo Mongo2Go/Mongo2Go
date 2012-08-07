@@ -68,8 +68,7 @@ namespace Mongo2GoTests.Runner
         {
             runner = MongoDbRunner.Start();
             
-            const string connectionString = "mongodb://localhost/?safe=true";
-            MongoServer server = MongoServer.Create(connectionString);
+            MongoServer server = MongoServer.Create(runner.ConnectionString);
             MongoDatabase database = server.GetDatabase("IntegrationTest");
             collection = database.GetCollection<TestDocument>("TestCollection");
         }
