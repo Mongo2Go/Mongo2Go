@@ -12,13 +12,14 @@ namespace Mongo2Go
         private readonly IProcessWatcher _processWatcher;
         private readonly IPortWatcher _portWatcher;
         private readonly IFileSystem _fileSystem;
+        private readonly IMongoDbProcess _process;
 
         private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
         private const string BinariesSearchPatternDebug = @"tools\mongodb-win32-i386*\bin";
 
         public State State { get; private set; }
 
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
         {
             _processWatcher = processWatcher;
             _portWatcher = portWatcher;
@@ -48,20 +49,19 @@ namespace Mongo2Go
             _fileSystem.CreateFolder(MongoDbDefaults.DataFolder);
             _fileSystem.DeleteFile(MongoDbDefaults.Lockfile);
 
-            
-            
+            _process = processStarter.Start(binariesFolder);
 
             State = State.Running;
         }
 
         public static MongoDbRunner Start()
         {
-            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem());
+            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcess(null));
         }
 
-        internal static MongoDbRunner StartForUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem)
+        internal static MongoDbRunner StartForUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
         {
-            return new MongoDbRunner(processWatcher, portWatcher, fileSystem);
+            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter);
         }
 
         private static MongoDbPortAlreadyTakenException MongoDbPortAlreadyTakenException()
@@ -82,7 +82,7 @@ namespace Mongo2Go
         {
             if (State == State.Running && disposing)
             {
-                // TODO: kill process
+                _process.Kill();
             }
         }
 

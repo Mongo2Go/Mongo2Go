@@ -7,3 +7,4 @@
 [assembly: SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Db", Scope = "type", Target = "Mongo2Go.MongoDbPortAlreadyTakenException")]
 [assembly: SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Db", Scope = "type", Target = "Mongo2Go.MonogDbBinariesNotFoundException")]
 [assembly: SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Db", Scope = "type", Target = "Mongo2Go.Helper.MongoDbProcess")]
+[assembly: SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Db", Scope = "type", Target = "Mongo2Go.Helper.IMongoDbProcess")]

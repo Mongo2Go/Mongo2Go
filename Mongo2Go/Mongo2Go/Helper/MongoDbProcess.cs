@@ -1,23 +1,52 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
+using System.Threading;
 
 namespace Mongo2Go.Helper
 {
     public class MongoDbProcess : IMongoDbProcess
     {
+        private const string ProcessReadyIdentifier = "waiting for connections";
         private Process _process;
 
-        public MongoDbProcess(string binariesFolder)
+        internal MongoDbProcess(Process process)
         {
-            string fileName = binariesFolder + @"\" + MongoDbDefaults.ProcessName;
+            _process = process;
+        }
 
-            ProcessStartInfo startInfo = new ProcessStartInfo(fileName)
+        public IMongoDbProcess Start(string binariesFolder)
+        {
+            string fileName = string.Format(CultureInfo.InvariantCulture, @"{0}\{1}", binariesFolder, MongoDbDefaults.ProcessName);
+            string arguments = string.Format(CultureInfo.InvariantCulture, @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal", MongoDbDefaults.DataFolder, MongoDbDefaults.Port);
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
                 {
-                    WorkingDirectory = binariesFolder,
+                    FileName = fileName,
+                    Arguments = arguments,
                     //CreateNoWindow = true,
-                    //UseShellExecute = false
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
                 };
 
-            _process = Process.Start(startInfo);
+            bool processReady = false;
+
+            Process process = new Process { StartInfo = startInfo };
+            process.OutputDataReceived += (sender, args) => { if (args.Data.Contains(ProcessReadyIdentifier))
+                {
+                    processReady = true;
+                } 
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+
+            while (!processReady)
+            {
+                Thread.Sleep(100);
+            }
+
+
+            return new MongoDbProcess(process);
         }
 
         public void Kill()
@@ -34,6 +63,11 @@ namespace Mongo2Go.Helper
 
             _process.Dispose();
             _process = null;
+        }
+
+        ~MongoDbProcess()
+        {
+           Kill(); 
         }
     }
 }
