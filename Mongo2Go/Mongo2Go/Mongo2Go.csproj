@@ -53,8 +53,10 @@
     <Compile Include="Helper\IMongoDbProcess.cs">
       <DependentUpon>MongoDbProcess.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\IProcessWatcher.cs" />
     <Compile Include="Helper\MongoDbProcess.cs" />
     <Compile Include="Helper\MongoImportExport.cs" />
+    <Compile Include="Helper\ProcessWatcher.cs" />
     <Compile Include="Helper\StringFormatExtension.cs" />
     <Compile Include="MongoDbDefaults.cs" />
     <Compile Include="GlobalSuppressions.cs" />
@@ -65,6 +67,9 @@
     <Compile Include="Helper\PortWatcher.cs" />
     <Compile Include="Helper\NoFreePortFoundException.cs">
       <DependentUpon>PortWatcher.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MongoDbPortAlreadyTakenException.cs">
+      <DependentUpon>MongoDbRunner.cs</DependentUpon>
     </Compile>
     <Compile Include="MongoDbRunner.cs" />
     <Compile Include="MonogDbBinariesNotFoundException.cs">

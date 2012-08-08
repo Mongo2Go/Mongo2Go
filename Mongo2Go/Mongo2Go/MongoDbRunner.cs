@@ -5,6 +5,7 @@ namespace Mongo2Go
 {
     public class MongoDbRunner : IDisposable
     {
+        private readonly IProcessWatcher _processWatcher;        
         private readonly IPortWatcher _portWatcher;
         private readonly IFileSystem _fileSystem;
         private readonly IMongoDbProcess _process;
@@ -18,20 +19,75 @@ namespace Mongo2Go
         public int Port { get; private set; }
         public string ConnectionString { get; private set; }
 
+        /// <summary>
+        /// Starts Multiple MongoDB instances with each call
+        /// On dispose: kills them and deletes their data directory
+        /// </summary>
+        /// <remarks>Should be used for integration tests</remarks>
+        public static MongoDbRunner Start()
+        {
+            return new MongoDbRunner(new PortWatcher(), new FileSystem(), new MongoDbProcess(null));
+        }
+
+        internal static MongoDbRunner StartUnitTest(IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
+        {
+            return new MongoDbRunner(portWatcher, fileSystem, processStarter);
+        }
+
+        /// <summary>
+        /// Only starts one single MongoDB instance (even on multiple calls), does not kill it, does not delete data
+        /// </summary>
+        /// <remarks>
+        /// Should be used for local debugging only
+        /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
+        /// </remarks>
+        public static MongoDbRunner StartForDebugging()
+        {
+            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcess(null));
+        }
+
+        internal static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
+        {
+            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter);
+        }
+
+        /// <summary>
+        /// usage: local debugging
+        /// </summary>
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
+        {
+            _processWatcher = processWatcher;            
+            _portWatcher = portWatcher;
+            _fileSystem = fileSystem;
+
+            Port = MongoDbDefaults.DefaultPort;
+            ConnectionString = "mongodb://localhost:{0}/".Formatted(Port);
+
+            if (_processWatcher.IsProcessRunning(MongoDbDefaults.ProcessName))
+            {
+                State = State.AlreadyRunning;
+                return;
+            }
+
+            if (!_portWatcher.IsPortAvailable(Port))
+            {
+                throw new MongoDbPortAlreadyTakenException("MongoDB can't be started. The TCP port {0} is already taken.".Formatted(Port));
+            }
+
+            _fileSystem.CreateFolder(MongoDbDefaults.DataDirectory);
+            _fileSystem.DeleteFile(@"{0}\{1}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.Lockfile));
+            _process = processStarter.Start(BinariesFolder, MongoDbDefaults.DataDirectory, Port, true);
+
+            State = State.Running;
+        }
+
+        /// <summary>
+        /// usage: integration tests
+        /// </summary>
         private MongoDbRunner(IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
         {
             _portWatcher = portWatcher;
             _fileSystem = fileSystem;
-
-            // 1st: path when installed via nuget
-            // 2nd: path when started from solution
-            string binariesFolder = FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPattern) ??
-                                    FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPatternDebug);
-
-            if (binariesFolder == null)
-            {
-                throw new MonogDbBinariesNotFoundException();
-            }
 
             Port = _portWatcher.FindOpenPort(MongoDbDefaults.TestStartPort);
             ConnectionString = "mongodb://localhost:{0}/".Formatted(Port);
@@ -39,25 +95,26 @@ namespace Mongo2Go
             _dataDirectoryWithPort = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, Port);
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
             _fileSystem.DeleteFile(@"{0}\{1}".Formatted(_dataDirectoryWithPort, MongoDbDefaults.Lockfile));
-            _process = processStarter.Start(binariesFolder, _dataDirectoryWithPort, Port);
+            _process = processStarter.Start(BinariesFolder, _dataDirectoryWithPort, Port);
 
             State = State.Running;
         }
-        
-        /// <summary>
-        /// Start a new MongoDB instance on the open port
-        /// </summary>
-        /// <remarks>
-        /// Should be used for integration tests
-        /// </remarks>
-        public static MongoDbRunner Start()
-        {
-            return new MongoDbRunner(new PortWatcher(), new FileSystem(), new MongoDbProcess(null));
-        }
 
-        internal static MongoDbRunner StartForUnitTest(IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
+        private static string BinariesFolder
         {
-            return new MongoDbRunner(portWatcher, fileSystem, processStarter);
+            get
+            {
+                // 1st: path when installed via nuget
+                // 2nd: path when started from solution
+                string binariesFolder = FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPattern) ??
+                                        FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPatternDebug);
+
+                if (binariesFolder == null)
+                {
+                    throw new MonogDbBinariesNotFoundException();
+                }
+                return binariesFolder;
+            }
         }
 
         #region IDisposable
@@ -83,8 +140,11 @@ namespace Mongo2Go
                 _process.Dispose();
             }
 
-            // finally clean up the data directory we created previously
-            _fileSystem.DeleteFolder(_dataDirectoryWithPort);
+            // will be null if we are working in debugging mode (single instance)
+            if (_dataDirectoryWithPort != null) {
+                // finally clean up the data directory we created previously
+                _fileSystem.DeleteFolder(_dataDirectoryWithPort);
+            }
 
             Disposed = true;
             State = State.Stopped;

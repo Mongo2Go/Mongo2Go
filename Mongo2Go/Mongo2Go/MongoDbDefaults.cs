@@ -2,6 +2,8 @@
 {
     public static class MongoDbDefaults
     {
+        public const string ProcessName = "mongod";
+        
         public const string MongodExecutable = "mongod";
 
         public const string MongoExportExecutable = "mongoexport";

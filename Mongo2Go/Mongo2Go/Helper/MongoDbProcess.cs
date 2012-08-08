@@ -9,6 +9,7 @@ namespace Mongo2Go.Helper
     {
         private const string ProcessReadyIdentifier = "waiting for connections";
         private Process _process;
+        private bool _dontKill;
 
         public bool Disposed { get; private set; }
 
@@ -19,6 +20,13 @@ namespace Mongo2Go.Helper
 
         public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port)
         {
+            return Start(binariesDirectory, dataDirectory, port, false);
+        }
+
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool dontKill)
+        {
+            _dontKill = dontKill;
+
             string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongodExecutable);
             string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
 
@@ -26,7 +34,7 @@ namespace Mongo2Go.Helper
                 {
                     FileName = fileName,
                     Arguments = arguments,
-                    //CreateNoWindow = true,
+                    CreateNoWindow = !_dontKill, // it is very helpfull to see if the instance is still open, even if there is no output because  of RedirectStandardOutput
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                 };
@@ -90,9 +98,6 @@ namespace Mongo2Go.Helper
             }
             Kill();
 
-            // wait a bit to be sure
-            Thread.Sleep(500);
-
             Disposed = true;
         }
 
@@ -103,6 +108,12 @@ namespace Mongo2Go.Helper
 
         private void Kill()
         {
+            if (_dontKill)
+            {
+                // nothing to do
+                return;
+            }
+
             if (_process == null)
             {
                 return;
@@ -115,6 +126,9 @@ namespace Mongo2Go.Helper
 
             _process.Dispose();
             _process = null;
+
+            // wait a bit to be sure
+            Thread.Sleep(500);
         }
 
         #endregion
