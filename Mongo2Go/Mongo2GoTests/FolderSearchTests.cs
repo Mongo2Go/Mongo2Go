@@ -3,7 +3,7 @@ using Machine.Specifications;
 using Mongo2Go.Helper;
 
 // ReSharper disable InconsistentNaming
-namespace Mongo2GoTests.FolderSearch
+namespace Mongo2GoTests
 {
     [Subject("FolderSearch")]
     public class when_requesting_current_executing_directory

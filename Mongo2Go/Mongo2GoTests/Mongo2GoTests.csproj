@@ -66,7 +66,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FolderSearch\FolderSearchTests.cs" />
+    <Compile Include="FolderSearchTests.cs" />
     <Compile Include="Runner\RunnerIntegrationTests.cs" />
     <Compile Include="Runner\RunnerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

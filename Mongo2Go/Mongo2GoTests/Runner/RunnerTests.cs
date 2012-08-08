@@ -15,15 +15,14 @@ namespace Mongo2GoTests.Runner
         static Mock<IFileSystem> fileMock;
         static Mock<IMongoDbProcess> processMock;
 
-        static readonly string exptectedDataDirectory = string.Format("{0}_{1}", MongoDbDefaults.DataDirectory, (MongoDbDefaults.Port + 1));
-        static readonly string exptectedLogfile = string.Format("{0}_{1}\\{2}", MongoDbDefaults.DataDirectory, (MongoDbDefaults.Port + 1), MongoDbDefaults.Lockfile);
-        static readonly string exptectedConnectString = string.Format("mongodb://localhost:{0}/", (MongoDbDefaults.Port + 1));
+        static readonly string exptectedDataDirectory = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.Port + 1);
+        static readonly string exptectedLogfile = @"{0}_{1}\{2}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.Port + 1, MongoDbDefaults.Lockfile);
+        static readonly string exptectedConnectString = "mongodb://localhost:{0}/".Formatted(MongoDbDefaults.Port + 1);
 
         Establish context = () =>
         {
             portWatcherMock = new Mock<IPortWatcher>();
-            portWatcherMock.Setup(m => m.IsPortAvailable(MongoDbDefaults.Port)).Returns(false);
-            portWatcherMock.Setup(m => m.IsPortAvailable(MongoDbDefaults.Port + 1)).Returns(true);
+            portWatcherMock.Setup(m => m.FindOpenPort(MongoDbDefaults.Port)).Returns(MongoDbDefaults.Port + 1);
 
             fileMock = new Mock<IFileSystem>();
             
@@ -33,9 +32,6 @@ namespace Mongo2GoTests.Runner
         };
 
         Because of = () => runner = MongoDbRunner.StartForUnitTest(portWatcherMock.Object, fileMock.Object, processMock.Object);
-
-        It should_check_the_default_port                = () => portWatcherMock.Verify(x => x.IsPortAvailable(MongoDbDefaults.Port), Times.Exactly(1));
-        It should_check_another_port                    = () => portWatcherMock.Verify(x => x.IsPortAvailable(MongoDbDefaults.Port + 1), Times.Exactly(1));
 
         It should_create_the_data_directory             = () => fileMock.Verify(x => x.CreateFolder(exptectedDataDirectory), Times.Exactly(1));
         It should_delete_old_lock_file                  = () => fileMock.Verify(x => x.DeleteFile(exptectedLogfile), Times.Exactly(1));

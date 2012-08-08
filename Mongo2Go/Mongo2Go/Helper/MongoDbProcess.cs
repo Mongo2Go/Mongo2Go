@@ -19,8 +19,8 @@ namespace Mongo2Go.Helper
 
         public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port)
         {
-            string fileName  = string.Format(CultureInfo.InvariantCulture, @"{0}\{1}", binariesDirectory, MongoDbDefaults.ExecutableName);
-            string arguments = string.Format(CultureInfo.InvariantCulture, @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal", dataDirectory, port);
+            string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.ExecutableName);
+            string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
 
             ProcessStartInfo startInfo = new ProcessStartInfo
                 {
@@ -90,8 +90,8 @@ namespace Mongo2Go.Helper
             }
             Kill();
 
-            // the c# driver takes care of the connections - and totally fails if you kill the database, this is a temporarely workaround
-            Thread.Sleep(1000);
+            // wait a bit to be sure
+            Thread.Sleep(500);
 
             Disposed = true;
         }

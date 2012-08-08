@@ -9,9 +9,6 @@ using It = Machine.Specifications.It;
 // ReSharper disable InconsistentNaming
 namespace Mongo2GoTests.Runner
 {
-    #if !DEBUG
-    [Ignore("Intergration Test should be started by hand")]
-    #endif
     [Subject("Runner Integration Test")]
     public class when_using_the_inbuild_serialization : MongoIntegrationTest
     {
@@ -30,9 +27,6 @@ namespace Mongo2GoTests.Runner
         It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
     }
 
-    #if !DEBUG
-    [Ignore("Intergration Test should be started by hand")]
-    #endif
     [Subject("Runner Integration Test")]
     public class when_using_the_new_linq_support : MongoIntegrationTest
     {
@@ -73,11 +67,7 @@ namespace Mongo2GoTests.Runner
             collection = database.GetCollection<TestDocument>("TestCollection");
         }
 
-        Cleanup stuff = () =>
-            {
-                collection.Drop();
-                runner.Dispose();
-            };
+        Cleanup stuff = () => runner.Dispose();
     }
 }
 // ReSharper restore InconsistentNaming

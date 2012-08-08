@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Mongo2Go
+namespace Mongo2Go.Helper
 {
     [Serializable]
     public class NoFreePortFoundException : Exception

@@ -9,12 +9,14 @@ namespace Mongo2Go
         private readonly IPortWatcher _portWatcher;
         private readonly IFileSystem _fileSystem;
         private readonly IMongoDbProcess _process;
+        private readonly string _dataDirectoryWithPort;
 
         private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
         private const string BinariesSearchPatternDebug = @"tools\mongodb-win32-i386*\bin";
 
         public bool Disposed { get; private set; }
         public State State { get; private set; }
+        public int Port { get; private set; }
         public string ConnectionString { get; private set; }
 
         private MongoDbRunner(IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
@@ -32,37 +34,18 @@ namespace Mongo2Go
                 throw new MonogDbBinariesNotFoundException();
             }
 
-            int port = FindOpenPort();
-            string dataDirectory = MongoDbDefaults.DataDirectory + "_" + port;
+            Port = _portWatcher.FindOpenPort(MongoDbDefaults.Port);
+            ConnectionString = "mongodb://localhost:{0}/".Formatted(Port);
 
-            _fileSystem.CreateFolder(dataDirectory);
-            _fileSystem.DeleteFile(dataDirectory + "\\" + MongoDbDefaults.Lockfile);
-            _process = processStarter.Start(binariesFolder, dataDirectory, port);
+            _dataDirectoryWithPort = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, Port);
+            _fileSystem.CreateFolder(_dataDirectoryWithPort);
+            _fileSystem.DeleteFile(@"{0}\{1}".Formatted(_dataDirectoryWithPort, MongoDbDefaults.Lockfile));
+            _process = processStarter.Start(binariesFolder, _dataDirectoryWithPort, Port);
 
-            ConnectionString = string.Format(CultureInfo.InvariantCulture, "mongodb://localhost:{0}/", port);
             State = State.Running;
-}
-
-        private int FindOpenPort()
-        {
-            int port = MongoDbDefaults.Port;
-            do
-            {
-                if (_portWatcher.IsPortAvailable(port))
-                {
-                    break;
-                }
-
-                if (port == MongoDbDefaults.Port + 100) { 
-                    throw new NoFreePortFoundException();
-                }
-
-                ++port;
-
-            } while (true);
-
-            return port;
         }
+        
+
 
         public static MongoDbRunner Start()
         {
@@ -98,7 +81,7 @@ namespace Mongo2Go
             }
 
             // finally clean up the data directory we created previously
-            _fileSystem.DeleteFolder(MongoDbDefaults.DataDirectory);
+            _fileSystem.DeleteFolder(_dataDirectoryWithPort);
 
             Disposed = true;
             State = State.Stopped;
