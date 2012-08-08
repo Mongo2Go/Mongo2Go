@@ -12,7 +12,7 @@ namespace Mongo2Go
         private readonly string _dataDirectoryWithPort;
 
         private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
-        private const string BinariesSearchPatternDebug = @"tools\mongodb-win32-i386*\bin";
+        private const string BinariesSearchPatternSolution = @"tools\mongodb-win32-i386*\bin";
 
         public bool Disposed { get; private set; }
         public State State { get; private set; }
@@ -52,6 +52,22 @@ namespace Mongo2Go
         }
 
         /// <summary>
+        /// Excutes Mongoimport on the associated MongoDB Instace
+        /// </summary>
+        public void Import(string database, string collection, string inputFile, bool drop)
+        {
+            MongoImportExport.Import(BinariesDirectory, Port, database, collection, inputFile, drop);
+        }
+
+        /// <summary>
+        /// Excutes Mongoexport on the associated MongoDB Instace
+        /// </summary>
+        public void Export(string database, string collection, string outputFile)
+        {
+            MongoImportExport.Export(BinariesDirectory, Port, database, collection, outputFile);
+        }
+        
+        /// <summary>
         /// usage: local debugging
         /// </summary>
         private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcess processStarter)
@@ -76,7 +92,7 @@ namespace Mongo2Go
 
             _fileSystem.CreateFolder(MongoDbDefaults.DataDirectory);
             _fileSystem.DeleteFile(@"{0}\{1}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.Lockfile));
-            _process = processStarter.Start(BinariesFolder, MongoDbDefaults.DataDirectory, Port, true);
+            _process = processStarter.Start(BinariesDirectory, MongoDbDefaults.DataDirectory, Port, true);
 
             State = State.Running;
         }
@@ -95,19 +111,19 @@ namespace Mongo2Go
             _dataDirectoryWithPort = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, Port);
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
             _fileSystem.DeleteFile(@"{0}\{1}".Formatted(_dataDirectoryWithPort, MongoDbDefaults.Lockfile));
-            _process = processStarter.Start(BinariesFolder, _dataDirectoryWithPort, Port);
+            _process = processStarter.Start(BinariesDirectory, _dataDirectoryWithPort, Port);
 
             State = State.Running;
         }
 
-        private static string BinariesFolder
+        private static string BinariesDirectory
         {
             get
             {
                 // 1st: path when installed via nuget
                 // 2nd: path when started from solution
                 string binariesFolder = FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPattern) ??
-                                        FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPatternDebug);
+                                        FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPatternSolution);
 
                 if (binariesFolder == null)
                 {

@@ -9,7 +9,7 @@ namespace Mongo2Go.Helper
     {
         private const string ProcessReadyIdentifier = "waiting for connections";
         private Process _process;
-        private bool _dontKill;
+        private bool _doNotKill;
 
         public bool Disposed { get; private set; }
 
@@ -23,9 +23,9 @@ namespace Mongo2Go.Helper
             return Start(binariesDirectory, dataDirectory, port, false);
         }
 
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool dontKill)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill)
         {
-            _dontKill = dontKill;
+            _doNotKill = doNotKill;
 
             string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongodExecutable);
             string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
@@ -34,7 +34,7 @@ namespace Mongo2Go.Helper
                 {
                     FileName = fileName,
                     Arguments = arguments,
-                    CreateNoWindow = !_dontKill, // it is very helpfull to see if the instance is still open, even if there is no output because  of RedirectStandardOutput
+                    CreateNoWindow = !_doNotKill, // it is very helpfull to see if the instance is still open, even if there is no output because  of RedirectStandardOutput
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                 };
@@ -108,7 +108,7 @@ namespace Mongo2Go.Helper
 
         private void Kill()
         {
-            if (_dontKill)
+            if (_doNotKill)
             {
                 // nothing to do
                 return;

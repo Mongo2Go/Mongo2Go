@@ -8,7 +8,7 @@
 
         public const string MongoExportExecutable = "mongoexport";
 
-        public const string MongoimportExecutable = "mongoimport";
+        public const string MongoImportExecutable = "mongoimport";
 
         public const int DefaultPort = 27017;
 
