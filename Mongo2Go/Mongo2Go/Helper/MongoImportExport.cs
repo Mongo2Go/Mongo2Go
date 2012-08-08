@@ -2,6 +2,7 @@
 
 namespace Mongo2Go.Helper
 {
+    // TODO: event if export/import finished
     public static class MongoImportExport
     {
         public static void Import(string binariesDirectory, int port, string database, string collection, string inputFile, bool drop)

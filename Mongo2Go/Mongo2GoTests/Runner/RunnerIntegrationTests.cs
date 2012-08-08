@@ -1,16 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using FluentAssertions;
 using Machine.Specifications;
 using Mongo2Go;
-using Mongo2Go.Helper;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using Newtonsoft.Json;
 using It = Machine.Specifications.It;
 
 // ReSharper disable InconsistentNaming
@@ -59,34 +55,6 @@ namespace Mongo2GoTests.Runner
         It should_return_document3 = () => query.ElementAt(1).IntTest = TestDocument.DummyData3().IntTest;
     }
 
-    [Subject("Runner Integration Test")]
-    public class when_using_monogoexport: MongoIntegrationTest
-    {
-        const string _testFile = @"C:\test.json";
-        static IList<TestDocument> parsedContent;
-
-        Establish context = () =>
-        {
-            CreateConnection();
-            collection.Insert(TestDocument.DummyData1());
-            collection.Insert(TestDocument.DummyData2());
-            collection.Insert(TestDocument.DummyData3());
-        };
-
-        Because of = () =>
-            {
-                runner.Export(_databaseName, _collectionName, _testFile);
-                Thread.Sleep(500);
-                parsedContent = ReadBsonFile<TestDocument>(_testFile);
-            };
-
-        It should_preserve_all_values1 = () => parsedContent[0].ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
-        It should_preserve_all_values2 = () => parsedContent[1].ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData2());
-        It should_preserve_all_values3 = () => parsedContent[2].ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData3());
-
-        //Cleanup stuff = () => new FileSystem().DeleteFile(_testFile);
-    }
-
     public class MongoIntegrationTest
     {
         internal static MongoDbRunner runner;
@@ -107,19 +75,8 @@ namespace Mongo2GoTests.Runner
 
         public static IList<T> ReadBsonFile<T>(string fileName)
         {
-            string[] exportedContent = File.ReadAllLines(fileName);
-
-            List<T> tmp = new List<T>();
-            foreach(string oneDoc in exportedContent)
-            {
-                T theDoc = BsonSerializer.Deserialize<T>(oneDoc);
-                tmp.Add(theDoc);
-            }
-
-            return tmp;
-
-
-            //return exportedContent.Select(BsonSerializer.Deserialize<T>).ToList();
+            string[] content = File.ReadAllLines(fileName);
+            return content.Select(BsonSerializer.Deserialize<T>).ToList();
         }
     }
 }

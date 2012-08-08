@@ -30,11 +30,12 @@ namespace Mongo2Go.Helper
             string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongodExecutable);
             string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
 
+
             ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = fileName,
                     Arguments = arguments,
-                    CreateNoWindow = !_doNotKill, // it is very helpfull to see if the instance is still open, even if there is no output because  of RedirectStandardOutput
+                    CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                 };
