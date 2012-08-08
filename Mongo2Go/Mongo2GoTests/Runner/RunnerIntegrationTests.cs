@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using FluentAssertions;
 using Machine.Specifications;
 using Mongo2Go;
@@ -75,6 +76,7 @@ namespace Mongo2GoTests.Runner
         Because of = () =>
             {
                 runner.Export(_databaseName, _collectionName, _testFile);
+                Thread.Sleep(500);
                 parsedContent = ReadBsonFile<TestDocument>(_testFile);
             };
 

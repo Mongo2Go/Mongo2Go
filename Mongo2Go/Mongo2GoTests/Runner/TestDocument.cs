@@ -16,7 +16,7 @@ namespace Mongo2GoTests.Runner
         public int IntTest { get; set; }
         
         [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
-        public DateTime DateTest { get; set; }
+        public DateTime? DateTest { get; set; }
 
         public List<string> ListTest { get; set; }
 
