@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using Mongo2Go.Helper;
 
 namespace Mongo2Go
@@ -34,7 +33,7 @@ namespace Mongo2Go
                 throw new MonogDbBinariesNotFoundException();
             }
 
-            Port = _portWatcher.FindOpenPort(MongoDbDefaults.Port);
+            Port = _portWatcher.FindOpenPort(MongoDbDefaults.TestStartPort);
             ConnectionString = "mongodb://localhost:{0}/".Formatted(Port);
 
             _dataDirectoryWithPort = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, Port);
@@ -45,8 +44,12 @@ namespace Mongo2Go
             State = State.Running;
         }
         
-
-
+        /// <summary>
+        /// Start a new MongoDB instance on the open port
+        /// </summary>
+        /// <remarks>
+        /// Should be used for integration tests
+        /// </remarks>
         public static MongoDbRunner Start()
         {
             return new MongoDbRunner(new PortWatcher(), new FileSystem(), new MongoDbProcess(null));

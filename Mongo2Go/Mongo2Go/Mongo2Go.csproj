@@ -54,6 +54,7 @@
       <DependentUpon>MongoDbProcess.cs</DependentUpon>
     </Compile>
     <Compile Include="Helper\MongoDbProcess.cs" />
+    <Compile Include="Helper\MongoImportExport.cs" />
     <Compile Include="Helper\StringFormatExtension.cs" />
     <Compile Include="MongoDbDefaults.cs" />
     <Compile Include="GlobalSuppressions.cs" />

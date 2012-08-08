@@ -16,7 +16,7 @@ namespace Mongo2Go.Helper
                     break;
                 }
 
-                if (port == MongoDbDefaults.Port + 100)
+                if (port == MongoDbDefaults.TestStartPort + 100)
                 {
                     throw new NoFreePortFoundException();
                 }

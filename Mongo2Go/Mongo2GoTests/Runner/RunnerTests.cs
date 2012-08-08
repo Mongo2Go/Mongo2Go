@@ -15,14 +15,14 @@ namespace Mongo2GoTests.Runner
         static Mock<IFileSystem> fileMock;
         static Mock<IMongoDbProcess> processMock;
 
-        static readonly string exptectedDataDirectory = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.Port + 1);
-        static readonly string exptectedLogfile = @"{0}_{1}\{2}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.Port + 1, MongoDbDefaults.Lockfile);
-        static readonly string exptectedConnectString = "mongodb://localhost:{0}/".Formatted(MongoDbDefaults.Port + 1);
+        static readonly string exptectedDataDirectory = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.TestStartPort + 1);
+        static readonly string exptectedLogfile = @"{0}_{1}\{2}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.TestStartPort + 1, MongoDbDefaults.Lockfile);
+        static readonly string exptectedConnectString = "mongodb://localhost:{0}/".Formatted(MongoDbDefaults.TestStartPort + 1);
 
         Establish context = () =>
         {
             portWatcherMock = new Mock<IPortWatcher>();
-            portWatcherMock.Setup(m => m.FindOpenPort(MongoDbDefaults.Port)).Returns(MongoDbDefaults.Port + 1);
+            portWatcherMock.Setup(m => m.FindOpenPort(MongoDbDefaults.TestStartPort)).Returns(MongoDbDefaults.TestStartPort + 1);
 
             fileMock = new Mock<IFileSystem>();
             

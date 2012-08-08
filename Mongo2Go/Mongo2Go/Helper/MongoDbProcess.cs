@@ -19,7 +19,7 @@ namespace Mongo2Go.Helper
 
         public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port)
         {
-            string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.ExecutableName);
+            string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongodExecutable);
             string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
 
             ProcessStartInfo startInfo = new ProcessStartInfo
