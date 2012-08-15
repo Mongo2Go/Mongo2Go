@@ -78,7 +78,7 @@ namespace Mongo2Go
             Port = MongoDbDefaults.DefaultPort;
             ConnectionString = "mongodb://localhost:{0}/".Formatted(Port);
 
-            if (_processWatcher.IsProcessRunning(MongoDbDefaults.ProcessName))
+            if (_processWatcher.IsProcessRunning(MongoDbDefaults.ProcessName) && !_portWatcher.IsPortAvailable(Port))
             {
                 State = State.AlreadyRunning;
                 return;

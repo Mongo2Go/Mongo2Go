@@ -32,7 +32,8 @@ namespace Mongo2Go.Helper
 
             Process process = ProcessControl.ProcessFactory(fileName, arguments);
 
-            ProcessOutput output =  ProcessControl.StartAndWaitForReady(process, 5, ProcessReadyIdentifier);
+            string windowTitle = "mongod | port: {0}".Formatted(port);
+            ProcessOutput output = ProcessControl.StartAndWaitForReady(process, 5, ProcessReadyIdentifier, windowTitle);
             ErrorOutput = output.ErrorOutput;
             StandardOutput = output.StandardOutput;
 

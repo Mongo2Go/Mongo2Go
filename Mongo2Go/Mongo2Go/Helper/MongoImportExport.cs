@@ -12,7 +12,8 @@ namespace Mongo2Go.Helper
 
             Process process = ProcessControl.ProcessFactory(fileName, arguments);
 
-            return ProcessControl.StartAndWaitForExit(process);
+            string windowTitle = "mongoimport | port: {0} db: {1} collection: {2} file {3}".Formatted(port, database, collection, inputFile);
+            return ProcessControl.StartAndWaitForExit(process, windowTitle);
         }
 
         public static ProcessOutput Export(string binariesDirectory, int port, string database, string collection, string outputFile)
@@ -22,7 +23,8 @@ namespace Mongo2Go.Helper
 
             Process process = ProcessControl.ProcessFactory(fileName, arguments);
 
-            return ProcessControl.StartAndWaitForExit(process);
+            string windowTitle = "mongoexport | port: {0} db: {1} collection: {2} file {3}".Formatted(port, database, collection, outputFile);
+            return ProcessControl.StartAndWaitForExit(process, windowTitle);
         }
     }
 }
