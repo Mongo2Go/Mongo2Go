@@ -63,6 +63,9 @@
     <Compile Include="Helper\MongoImportExport.cs" />
     <Compile Include="Helper\ProcessControl.cs" />
     <Compile Include="Helper\ProcessWatcher.cs" />
+    <Compile Include="Helper\ProcessOutput.cs">
+      <DependentUpon>ProcessControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Helper\StringFormatExtension.cs" />
     <Compile Include="MongoDbDefaults.cs" />
     <Compile Include="GlobalSuppressions.cs" />
@@ -78,6 +81,9 @@
       <DependentUpon>MongoDbRunner.cs</DependentUpon>
     </Compile>
     <Compile Include="MongoDbRunner.cs" />
+    <Compile Include="MongoDbRunner.IDisposable.cs">
+      <DependentUpon>MongoDbRunner.cs</DependentUpon>
+    </Compile>
     <Compile Include="MonogDbBinariesNotFoundException.cs">
       <DependentUpon>MongoDbRunner.cs</DependentUpon>
     </Compile>

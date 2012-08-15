@@ -10,6 +10,7 @@ namespace Mongo2Go.Helper
         private Process _process;
         private bool _doNotKill;
 
+        public IEnumerable<string> ErrorOutput { get; set; }
         public IEnumerable<string> StandardOutput { get; set; }
 
         internal MongoDbProcess(Process process)
@@ -29,18 +30,11 @@ namespace Mongo2Go.Helper
             string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongodExecutable);
             string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
 
-            ProcessStartInfo startInfo = new ProcessStartInfo
-                {
-                    FileName = fileName,
-                    Arguments = arguments,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                };
+            Process process = ProcessControl.ProcessFactory(fileName, arguments);
 
-            Process process = new Process { StartInfo = startInfo };
-
-            StandardOutput = ProcessControl.StartAndBlockUntilReady(process, 5, ProcessReadyIdentifier);
+            ProcessOutput output =  ProcessControl.StartAndBlockUntilReady(process, 5, ProcessReadyIdentifier);
+            ErrorOutput = output.ErrorOutput;
+            StandardOutput = output.StandardOutput;
 
             return new MongoDbProcess(process);
         }

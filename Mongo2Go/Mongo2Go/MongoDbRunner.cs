@@ -3,7 +3,7 @@ using Mongo2Go.Helper;
 
 namespace Mongo2Go
 {
-    public class MongoDbRunner : IDisposable
+    public partial class MongoDbRunner : IDisposable
     {
         private readonly IProcessWatcher _processWatcher;        
         private readonly IPortWatcher _portWatcher;
@@ -14,7 +14,6 @@ namespace Mongo2Go
         private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
         private const string BinariesSearchPatternSolution = @"tools\mongodb-win32-i386*\bin";
 
-        public bool Disposed { get; private set; }
         public State State { get; private set; }
         public int Port { get; private set; }
         public string ConnectionString { get; private set; }
@@ -132,45 +131,5 @@ namespace Mongo2Go
                 return binariesFolder;
             }
         }
-
-        #region IDisposable
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (Disposed) { return; }
-            if (State != State.Running) { return; }
-
-            if (disposing)
-            {
-                // we have no "managed resources" - but we leave this switch to avoid an FxCop CA1801 warnig
-            }
-
-            if (_process != null)
-            {
-                _process.Dispose();
-            }
-
-            // will be null if we are working in debugging mode (single instance)
-            if (_dataDirectoryWithPort != null) {
-                // finally clean up the data directory we created previously
-                _fileSystem.DeleteFolder(_dataDirectoryWithPort);
-            }
-
-            Disposed = true;
-            State = State.Stopped;
-        }
-
-        ~MongoDbRunner()
-        {
-            Dispose(false);
-        }
-
-        #endregion
     }
 }
