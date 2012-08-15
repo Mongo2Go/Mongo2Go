@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Mongo2Go.Helper
 {
@@ -6,5 +7,6 @@ namespace Mongo2Go.Helper
     {
         IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port);
         IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill);
+        IEnumerable<string> StandardOutput { get; }
     }
 }
