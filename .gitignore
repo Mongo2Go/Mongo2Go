@@ -1,5 +1,5 @@
-src/Mongo2Go/Mongo2Go/bin/
-src/Mongo2Go/Mongo2GoTests/bin/
+src/Mongo2Go/bin/
+src/Mongo2GoTests/bin/
 src/packages/
 obj/
 *ReSharper*
@@ -9,4 +9,3 @@ obj/
 ~$*
 */StyleCop.Cache
 *.nupkg
-
