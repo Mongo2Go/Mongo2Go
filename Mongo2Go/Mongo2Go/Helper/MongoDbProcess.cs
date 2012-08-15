@@ -32,7 +32,7 @@ namespace Mongo2Go.Helper
 
             Process process = ProcessControl.ProcessFactory(fileName, arguments);
 
-            ProcessOutput output =  ProcessControl.StartAndBlockUntilReady(process, 5, ProcessReadyIdentifier);
+            ProcessOutput output =  ProcessControl.StartAndWaitForReady(process, 5, ProcessReadyIdentifier);
             ErrorOutput = output.ErrorOutput;
             StandardOutput = output.StandardOutput;
 
