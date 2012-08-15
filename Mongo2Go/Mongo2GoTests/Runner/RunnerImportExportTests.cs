@@ -17,12 +17,14 @@ namespace Mongo2GoTests.Runner
     [Subject("Runner Integration Test")]
     public class when_using_monogoexport : MongoDebuggingTest
     {
-        const string _testFile = @"C:\test.json";
+        const string _testFile = @"C:\testExport.json";
         static IList<TestDocument> parsedContent;
 
         Establish context = () =>
         {
             CreateConnection();
+            collection.Drop();
+
             collection.Insert(TestDocument.DummyData1());
             collection.Insert(TestDocument.DummyData2());
             collection.Insert(TestDocument.DummyData3());
@@ -46,16 +48,17 @@ namespace Mongo2GoTests.Runner
     public class when_using_monogoimport : MongoDebuggingTest
     {
         static IQueryable<TestDocument> query;        
-        const string _testFile = @"C:\test.json";
+        const string _testFile = @"C:\testImport.json";
 
-        const string _filecontent = @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc4"" }, ""StringTest"" : ""Hello World"", ""IntTest"" : 42, ""DateTest"" : { ""$date"" : 465365166000 }, ""ListTest"" : [ ""I"", ""am"", ""a"", ""list"", ""of"", ""strings"" ] }"
-                                  + @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc5"" }, ""StringTest"" : ""Foo"", ""IntTest"" : 23, ""DateTest"" : null, ""ListTest"" : null }"
-                                  + @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc6"" }, ""StringTest"" : ""Bar"", ""IntTest"" : 77, ""DateTest"" : null, ""ListTest"" : null }";
+        const string _filecontent = @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc4"" }, ""StringTest"" : ""Hello World"", ""IntTest"" : 42, ""DateTest"" : { ""$date"" : 465365166000 }, ""ListTest"" : [ ""I"", ""am"", ""a"", ""list"", ""of"", ""strings"" ] }" + "\r\n"
+                                  + @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc5"" }, ""StringTest"" : ""Foo"", ""IntTest"" : 23, ""DateTest"" : null, ""ListTest"" : null }" + "\r\n"
+                                  + @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc6"" }, ""StringTest"" : ""Bar"", ""IntTest"" : 77, ""DateTest"" : null, ""ListTest"" : null }" + "\r\n";
 
         Establish context = () =>
             {
                 CreateConnection();
                 collection.Drop();
+                File.WriteAllText(_testFile, _filecontent);
             };
 
         Because of = () =>
