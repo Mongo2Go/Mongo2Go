@@ -1,5 +1,6 @@
-Mongo2Go/Mongo2Go/bin/
-Mongo2Go/Mongo2GoTests/bin/
+src/Mongo2Go/Mongo2Go/bin/
+src/Mongo2Go/Mongo2GoTests/bin/
+src/Mongo2Go/packages/
 obj/
 *ReSharper*
 *.suo
@@ -7,4 +8,5 @@ obj/
 *.user
 ~$*
 */StyleCop.Cache
-Mongo2Go/packages/
+*.nupkg
+
