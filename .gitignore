@@ -1,6 +1,6 @@
 src/Mongo2Go/Mongo2Go/bin/
 src/Mongo2Go/Mongo2GoTests/bin/
-src/Mongo2Go/packages/
+src/packages/
 obj/
 *ReSharper*
 *.suo
