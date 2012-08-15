@@ -61,6 +61,7 @@
       <DependentUpon>MongoDbProcess.cs</DependentUpon>
     </Compile>
     <Compile Include="Helper\MongoImportExport.cs" />
+    <Compile Include="Helper\NativeMethods.cs" />
     <Compile Include="Helper\ProcessControl.cs" />
     <Compile Include="Helper\ProcessWatcher.cs" />
     <Compile Include="Helper\ProcessOutput.cs">

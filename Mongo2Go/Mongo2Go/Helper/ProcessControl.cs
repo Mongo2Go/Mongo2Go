@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace Mongo2Go.Helper
 {
     public static class ProcessControl
     {
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern bool SetWindowText(IntPtr hwnd, String lpString);
-
         public static Process ProcessFactory(string fileName, string arguments)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo
@@ -49,7 +46,7 @@ namespace Mongo2Go.Helper
             return new ProcessOutput(errorOutput, standardOutput);
         }
 
-
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public static void RenameWindow(Process process, string newName)
         {
             if (String.IsNullOrEmpty(newName))
@@ -58,9 +55,9 @@ namespace Mongo2Go.Helper
             }
 
             try {
-                SetWindowText(process.MainWindowHandle, newName);
+                NativeMethods.SetWindowText(process.MainWindowHandle, newName);
             } 
-            catch (Exception ex) { }
+            catch (Exception) { }
         }
 
         /// <summary>
