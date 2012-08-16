@@ -17,7 +17,7 @@ Unit Test / Integration test
 With each call of the static method **MongoDbRunner.Start()** a new MongoDB instance will be set up.
 A free port will be used (starting with port 27018) and a corresponding data directory will be created.
 The method returns an instance of MongoDbRunner, which implements IDisposable.
-As soon as the MongoDbRunner is disposed (or if the Destructor is called by the GC),
+As soon as the MongoDbRunner is disposed (or if the Finalizer is called by the GC),
 the wrapped MongoDB process will be killed and all data in the data directory will be deleted.
 
 
@@ -35,7 +35,7 @@ which allow you to quickly set up a working environment.
 
 Installation
 --------------
-The MongoDB Nuget package can be found at [https://nuget.org/packages/Mongo2Go/](https://nuget.org/packages/Mongo2Go/)
+The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/](https://nuget.org/packages/Mongo2Go/)
 
 Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
 
@@ -77,7 +77,7 @@ Examples
         It should_return_a_result = () => findResult.ShouldNotBeNull();
         It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
     }
-	
+    
     public class MongoIntegrationTest
     {
         internal static MongoDbRunner runner;
@@ -93,18 +93,18 @@ Examples
         }
 
         Cleanup stuff = () => runner.Dispose();
-    }	
+    }    
 
 More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
 
 **Example: Exporting**
 
-	using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
+    using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 
-		MongoServer server = MongoServer.Create(runner.ConnectionString);
-		MongoDatabase database = server.GetDatabase("TestDatabase");
-		runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
-	}
+        MongoServer server = MongoServer.Create(runner.ConnectionString);
+        MongoDatabase database = server.GetDatabase("TestDatabase");
+        runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
+    }
 
 **Example: Importing (ASP.NET MVC 4 Web API)**
 
@@ -126,7 +126,7 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
         {
             _runner.Dispose();
         }
-	}
+    }
 
 
 
