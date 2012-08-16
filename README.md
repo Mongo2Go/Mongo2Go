@@ -3,10 +3,10 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](https://raw.github.com/JohannesHoppe/Mongo2Go/master/src/mongo2go_200_200.png)
 
-Mongo2Go is a manged wrapper around the latest MongoDB binaries. It targets **.NET 3.5.** and should work in later version, too.  
+Mongo2Go is a manged wrapper around the latest MongoDB binaries. It targets **.NET 3.5.** and should work in later versions, too.  
 Currently the Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ v2.2.0-rc1 (32bit).
 
-It has two use cases:
+Mongo2Go has two use cases:
 
 1. Providing multiple, temporary and isolated MongoDB databases for unit tests (or to be precise: integration tests)
 2. Providing a quick to set up MongoDB database for a local developer environment
@@ -32,6 +32,7 @@ Here you should set up a MongoDB as it is described in the manual.
 For you convenience the MongoDbRunner also exposes _mongoexport_ and _mongoimport_
 which allow you to quickly set up a working environment.
 
+
 Installation
 --------------
 The MongoDB Nuget package can be found at [https://nuget.org/packages/Mongo2Go/](https://nuget.org/packages/Mongo2Go/)
@@ -51,7 +52,87 @@ The official MongoDB C# sharp driver uses a connection pool to increase efficien
 This fact can create connection problems if multiple MongoDb instances are
 created and killed within a short time frame.
 Some Thead.Sleep methods currently target this issue.
-Later versions should definitely address this issue.
+Later versions should definitely address that problem.
+
+
+Examples
+--------
+
+**Example for Integration Test (Machine.Specifications & Fluent Assertions)**
+
+    [Subject("Integration Test")]
+    public class when_using_the_inbuild_serialization : MongoIntegrationTest
+    {
+        static TestDocument findResult;
+        
+        Establish context = () =>
+            {
+                runner = MongoDbRunner.Start();
+                CreateConnection();
+                collection.Insert(TestDocument.DummyData1());
+            };
+
+        Because of = () => findResult = collection.FindOneAs<TestDocument>();
+
+        It should_return_a_result = () => findResult.ShouldNotBeNull();
+        It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
+    }
+	
+    public class MongoIntegrationTest
+    {
+        internal static MongoDbRunner runner;
+        internal static MongoCollection<TestDocument> collection;
+
+        internal static void CreateConnection()
+        {
+            runner = MongoDbRunner.Start();
+            
+            MongoServer server = MongoServer.Create(runner.ConnectionString);
+            MongoDatabase database = server.GetDatabase("TestDatabase");
+            collection = database.GetCollection<TestDocument>("TestCollection");
+        }
+
+        Cleanup stuff = () => runner.Dispose();
+
+        public static IList<T> ReadBsonFile<T>(string fileName)
+        {
+            string[] content = File.ReadAllLines(fileName);
+            return content.Select(BsonSerializer.Deserialize<T>).ToList();
+        }
+    }	
+
+More test can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
+
+**Example for exporting:**
+
+	using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
+
+		MongoServer server = MongoServer.Create(runner.ConnectionString);
+		MongoDatabase database = server.GetDatabase("TestDatabase");
+		runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\details.json");
+	}
+
+**Example for importing (ASP.NET MVC 4 Web API):**
+
+    public class WebApiApplication : System.Web.HttpApplication
+    {
+        private MongoDbRunner _runner;
+
+        protected void Application_Start()
+        {
+            _runner = MongoDbRunner.StartForDebugging();
+            _runner.Import("TestDatase", "TestCollection", @"..\..\App_Data\details.json", true);
+
+            MongoServer server = MongoServer.Create(_runner.ConnectionString);
+            MongoDatabase database = server.GetDatabase("TestDatabase");
+            MongoCollection<TestObject> collection = database.GetCollection<TestObject>("TestCollection");
+        }
+
+        protected void Application_End()
+        {
+            _runner.Dispose();
+        }
+	}
 
 
 

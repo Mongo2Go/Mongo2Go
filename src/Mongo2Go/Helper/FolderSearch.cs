@@ -65,5 +65,30 @@ namespace Mongo2Go.Helper
             parts.RemoveAt(parts.Count() - 1);
             return string.Join(@"\", parts.ToArray());
         }
+
+        /// <summary>
+        /// Absolute path stays unchanged, relative path will be relative to current executing directory (usually the /bin folder)
+        /// </summary>
+        public static string FinalizePath(string fileName)
+        {
+            string finalPath;
+
+            if (Path.IsPathRooted(fileName))
+            {
+                finalPath = fileName;
+            }
+            else
+            {
+                finalPath = CurrentExecutingDirectory() + @"\" + fileName;
+                finalPath = Path.GetFullPath(finalPath);
+            }
+
+            if (!File.Exists(finalPath))
+            {
+                throw new FileNotFoundException("File not found", fileName);
+            }
+
+            return finalPath;
+        }
     }
 }
