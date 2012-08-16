@@ -58,7 +58,7 @@ Later versions should definitely address that problem.
 Examples
 --------
 
-**Example for Integration Test (Machine.Specifications & Fluent Assertions)**
+**Example: Integration Test (Machine.Specifications & Fluent Assertions)**
 
     [Subject("Integration Test")]
     public class when_using_the_inbuild_serialization : MongoIntegrationTest
@@ -93,17 +93,11 @@ Examples
         }
 
         Cleanup stuff = () => runner.Dispose();
-
-        public static IList<T> ReadBsonFile<T>(string fileName)
-        {
-            string[] content = File.ReadAllLines(fileName);
-            return content.Select(BsonSerializer.Deserialize<T>).ToList();
-        }
     }	
 
-More test can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
+More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
 
-**Example for exporting:**
+**Example: Exporting**
 
 	using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 
@@ -112,7 +106,7 @@ More test can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/
 		runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\details.json");
 	}
 
-**Example for importing (ASP.NET MVC 4 Web API):**
+**Example: Importing (ASP.NET MVC 4 Web API)**
 
     public class WebApiApplication : System.Web.HttpApplication
     {
