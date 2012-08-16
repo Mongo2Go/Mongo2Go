@@ -103,7 +103,7 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
 
 		MongoServer server = MongoServer.Create(runner.ConnectionString);
 		MongoDatabase database = server.GetDatabase("TestDatabase");
-		runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\details.json");
+		runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
 	}
 
 **Example: Importing (ASP.NET MVC 4 Web API)**
@@ -115,7 +115,7 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
         protected void Application_Start()
         {
             _runner = MongoDbRunner.StartForDebugging();
-            _runner.Import("TestDatase", "TestCollection", @"..\..\App_Data\details.json", true);
+            _runner.Import("TestDatase", "TestCollection", @"..\..\App_Data\test.json", true);
 
             MongoServer server = MongoServer.Create(_runner.ConnectionString);
             MongoDatabase database = server.GetDatabase("TestDatabase");
