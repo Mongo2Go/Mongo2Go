@@ -1,13 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Mongo2Go
 {
     //  IDisposable and friends
     public partial class MongoDbRunner
     {
+        ~MongoDbRunner()
+        {
+            Dispose(false);
+        }
+
         public bool Disposed { get; private set; }
 
         public void Dispose()
@@ -18,8 +20,15 @@ namespace Mongo2Go
 
         private void Dispose(bool disposing)
         {
-            if (Disposed) { return; }
-            if (State != State.Running) { return; }
+            if (Disposed)
+            {
+                return;
+            }
+
+            if (State != State.Running)
+            {
+                return;
+            }
 
             if (disposing)
             {
@@ -40,11 +49,6 @@ namespace Mongo2Go
 
             Disposed = true;
             State = State.Stopped;
-        }
-
-        ~MongoDbRunner()
-        {
-            Dispose(false);
         }
     }
 }

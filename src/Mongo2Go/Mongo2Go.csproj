@@ -69,6 +69,10 @@
       <DependentUpon>ProcessControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Helper\StringFormatExtension.cs" />
+    <Compile Include="Helper\WrappedProcess.cs">
+      <SubType>Component</SubType>
+      <DependentUpon>ProcessControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="MongoDbDefaults.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Helper\FolderSearch.cs" />

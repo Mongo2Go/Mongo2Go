@@ -8,7 +8,7 @@ namespace Mongo2Go.Helper
 {
     public static class ProcessControl
     {
-        public static Process ProcessFactory(string fileName, string arguments)
+        public static WrappedProcess ProcessFactory(string fileName, string arguments)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
@@ -20,7 +20,7 @@ namespace Mongo2Go.Helper
                 RedirectStandardError = true,
             };
 
-            Process process = new Process { StartInfo = startInfo };
+            WrappedProcess process = new WrappedProcess { StartInfo = startInfo };
             return process;
         }
 

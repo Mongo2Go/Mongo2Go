@@ -4,7 +4,7 @@ Mongo2Go - MongoDB for integration tests & local debugging
 ![Logo](https://raw.github.com/JohannesHoppe/Mongo2Go/master/src/mongo2go_200_200.png)
 
 Mongo2Go is a manged wrapper around the latest MongoDB binaries. It targets **.NET 3.5.** and should work in later version, too.  
-Currently the Nuget package contains the executables of _mongo**d**_, _monoimport_ and _mongoexport_ v2.2.0-rc1 (32bit).
+Currently the Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ v2.2.0-rc1 (32bit).
 
 It has two use cases:
 
@@ -18,7 +18,7 @@ With each call of the static method **MongoDbRunner.Start()** a new MongoDB inst
 A free port will be used (starting with port 27018) and a corresponding data directory will be created.
 The method returns an instance of MongoDbRunner, which implements IDisposable.
 As soon as the MongoDbRunner is disposed (or if the Destructor is called by the GC),
-the wrapped MongoDB instance will be killed and all data in the data directory will be deleted.
+the wrapped MongoDB process will be killed and all data in the data directory will be deleted.
 
 
 Local debugging

@@ -97,6 +97,9 @@ namespace Mongo2GoTests.Runner
             string[] content = File.ReadAllLines(fileName);
             return content.Select(BsonSerializer.Deserialize<T>).ToList();
         }
+
+        // should NOT close the instance!
+        Cleanup stuff = () => runner.Dispose();
     }
 }
 // ReSharper restore InconsistentNaming

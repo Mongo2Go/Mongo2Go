@@ -7,13 +7,12 @@ namespace Mongo2Go.Helper
     public partial class MongoDbProcess : IMongoDbProcess, IDisposable
     {
         private const string ProcessReadyIdentifier = "waiting for connections";
-        private Process _process;
-        private bool _doNotKill;
+        private WrappedProcess _process;
 
         public IEnumerable<string> ErrorOutput { get; set; }
         public IEnumerable<string> StandardOutput { get; set; }
 
-        internal MongoDbProcess(Process process)
+        internal MongoDbProcess(WrappedProcess process)
         {
             _process = process;
         }
@@ -25,12 +24,11 @@ namespace Mongo2Go.Helper
 
         public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill)
         {
-            _doNotKill = doNotKill;
-
             string fileName  = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongodExecutable);
             string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
 
-            Process process = ProcessControl.ProcessFactory(fileName, arguments);
+            WrappedProcess process = ProcessControl.ProcessFactory(fileName, arguments);
+            process.DoNotKill = doNotKill;
 
             string windowTitle = "mongod | port: {0}".Formatted(port);
             ProcessOutput output = ProcessControl.StartAndWaitForReady(process, 5, ProcessReadyIdentifier, windowTitle);

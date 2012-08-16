@@ -6,6 +6,11 @@ namespace Mongo2Go.Helper
     //  IDisposable and friends
     public partial class MongoDbProcess
     {
+        ~MongoDbProcess()
+        {
+            Dispose(false);
+        }
+
         public bool Disposed { get; private set; }
 
         public void Dispose()
@@ -16,30 +21,22 @@ namespace Mongo2Go.Helper
 
         private void Dispose(bool disposing)
         {
-            if (Disposed) { return; }
+            if (Disposed)
+            {
+                return;
+            }
+
             if (disposing)
             {
                 // we have no "managed resources" - but we leave this switch to avoid an FxCop CA1801 warnig
             }
-            Kill();
 
-            Disposed = true;
-        }
-
-        ~MongoDbProcess()
-        {
-            Dispose(false);
-        }
-
-        private void Kill()
-        {
-            if (_doNotKill)
+            if (_process == null)
             {
-                // nothing to do
                 return;
             }
 
-            if (_process == null)
+            if (_process.DoNotKill)
             {
                 return;
             }
@@ -54,6 +51,8 @@ namespace Mongo2Go.Helper
 
             // wait a bit to be sure
             Thread.Sleep(500);
+
+            Disposed = true;
         }
     }
 }
