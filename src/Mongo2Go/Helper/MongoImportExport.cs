@@ -11,6 +11,11 @@ namespace Mongo2Go.Helper
         public static ProcessOutput Import(string binariesDirectory, int port, string database, string collection, string inputFile, bool drop)
         {
             string finalPath = FolderSearch.FinalizePath(inputFile);
+
+            if (!File.Exists(finalPath))
+            {
+                throw new FileNotFoundException("File not found", finalPath);
+            }
             
             string fileName = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongoImportExecutable);
             string arguments = @"--host localhost --port {0} --db {1} --collection {2} --file ""{3}""".Formatted(port, database, collection, finalPath);
