@@ -83,11 +83,6 @@ namespace Mongo2Go.Helper
                 finalPath = Path.GetFullPath(finalPath);
             }
 
-            if (!File.Exists(finalPath))
-            {
-                throw new FileNotFoundException("File not found", fileName);
-            }
-
             return finalPath;
         }
     }
