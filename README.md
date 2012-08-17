@@ -67,7 +67,6 @@ Examples
         
         Establish context = () =>
             {
-                runner = MongoDbRunner.Start();
                 CreateConnection();
                 collection.Insert(TestDocument.DummyData1());
             };

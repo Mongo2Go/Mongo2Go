@@ -49,9 +49,6 @@ namespace Mongo2Go.Helper
             _process.Dispose();
             _process = null;
 
-            // wait a bit to be sure
-            Thread.Sleep(500);
-
             Disposed = true;
         }
     }
