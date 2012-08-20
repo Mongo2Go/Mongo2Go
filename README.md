@@ -64,7 +64,6 @@ Examples
             {
                 CreateConnection();
                 _collection.Drop();
-
                 _collection.Insert(TestDocument.DummyData1());
             };
 
@@ -80,16 +79,14 @@ Examples
     {
         internal static MongoDbRunner _runner;
         internal static MongoCollection<TestDocument> _collection;
-        internal static string _databaseName = "IntegrationTest";
-        internal static string _collectionName = "TestCollection";
 
         internal static void CreateConnection()
         {
             _runner = MongoDbRunner.Start();
             
             MongoServer server = MongoServer.Create(_runner.ConnectionString);
-            MongoDatabase database = server.GetDatabase(_databaseName);
-            _collection = database.GetCollection<TestDocument>(_collectionName);
+            MongoDatabase database = server.GetDatabase("IntegrationTest");
+            _collection = database.GetCollection<TestDocument>("TestCollection");
         }
     }    
 
