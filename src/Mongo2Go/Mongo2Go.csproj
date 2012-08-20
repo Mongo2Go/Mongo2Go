@@ -55,6 +55,12 @@
     <Compile Include="Helper\IMongoDbProcess.cs">
       <DependentUpon>MongoDbProcess.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\IMongoDbProcessStarter.cs">
+      <DependentUpon>MongoDbProcessStarter.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Helper\IPortPool.cs">
+      <DependentUpon>PortPool.cs</DependentUpon>
+    </Compile>
     <Compile Include="Helper\IProcessWatcher.cs">
       <DependentUpon>ProcessWatcher.cs</DependentUpon>
     </Compile>
@@ -62,8 +68,10 @@
     <Compile Include="Helper\MongoDbProcess.IDisposable.cs">
       <DependentUpon>MongoDbProcess.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\MongoDbProcessStarter.cs" />
     <Compile Include="Helper\MongoImportExport.cs" />
     <Compile Include="Helper\NativeMethods.cs" />
+    <Compile Include="Helper\PortPool.cs" />
     <Compile Include="Helper\ProcessControl.cs" />
     <Compile Include="Helper\ProcessWatcher.cs" />
     <Compile Include="Helper\ProcessOutput.cs">

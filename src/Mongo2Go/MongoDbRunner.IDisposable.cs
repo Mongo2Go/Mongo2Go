@@ -35,9 +35,9 @@ namespace Mongo2Go
                 // we have no "managed resources" - but we leave this switch to avoid an FxCop CA1801 warnig
             }
 
-            if (_process != null)
+            if (_mongoDbProcess != null)
             {
-                _process.Dispose();
+                _mongoDbProcess.Dispose();
             }
 
             // will be null if we are working in debugging mode (single instance)
