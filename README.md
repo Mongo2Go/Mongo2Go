@@ -46,13 +46,8 @@ in the Package Manager Console.
 
 Release Notes / Known Bugs
 ------------------------------------------
-This is the very first release of Mongo2Go.
-There are still some glitches here and there.
-The official MongoDB C# sharp driver uses a connection pool to increase efficiency.
-This fact can create connection problems if multiple MongoDb instances are
-created and killed within a short time frame.
-Some Thead.Sleep methods currently target this issue.
-Later versions should definitely address that problem.
+Everything works stable for the author.
+Please report issues or feature request via GitHub.
 
 
 Examples
@@ -60,7 +55,7 @@ Examples
 
 **Example: Integration Test (Machine.Specifications & Fluent Assertions)**
 
-    [Subject("Integration Test")]
+    [Subject("Runner Integration Test")]
     public class when_using_the_inbuild_serialization : MongoIntegrationTest
     {
         static TestDocument findResult;
@@ -68,30 +63,34 @@ Examples
         Establish context = () =>
             {
                 CreateConnection();
-                collection.Insert(TestDocument.DummyData1());
+                _collection.Drop();
+
+                _collection.Insert(TestDocument.DummyData1());
             };
 
-        Because of = () => findResult = collection.FindOneAs<TestDocument>();
+        Because of = () => findResult = _collection.FindOneAs<TestDocument>();
 
         It should_return_a_result = () => findResult.ShouldNotBeNull();
         It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
+
+        Cleanup stuff = () => _runner.Dispose();
     }
     
     public class MongoIntegrationTest
     {
-        internal static MongoDbRunner runner;
-        internal static MongoCollection<TestDocument> collection;
+        internal static MongoDbRunner _runner;
+        internal static MongoCollection<TestDocument> _collection;
+        internal static string _databaseName = "IntegrationTest";
+        internal static string _collectionName = "TestCollection";
 
         internal static void CreateConnection()
         {
-            runner = MongoDbRunner.Start();
+            _runner = MongoDbRunner.Start();
             
-            MongoServer server = MongoServer.Create(runner.ConnectionString);
-            MongoDatabase database = server.GetDatabase("TestDatabase");
-            collection = database.GetCollection<TestDocument>("TestCollection");
+            MongoServer server = MongoServer.Create(_runner.ConnectionString);
+            MongoDatabase database = server.GetDatabase(_databaseName);
+            _collection = database.GetCollection<TestDocument>(_collectionName);
         }
-
-        Cleanup stuff = () => runner.Dispose();
     }    
 
 More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
@@ -101,7 +100,6 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
     using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 
         MongoServer server = MongoServer.Create(runner.ConnectionString);
-        MongoDatabase database = server.GetDatabase("TestDatabase");
         runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
     }
 
@@ -119,6 +117,8 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
             MongoServer server = MongoServer.Create(_runner.ConnectionString);
             MongoDatabase database = server.GetDatabase("TestDatabase");
             MongoCollection<TestObject> collection = database.GetCollection<TestObject>("TestCollection");
+
+            /* happy coding! */
         }
 
         protected void Application_End()
