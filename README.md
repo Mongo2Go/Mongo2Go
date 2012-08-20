@@ -96,7 +96,6 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
 
     using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 
-        MongoServer server = MongoServer.Create(runner.ConnectionString);
         runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
     }
 
