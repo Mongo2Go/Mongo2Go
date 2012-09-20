@@ -4,7 +4,7 @@ Mongo2Go - MongoDB for integration tests & local debugging
 ![Logo](https://raw.github.com/JohannesHoppe/Mongo2Go/master/src/mongo2go_200_200.png)
 
 Mongo2Go is a manged wrapper around the latest MongoDB binaries. It targets **.NET 3.5.** and should work in later versions, too.  
-Currently the Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ v2.2.0-rc1 (32bit).
+This Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ v2.2.0 (32bit).
 
 Mongo2Go has two use cases:
 
@@ -55,6 +55,7 @@ Examples
 
 **Example: Integration Test (Machine.Specifications & Fluent Assertions)**
 
+```c#
     [Subject("Runner Integration Test")]
     public class when_using_the_inbuild_serialization : MongoIntegrationTest
     {
@@ -89,18 +90,22 @@ Examples
             _collection = database.GetCollection<TestDocument>("TestCollection");
         }
     }    
+```
 
 More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
 
 **Example: Exporting**
 
+```c#
     using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 
         runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
     }
+```
 
 **Example: Importing (ASP.NET MVC 4 Web API)**
 
+```c#
     public class WebApiApplication : System.Web.HttpApplication
     {
         private MongoDbRunner _runner;
@@ -122,6 +127,4 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
             _runner.Dispose();
         }
     }
-
-
-
+```
