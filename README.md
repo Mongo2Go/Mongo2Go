@@ -56,40 +56,40 @@ Examples
 **Example: Integration Test (Machine.Specifications & Fluent Assertions)**
 
 ```c#
-    [Subject("Runner Integration Test")]
-    public class when_using_the_inbuild_serialization : MongoIntegrationTest
-    {
-        static TestDocument findResult;
-        
-        Establish context = () =>
-            {
-                CreateConnection();
-                _collection.Drop();
-                _collection.Insert(TestDocument.DummyData1());
-            };
-
-        Because of = () => findResult = _collection.FindOneAs<TestDocument>();
-
-        It should_return_a_result = () => findResult.ShouldNotBeNull();
-        It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
-
-        Cleanup stuff = () => _runner.Dispose();
-    }
+[Subject("Runner Integration Test")]
+public class when_using_the_inbuild_serialization : MongoIntegrationTest
+{
+    static TestDocument findResult;
     
-    public class MongoIntegrationTest
-    {
-        internal static MongoDbRunner _runner;
-        internal static MongoCollection<TestDocument> _collection;
-
-        internal static void CreateConnection()
+    Establish context = () =>
         {
-            _runner = MongoDbRunner.Start();
-            
-            MongoServer server = MongoServer.Create(_runner.ConnectionString);
-            MongoDatabase database = server.GetDatabase("IntegrationTest");
-            _collection = database.GetCollection<TestDocument>("TestCollection");
-        }
-    }    
+            CreateConnection();
+            _collection.Drop();
+            _collection.Insert(TestDocument.DummyData1());
+        };
+
+    Because of = () => findResult = _collection.FindOneAs<TestDocument>();
+
+    It should_return_a_result = () => findResult.ShouldNotBeNull();
+    It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
+
+    Cleanup stuff = () => _runner.Dispose();
+}
+
+public class MongoIntegrationTest
+{
+    internal static MongoDbRunner _runner;
+    internal static MongoCollection<TestDocument> _collection;
+
+    internal static void CreateConnection()
+    {
+        _runner = MongoDbRunner.Start();
+        
+        MongoServer server = MongoServer.Create(_runner.ConnectionString);
+        MongoDatabase database = server.GetDatabase("IntegrationTest");
+        _collection = database.GetCollection<TestDocument>("TestCollection");
+    }
+}    
 ```
 
 More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
@@ -97,34 +97,34 @@ More tests can be found at https://github.com/JohannesHoppe/Mongo2Go/tree/master
 **Example: Exporting**
 
 ```c#
-    using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
+using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 
-        runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
-    }
+    runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
+}
 ```
 
 **Example: Importing (ASP.NET MVC 4 Web API)**
 
 ```c#
-    public class WebApiApplication : System.Web.HttpApplication
+public class WebApiApplication : System.Web.HttpApplication
+{
+    private MongoDbRunner _runner;
+
+    protected void Application_Start()
     {
-        private MongoDbRunner _runner;
+        _runner = MongoDbRunner.StartForDebugging();
+        _runner.Import("TestDatase", "TestCollection", @"..\..\App_Data\test.json", true);
 
-        protected void Application_Start()
-        {
-            _runner = MongoDbRunner.StartForDebugging();
-            _runner.Import("TestDatase", "TestCollection", @"..\..\App_Data\test.json", true);
+        MongoServer server = MongoServer.Create(_runner.ConnectionString);
+        MongoDatabase database = server.GetDatabase("TestDatabase");
+        MongoCollection<TestObject> collection = database.GetCollection<TestObject>("TestCollection");
 
-            MongoServer server = MongoServer.Create(_runner.ConnectionString);
-            MongoDatabase database = server.GetDatabase("TestDatabase");
-            MongoCollection<TestObject> collection = database.GetCollection<TestObject>("TestCollection");
-
-            /* happy coding! */
-        }
-
-        protected void Application_End()
-        {
-            _runner.Dispose();
-        }
+        /* happy coding! */
     }
+
+    protected void Application_End()
+    {
+        _runner.Dispose();
+    }
+}
 ```
