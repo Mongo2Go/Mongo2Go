@@ -6,6 +6,7 @@ using MongoDB.Driver.Linq;
 using It = Machine.Specifications.It;
 
 // ReSharper disable InconsistentNaming
+// ReSharper disable UnusedMember.Local
 namespace Mongo2GoTests.Runner
 {
     [Subject("Runner Integration Test")]
@@ -13,6 +14,7 @@ namespace Mongo2GoTests.Runner
     {
         static TestDocument findResult;
         
+
         Establish context = () =>
             {
                 CreateConnection();
@@ -58,4 +60,5 @@ namespace Mongo2GoTests.Runner
         Cleanup stuff = () => _runner.Dispose();
     }
 }
+// ReSharper restore UnusedMember.Local
 // ReSharper restore InconsistentNaming

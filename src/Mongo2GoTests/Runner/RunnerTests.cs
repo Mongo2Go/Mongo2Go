@@ -5,6 +5,7 @@ using Moq;
 using It = Machine.Specifications.It;
 
 // ReSharper disable InconsistentNaming
+// ReSharper disable UnusedMember.Local
 namespace Mongo2GoTests.Runner
 {
     [Subject("Runner")]
@@ -79,4 +80,5 @@ namespace Mongo2GoTests.Runner
         It should_start_the_process_without_kill = () => processStarterMock.Verify(x => x.Start(Moq.It.IsAny<string>(), MongoDbDefaults.DataDirectory, MongoDbDefaults.DefaultPort, true), Times.Exactly(1));
     }
 }
+// ReSharper restore UnusedMember.Local
 // ReSharper restore InconsistentNaming

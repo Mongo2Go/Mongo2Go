@@ -17,8 +17,9 @@ namespace Mongo2GoTests.Runner
         internal static void CreateConnection()
         {
             _runner = MongoDbRunner.StartForDebugging();
-            
-            MongoServer server = MongoServer.Create(_runner.ConnectionString);
+
+            MongoClient client = new MongoClient(_runner.ConnectionString);
+            MongoServer server = client.GetServer();
             MongoDatabase database = server.GetDatabase(_databaseName);
             _collection = database.GetCollection<TestDocument>(_collectionName);
         }

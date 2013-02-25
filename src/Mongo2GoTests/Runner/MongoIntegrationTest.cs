@@ -18,7 +18,8 @@ namespace Mongo2GoTests.Runner
         {
             _runner = MongoDbRunner.Start();
             
-            MongoServer server = MongoServer.Create(_runner.ConnectionString);
+            MongoClient client = new MongoClient(_runner.ConnectionString);
+            MongoServer server = client.GetServer();
             MongoDatabase database = server.GetDatabase(_databaseName);
             _collection = database.GetCollection<TestDocument>(_collectionName);
         }

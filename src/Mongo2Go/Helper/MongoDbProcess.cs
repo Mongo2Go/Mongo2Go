@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 
 namespace Mongo2Go.Helper
 {
-    public partial class MongoDbProcess : IMongoDbProcess, IDisposable
+    public partial class MongoDbProcess : IMongoDbProcess
     {
 
         private WrappedProcess _process;

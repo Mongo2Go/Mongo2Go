@@ -59,7 +59,9 @@ namespace Mongo2Go.Helper
             try {
                 NativeMethods.SetWindowText(process.MainWindowHandle, newName);
             } 
+            // ReSharper disable EmptyGeneralCatchClause
             catch (Exception) { }
+            // ReSharper restore EmptyGeneralCatchClause
         }
 
         /// <summary>

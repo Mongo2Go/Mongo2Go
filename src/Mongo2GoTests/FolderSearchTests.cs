@@ -3,6 +3,7 @@ using Machine.Specifications;
 using Mongo2Go.Helper;
 
 // ReSharper disable InconsistentNaming
+// ReSharper disable UnusedMember.Local
 namespace Mongo2GoTests
 {
     [Subject("FolderSearch")]
@@ -10,7 +11,7 @@ namespace Mongo2GoTests
     {
         public static string directory;
 
-        Because of = () => directory = Mongo2Go.Helper.FolderSearch.CurrentExecutingDirectory();
+        Because of = () => directory = FolderSearch.CurrentExecutingDirectory();
         It should_contain_correct_path = () => directory.ShouldContain(@"Mongo2GoTests\bin");
     }
 
@@ -90,4 +91,5 @@ namespace Mongo2GoTests
         Cleanup stuff = () => { if (Directory.Exists(@"C:\test1")) { Directory.Delete(@"C:\test1", true); }};
     }
 }
+// ReSharper restore UnusedMember.Local
 // ReSharper restore InconsistentNaming
