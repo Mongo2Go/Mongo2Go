@@ -18,8 +18,6 @@ namespace Mongo2GoTests.Runner
         Establish context = () =>
             {
                 CreateConnection();
-                _collection.Drop();
-
                 _collection.Insert(TestDocument.DummyData1());
             };
 
@@ -39,8 +37,6 @@ namespace Mongo2GoTests.Runner
         Establish context = () =>
         {
             CreateConnection();
-            _collection.Drop();
-
             _collection.Insert(TestDocument.DummyData1());
             _collection.Insert(TestDocument.DummyData2());
             _collection.Insert(TestDocument.DummyData3());
