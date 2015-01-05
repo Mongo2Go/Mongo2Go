@@ -23,8 +23,8 @@ namespace Mongo2GoTests.Runner
 
         Because of = () => findResult = _collection.FindOneAs<TestDocument>();
 
-        It should_return_a_result = () => findResult.ShouldNotBeNull();
-        It should_hava_expected_data = () => findResult.ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
+        It should_return_a_result = () => findResult.Should().NotBeNull();
+        It should_hava_expected_data = () => findResult.ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
 
         Cleanup stuff = () => _runner.Dispose();
     }
@@ -49,7 +49,7 @@ namespace Mongo2GoTests.Runner
                          select c).ToList();
                 };
 
-        It should_return_two_documents = () => queryResult.Count().ShouldEqual(2);
+        It should_return_two_documents = () => queryResult.Count().Should().Be(2);
         It should_return_document2 = () => queryResult.ElementAt(0).IntTest = TestDocument.DummyData2().IntTest;
         It should_return_document3 = () => queryResult.ElementAt(1).IntTest = TestDocument.DummyData3().IntTest;
 

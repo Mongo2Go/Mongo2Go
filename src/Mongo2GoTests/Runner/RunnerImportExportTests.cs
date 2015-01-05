@@ -36,9 +36,9 @@ namespace Mongo2GoTests.Runner
                 parsedContent = ReadBsonFile<TestDocument>(_testFile);
             };
 
-        It should_preserve_all_values1 = () => parsedContent[0].ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
-        It should_preserve_all_values2 = () => parsedContent[1].ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData2());
-        It should_preserve_all_values3 = () => parsedContent[2].ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData3());
+        It should_preserve_all_values1 = () => parsedContent[0].ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
+        It should_preserve_all_values2 = () => parsedContent[1].ShouldBeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
+        It should_preserve_all_values3 = () => parsedContent[2].ShouldBeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
 
         Cleanup stuff = () =>
             {
@@ -54,7 +54,7 @@ namespace Mongo2GoTests.Runner
         const string _testFile = @"C:\testImport.json";
 
         const string _filecontent =
-            @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc4"" }, ""StringTest"" : ""Hello World"", ""IntTest"" : 42, ""DateTest"" : { ""$date"" : 465365166000 }, ""ListTest"" : [ ""I"", ""am"", ""a"", ""list"", ""of"", ""strings"" ] }" + "\r\n" +
+            @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc4"" }, ""StringTest"" : ""Hello World"", ""IntTest"" : 42, ""DateTest"" : { ""$date"" : ""1984-09-30T06:06:06.171Z"" }, ""ListTest"" : [ ""I"", ""am"", ""a"", ""list"", ""of"", ""strings"" ] }" + "\r\n" +
             @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc5"" }, ""StringTest"" : ""Foo"", ""IntTest"" : 23, ""DateTest"" : null, ""ListTest"" : null }" + "\r\n" +
             @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc6"" }, ""StringTest"" : ""Bar"", ""IntTest"" : 77, ""DateTest"" : null, ""ListTest"" : null }" + "\r\n";
 
@@ -73,9 +73,9 @@ namespace Mongo2GoTests.Runner
 
             };
 
-        It should_return_document1 = () => query.ElementAt(0).ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData1());
-        It should_return_document2 = () => query.ElementAt(1).ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData2());
-        It should_return_document3 = () => query.ElementAt(2).ShouldHave().AllPropertiesBut(d => d.Id).EqualTo(TestDocument.DummyData3());
+        It should_return_document1 = () => query.ElementAt(0).ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document2 = () => query.ElementAt(1).ShouldBeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document3 = () => query.ElementAt(2).ShouldBeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
         
         Cleanup stuff = () =>
             {

@@ -26,7 +26,7 @@ namespace Mongo2GoTests.Runner
                 {
                     StringTest = "Hello World",
                     IntTest = 42,
-                    DateTest = new DateTime(1984, 09, 30, 6, 6, 6),
+                    DateTest = new DateTime(1984, 09, 30, 6, 6, 6, 171, DateTimeKind.Utc).ToLocalTime(),
                     ListTest = new List<string> {"I", "am", "a", "list", "of", "strings"}
                 };
         }
