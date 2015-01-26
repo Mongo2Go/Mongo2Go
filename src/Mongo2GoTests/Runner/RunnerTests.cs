@@ -1,4 +1,5 @@
-﻿using Machine.Specifications;
+﻿using FluentAssertions;
+using Machine.Specifications;
 using Mongo2Go;
 using Mongo2Go.Helper;
 using Moq;
@@ -40,8 +41,8 @@ namespace Mongo2GoTests.Runner
 
         It should_start_the_process                     = () => processStarterMock.Verify(x => x.Start(Moq.It.IsAny<string>(), Moq.It.IsAny<string>(), Moq.It.IsAny<int>()), Times.Exactly(1));
 
-        It should_have_expected_connection_string       = () => runner.ConnectionString.ShouldEqual(exptectedConnectString);
-        It should_return_an_instance_with_state_running = () => runner.State.ShouldEqual(State.Running);
+        It should_have_expected_connection_string       = () => runner.ConnectionString.Should().Be(exptectedConnectString);
+		It should_return_an_instance_with_state_running = () => runner.State.Should().Be(State.Running);
     }
 
     [Subject("Runner")]
@@ -76,7 +77,7 @@ namespace Mongo2GoTests.Runner
         It should_check_the_default_port = () => portWatcherMock.Verify(x => x.IsPortAvailable(MongoDbDefaults.DefaultPort), Times.Exactly(1));
         It should_create_the_data_directory = () => fileSystemMock.Verify(x => x.CreateFolder(MongoDbDefaults.DataDirectory), Times.Exactly(1));
         It should_delete_old_lock_file = () => fileSystemMock.Verify(x => x.DeleteFile(exptectedLogfile), Times.Exactly(1));
-        It should_return_an_instance_with_state_running = () => runner.State.ShouldEqual(State.Running);
+		It should_return_an_instance_with_state_running = () => runner.State.Should().Be(State.Running);
         It should_start_the_process_without_kill = () => processStarterMock.Verify(x => x.Start(Moq.It.IsAny<string>(), MongoDbDefaults.DataDirectory, MongoDbDefaults.DefaultPort, true), Times.Exactly(1));
     }
 }

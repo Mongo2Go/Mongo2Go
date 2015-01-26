@@ -1,5 +1,7 @@
 ﻿using System.IO;
+using FluentAssertions;
 using Machine.Specifications;
+using FluentAssertions.Formatting;
 using Mongo2Go.Helper;
 
 // ReSharper disable InconsistentNaming
@@ -12,7 +14,7 @@ namespace Mongo2GoTests
         public static string directory;
 
         Because of = () => directory = FolderSearch.CurrentExecutingDirectory();
-        It should_contain_correct_path = () => directory.ShouldContain(@"Mongo2GoTests\bin");
+        It should_contain_correct_path = () => directory.Should().Contain(@"Mongo2GoTests\bin");
     }
 
     [Subject("FolderSearch")]
@@ -23,7 +25,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = startDirectory.FindFolder(searchPattern);
-        It should_find_the_path_with_the_highest_version_number = () => directory.ShouldEqual(MongoBinaries);
+        It should_find_the_path_with_the_highest_version_number = () => directory.Should().Be(MongoBinaries);
     }
 
     [Subject("FolderSearch")]
@@ -34,7 +36,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = startDirectory.FindFolder(searchPattern);
-        It should_return_null = () => directory.ShouldBeNull();
+        It should_return_null = () => directory.Should().BeNull();
     }
 
     [Subject("FolderSearch")]
@@ -44,7 +46,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = LocationOfAssembly.FindFolderUpwards(searchPattern);
-        It should_find_the_path_with_the_highest_version_number = () => directory.ShouldEqual(MongoBinaries);
+		It should_find_the_path_with_the_highest_version_number = () => directory.Should().Be(MongoBinaries);
     }
 
     [Subject("FolderSearch")]
@@ -54,7 +56,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = LocationOfAssembly.FindFolderUpwards(searchPattern);
-        It should_return_null = () => directory.ShouldBeNull();
+        It should_return_null = () => directory.Should().BeNull();
     }
 
     [Subject("FolderSearch")]
@@ -63,7 +65,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = @"test1\test2\test3".RemoveLastPart();
-        It should_remove_the_element = () => directory.ShouldEqual(@"test1\test2");
+		It should_remove_the_element = () => directory.Should().Be(@"test1\test2");
     }
 
     [Subject("FolderSearch")]
@@ -72,7 +74,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = "test1".RemoveLastPart();
-        It should_return_null = () => directory.ShouldBeNull();
+        It should_return_null = () => directory.Should().BeNull();
     }
 
     public class FolderSearchSpec
