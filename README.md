@@ -1,10 +1,10 @@
 Mongo2Go - MongoDB for integration tests & local debugging
 ========
 
-![Logo](https://raw.github.com/JohannesHoppe/Mongo2Go/master/src/mongo2go_200_200.png)
+![Logo](src/mongo2go_200_200.png)
 
 Mongo2Go is a manged wrapper around the latest MongoDB binaries. It targets **.NET 3.5** and works in later versions, too.  
-This Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ v2.2.0 (32bit).
+This Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ v2.6.6 (32bit).
 
 Mongo2Go has two use cases:
 
@@ -24,9 +24,9 @@ the wrapped MongoDB process will be killed and all data in the data directory wi
 Local debugging
 ------------------------
 In this mode a single MongoDB instance will be started on the default port (27017).
-No data will be deleted and the MongoDB instance won’t be killed automatically.
-Multiple calls to **MongoDbRunner.StartForDebugging()** will return an instance with the State “AlreadyRunning”.
-You can ignore the IDisposable interface, as it won’t have any effect.
+No data will be deleted and the MongoDB instance wonâ€™t be killed automatically.
+Multiple calls to **MongoDbRunner.StartForDebugging()** will return an instance with the State â€œAlreadyRunningâ€.
+You can ignore the IDisposable interface, as it wonâ€™t have any effect.
 **I highly recommend to not use this mode on productive machines!**
 Here you should set up a MongoDB as it is described in the manual.
 For you convenience the MongoDbRunner also exposes _mongoexport_ and _mongoimport_
@@ -37,7 +37,7 @@ Installation
 --------------
 The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/](https://nuget.org/packages/Mongo2Go/)
 
-Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
+Search for â€žMongo2Goâ€œ in the Manage NuGet Packages dialog box or run:
 
     PM> Install-Package Mongo2Go
 
