@@ -15,7 +15,7 @@ namespace Mongo2GoTests.Runner
     [Subject("Runner Integration Test")]
     public class when_using_monogoexport : MongoDebuggingTest
     {
-        const string _testFile = @"C:\testExport.json";
+        static readonly string _testFile = Path.GetTempPath() + "testExport.json";
         static IList<TestDocument> parsedContent;
 
         Establish context = () =>
@@ -51,7 +51,7 @@ namespace Mongo2GoTests.Runner
     public class when_using_monogoimport : MongoDebuggingTest
     {
         static IQueryable<TestDocument> query;
-        const string _testFile = @"C:\testImport.json";
+        static readonly string _testFile = Path.GetTempPath() + "testImport.json";
 
         const string _filecontent =
             @"{ ""_id"" : { ""$oid"" : ""50227b375dff9218248eadc4"" }, ""StringTest"" : ""Hello World"", ""IntTest"" : 42, ""DateTest"" : { ""$date"" : ""1984-09-30T06:06:06.171Z"" }, ""ListTest"" : [ ""I"", ""am"", ""a"", ""list"", ""of"", ""strings"" ] }" + "\r\n" +
