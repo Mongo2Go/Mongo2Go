@@ -127,3 +127,38 @@ public class WebApiApplication : System.Web.HttpApplication
     }
 }
 ```
+
+Changelog
+-------------------------------------
+
+### Mongo2Go 0.1.5, July 08 2015
+* includes mongod, mongoimport and mongoexport v2.6.6 (32bit)
+* changes from request [#3](https://github.com/JohannesHoppe/Mongo2Go/pull/3)
+* new: `Start` and `StartForDebugging` methods accept an optional parameter to specify a different data directory (default is "C:\data\db")
+* many thanks to [Marc](https://github.com/Silv3rcircl3)
+
+### Mongo2Go 0.1.4, January 26 2015
+* includes mongod, mongoimport and mongoexport v2.6.6 (32bit)
+* changes from pull request [#2](https://github.com/JohannesHoppe/Mongo2Go/pull/2)
+* internal updates for testing the package (not part of the release)
+    * updated MSpec package so that it would work with the latest VS and R# test runner
+    * updated Mongo C# Driver, Fluent Assertions, and Moq packages to latest versions
+    * fixed date handling for mongoimport and mongoexport to pass tests
+* many thanks to [Jesse Sweetland](https://github.com/sweetlandj) 
+
+### Mongo2Go 0.1.3, September 20 2012
+* includes mongod, mongoimport and mongoexport v2.2.0 (32bit)
+
+### Mongo2Go 0.1.2, August 20 2012
+* stable version
+* includes mongod, mongoimport and mongoexport v2.2.0-rc1 (32bit)
+
+### Mongo2Go 0.1.1, August 16 2012
+* second alpha version
+* includes mongod, mongoimport and mongoexport v2.2.0-rc1 (32bit)
+
+
+### Mongo2Go 0.1.0, August 15 2012
+* first alpha version
+* includes mongod, mongoimport and mongoexport v2.2.0-rc1 (32bit)
+
