@@ -22,7 +22,7 @@ namespace Mongo2Go
         public State State { get; private set; }
 
         /// <summary>
-        /// Connections tring that should be used to establish a conenction the MongoDB instance
+        /// Connections string that should be used to establish a connection the MongoDB instance
         /// </summary>
         public string ConnectionString { get; private set; }
 
@@ -59,7 +59,7 @@ namespace Mongo2Go
         }
 
         /// <summary>
-        /// Excutes Mongoimport on the associated MongoDB Instace
+        /// Executes Mongoimport on the associated MongoDB Instace
         /// </summary>
         public void Import(string database, string collection, string inputFile, bool drop)
         {
@@ -67,7 +67,7 @@ namespace Mongo2Go
         }
 
         /// <summary>
-        /// Excutes Mongoexport on the associated MongoDB Instace
+        /// Executes Mongoexport on the associated MongoDB Instace
         /// </summary>
         public void Export(string database, string collection, string outputFile)
         {

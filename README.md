@@ -133,7 +133,7 @@ Changelog
 
 ### Mongo2Go 0.1.5, July 08 2015
 * includes mongod, mongoimport and mongoexport v2.6.6 (32bit)
-* changes from request [#3](https://github.com/JohannesHoppe/Mongo2Go/pull/3)
+* changes from pull request [#3](https://github.com/JohannesHoppe/Mongo2Go/pull/3)
 * new: `Start` and `StartForDebugging` methods accept an optional parameter to specify a different data directory (default is "C:\data\db")
 * many thanks to [Marc](https://github.com/Silv3rcircl3)
 

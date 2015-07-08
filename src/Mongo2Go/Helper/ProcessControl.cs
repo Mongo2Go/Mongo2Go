@@ -65,7 +65,7 @@ namespace Mongo2Go.Helper
         }
 
         /// <summary>
-        /// Reads from Output stream to determine if prozess is ready
+        /// Reads from Output stream to determine if process is ready
         /// </summary>
         public static ProcessOutput StartAndWaitForReady(Process process, int timeoutInSeconds, string processReadyIdentifier, string windowTitle)
         {

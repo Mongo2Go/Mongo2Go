@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using FluentAssertions;
 using Machine.Specifications;
-using FluentAssertions.Formatting;
 using Mongo2Go.Helper;
 
 // ReSharper disable InconsistentNaming
@@ -46,7 +45,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = LocationOfAssembly.FindFolderUpwards(searchPattern);
-		It should_find_the_path_with_the_highest_version_number = () => directory.Should().Be(MongoBinaries);
+        It should_find_the_path_with_the_highest_version_number = () => directory.Should().Be(MongoBinaries);
     }
 
     [Subject("FolderSearch")]
@@ -65,7 +64,7 @@ namespace Mongo2GoTests
         static string directory;
 
         Because of = () => directory = @"test1\test2\test3".RemoveLastPart();
-		It should_remove_the_element = () => directory.Should().Be(@"test1\test2");
+        It should_remove_the_element = () => directory.Should().Be(@"test1\test2");
     }
 
     [Subject("FolderSearch")]
