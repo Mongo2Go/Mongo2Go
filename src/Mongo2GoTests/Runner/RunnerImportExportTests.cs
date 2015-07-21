@@ -69,7 +69,7 @@ namespace Mongo2GoTests.Runner
             {
                 _runner.Import(_databaseName, _collectionName, _testFile, true);
                 Thread.Sleep(500);
-                query = _collection.AsQueryable().Select(c => c);
+                query = _collection.AsQueryable().Select(c => c).OrderBy(c => c.Id); ;
 
             };
 
