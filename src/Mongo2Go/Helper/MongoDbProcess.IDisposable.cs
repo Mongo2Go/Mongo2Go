@@ -43,6 +43,7 @@ namespace Mongo2Go.Helper
             if (!_process.HasExited)
             {
                 _process.Kill();
+                _process.WaitForExit();
             }
 
             _process.Dispose();
