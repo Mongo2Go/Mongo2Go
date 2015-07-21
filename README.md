@@ -130,6 +130,13 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+### Mongo2Go 0.1.6, July 21 2015
+* includes mongod, mongoimport and mongoexport v3.0.4 (32bit)
+* MongoDB is updated to version 3.0.4
+* Bug fix [#4](https://github.com/JohannesHoppe/Mongo2Go/issues/4):  
+Sometimes the runner tries to delete the database directory before the mongod process has been stopped, this throws an IOException. 
+Now the runner waits until the mongod process has been stopped before the database directory will be deleted.  
+Thanks [Sergey Zwezdin](https://github.com/sergun)
 
 ### Mongo2Go 0.1.5, July 08 2015
 * includes mongod, mongoimport and mongoexport v2.6.6 (32bit)
