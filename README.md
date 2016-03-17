@@ -130,7 +130,7 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
-### Mongo2Go 0.1.7, March 13 2016
+### Mongo2Go 0.1.8, March 13 2016
 * includes mongod, mongoimport and mongoexport v3.0.10 (32bit)
 * MongoDB is updated to version 3.0.10
 * changes from pull request [#5](https://github.com/JohannesHoppe/Mongo2Go/pull/5), thanks to [Aristarkh Zagorodnikov](https://github.com/onyxmaster)
