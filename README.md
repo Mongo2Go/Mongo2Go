@@ -3,7 +3,7 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-Mongo2Go is a manged wrapper around the latest MongoDB binaries. It targets **.NET 3.5** and works in later versions, too.  
+Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 3.5** and works in later versions, too.  
 This Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ **v3.2.6** (64bit).
 
 Mongo2Go has two use cases:
