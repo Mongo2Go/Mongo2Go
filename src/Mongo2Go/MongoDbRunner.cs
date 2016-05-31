@@ -13,8 +13,8 @@ namespace Mongo2Go
         private readonly string _dataDirectoryWithPort;
         private readonly int _port;
 
-        private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
-        private const string BinariesSearchPatternSolution = @"tools\mongodb-win32-i386*\bin";
+        private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32*\bin";
+        private const string BinariesSearchPatternSolution = @"tools\mongodb-win32*\bin";
 
         /// <summary>
         /// State of the current MongoDB instance
