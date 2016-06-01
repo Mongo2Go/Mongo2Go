@@ -131,7 +131,7 @@ namespace Mongo2Go
 
                 if (binariesFolder == null)
                 {
-                    throw new MonogDbBinariesNotFoundException();
+                    throw new MonogDbBinariesNotFoundException($"Could not find Mongo binaries using {BinariesSearchPattern} or {BinariesSearchPatternSolution}.  We walk up the directories {FolderSearch.MaxLevelOfRecursion} levels from {FolderSearch.CurrentExecutingDirectory()}");
                 }
                 return binariesFolder;
             }

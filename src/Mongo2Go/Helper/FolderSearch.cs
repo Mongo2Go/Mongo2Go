@@ -8,7 +8,7 @@ namespace Mongo2Go.Helper
 {
     public static class FolderSearch
     {
-        private const int MaxLevelOfRecursion = 6;
+        public const int MaxLevelOfRecursion = 6;
 
         public static string CurrentExecutingDirectory()
         {
