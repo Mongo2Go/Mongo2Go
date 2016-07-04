@@ -17,7 +17,7 @@
         /// </summary>
         public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill)
         {
-            string fileName = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongodExecutable);
+            string fileName = @"{0}{1}{2}".Formatted(binariesDirectory, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.MongodExecutable);
             string arguments = @"--dbpath ""{0}"" --port {1} --nohttpinterface --nojournal".Formatted(dataDirectory, port);
 
             WrappedProcess wrappedProcess = ProcessControl.ProcessFactory(fileName, arguments);
