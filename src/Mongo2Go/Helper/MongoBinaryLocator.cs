@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace Mongo2Go.Helper
 {
@@ -7,6 +8,7 @@ namespace Mongo2Go.Helper
     {
         private string nugetPrefix = System.IO.Path.Combine ("packages", "Mongo2Go*");
         private string searchPattern = "";
+        private string binFolder = string.Empty;
 
         public MongoBinaryLocator (string binSearchPattern)
         {
@@ -17,7 +19,17 @@ namespace Mongo2Go.Helper
             searchPattern = binSearchPattern;
         }
 
-        public string ResolveBinariesDirectory ()
+        public string Directory {
+            get {
+                if (string.IsNullOrEmpty (binFolder)){
+                    return binFolder = ResolveBinariesDirectory ();
+                } else {
+                    return binFolder;
+                }
+            }
+        }
+
+        private string ResolveBinariesDirectory ()
         {
             // 1st: path when installed via nuget
             // 2nd: path when started from solution

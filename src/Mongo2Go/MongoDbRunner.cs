@@ -61,7 +61,8 @@ namespace Mongo2Go
         /// </summary>
         public void Import(string database, string collection, string inputFile, bool drop)
         {
-            MongoImportExport.Import(_mongoBin.ResolveBinariesDirectory(), _port, database, collection, inputFile, drop);
+            
+            MongoImportExport.Import(_mongoBin.Directory, _port, database, collection, inputFile, drop);
         }
 
         /// <summary>
@@ -69,7 +70,8 @@ namespace Mongo2Go
         /// </summary>
         public void Export(string database, string collection, string outputFile)
         {
-            MongoImportExport.Export(_mongoBin.ResolveBinariesDirectory(), _port, database, collection, outputFile);
+           
+            MongoImportExport.Export(_mongoBin.Directory, _port, database, collection, outputFile);
         }
         
         /// <summary>
@@ -80,6 +82,8 @@ namespace Mongo2Go
             _fileSystem = fileSystem;
             _port = MongoDbDefaults.DefaultPort;
             _mongoBin = mongoBin;
+
+            MakeMongoBinarysExecutable();
 
             ConnectionString = "mongodb://localhost:{0}/".Formatted(_port);
 
@@ -96,7 +100,7 @@ namespace Mongo2Go
 
             _fileSystem.CreateFolder(dataDirectory);
             _fileSystem.DeleteFile(@"{0}{1}{2}".Formatted(dataDirectory, System.IO.Path.DirectorySeparatorChar.ToString (), MongoDbDefaults.Lockfile));
-            _mongoDbProcess = processStarter.Start(_mongoBin.ResolveBinariesDirectory(), dataDirectory, _port, true);
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, dataDirectory, _port, true);
 
             State = State.Running;
         }
@@ -110,14 +114,27 @@ namespace Mongo2Go
             _port = portPool.GetNextOpenPort();
             _mongoBin = mongoBin;
 
+            MakeMongoBinarysExecutable();
+
             ConnectionString = "mongodb://localhost:{0}/".Formatted(_port);
 
             _dataDirectoryWithPort = "{0}_{1}".Formatted(dataDirectory, _port);
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
             _fileSystem.DeleteFile(@"{0}{1}{2}".Formatted(_dataDirectoryWithPort, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
-            _mongoDbProcess = processStarter.Start(_mongoBin.ResolveBinariesDirectory(), _dataDirectoryWithPort, _port);
+           
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port);
 
             State = State.Running;
+        }
+
+        private void MakeMongoBinarysExecutable() 
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Unix) 
+            {
+                _fileSystem.MakeFileExecutable (System.IO.Path.Combine (_mongoBin.Directory, MongoDbDefaults.MongodExecutable));
+                _fileSystem.MakeFileExecutable (System.IO.Path.Combine (_mongoBin.Directory, MongoDbDefaults.MongoExportExecutable));
+                _fileSystem.MakeFileExecutable (System.IO.Path.Combine (_mongoBin.Directory, MongoDbDefaults.MongoImportExecutable));
+            }
         }
     }
 }
