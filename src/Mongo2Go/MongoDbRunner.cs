@@ -12,9 +12,7 @@ namespace Mongo2Go
         private readonly IFileSystem _fileSystem;
         private readonly string _dataDirectoryWithPort;
         private readonly int _port;
-
-        private const string BinariesSearchPattern = @"packages\Mongo2Go*\tools\mongodb-win32*\bin";
-        private const string BinariesSearchPatternSolution = @"tools\mongodb-win32*\bin";
+        private readonly IMongoBinaryLocator _mongoBin;
 
         /// <summary>
         /// State of the current MongoDB instance
@@ -31,14 +29,14 @@ namespace Mongo2Go
         /// On dispose: kills them and deletes their data directory
         /// </summary>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = MongoDbDefaults.DataDirectory)
+        public static MongoDbRunner Start(string mongoBinSearchPattern = @"tools\mongodb-win32*\bin", string dataDirectory = MongoDbDefaults.DataDirectory)
         {
-            return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), dataDirectory);
+            return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator (mongoBinSearchPattern), dataDirectory);
         }
 
-        internal static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter)
+        internal static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
-            return new MongoDbRunner(portPool, fileSystem, processStarter, MongoDbDefaults.DataDirectory);
+            return new MongoDbRunner(portPool, fileSystem, processStarter, mongoBin, MongoDbDefaults.DataDirectory);
         }
 
         /// <summary>
@@ -48,14 +46,14 @@ namespace Mongo2Go
         /// Should be used for local debugging only
         /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
         /// </remarks>
-        public static MongoDbRunner StartForDebugging(string dataDirectory = MongoDbDefaults.DataDirectory)
+        public static MongoDbRunner StartForDebugging(string mongoBinSearchPattern = @"tools\mongodb-win32*\bin", string dataDirectory = MongoDbDefaults.DataDirectory)
         {
-            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), dataDirectory);
+            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(mongoBinSearchPattern), dataDirectory);
         }
 
-        internal static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter)
+        internal static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
-            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter, MongoDbDefaults.DataDirectory);
+            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter,mongoBin, MongoDbDefaults.DataDirectory);
         }
 
         /// <summary>
@@ -63,7 +61,8 @@ namespace Mongo2Go
         /// </summary>
         public void Import(string database, string collection, string inputFile, bool drop)
         {
-            MongoImportExport.Import(BinariesDirectory, _port, database, collection, inputFile, drop);
+            
+            MongoImportExport.Import(_mongoBin.Directory, _port, database, collection, inputFile, drop);
         }
 
         /// <summary>
@@ -71,16 +70,20 @@ namespace Mongo2Go
         /// </summary>
         public void Export(string database, string collection, string outputFile)
         {
-            MongoImportExport.Export(BinariesDirectory, _port, database, collection, outputFile);
+           
+            MongoImportExport.Export(_mongoBin.Directory, _port, database, collection, outputFile);
         }
         
         /// <summary>
         /// usage: local debugging
         /// </summary>
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, string dataDirectory)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter,IMongoBinaryLocator mongoBin, string dataDirectory)
         {
             _fileSystem = fileSystem;
             _port = MongoDbDefaults.DefaultPort;
+            _mongoBin = mongoBin;
+
+            MakeMongoBinarysExecutable();
 
             ConnectionString = "mongodb://localhost:{0}/".Formatted(_port);
 
@@ -96,8 +99,8 @@ namespace Mongo2Go
             }
 
             _fileSystem.CreateFolder(dataDirectory);
-            _fileSystem.DeleteFile(@"{0}\{1}".Formatted(dataDirectory, MongoDbDefaults.Lockfile));
-            _mongoDbProcess = processStarter.Start(BinariesDirectory, dataDirectory, _port, true);
+            _fileSystem.DeleteFile(@"{0}{1}{2}".Formatted(dataDirectory, System.IO.Path.DirectorySeparatorChar.ToString (), MongoDbDefaults.Lockfile));
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, dataDirectory, _port, true);
 
             State = State.Running;
         }
@@ -105,40 +108,32 @@ namespace Mongo2Go
         /// <summary>
         /// usage: integration tests
         /// </summary>
-        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, string dataDirectory)
+        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory)
         {
             _fileSystem = fileSystem;
             _port = portPool.GetNextOpenPort();
+            _mongoBin = mongoBin;
+
+            MakeMongoBinarysExecutable();
 
             ConnectionString = "mongodb://localhost:{0}/".Formatted(_port);
 
             _dataDirectoryWithPort = "{0}_{1}".Formatted(dataDirectory, _port);
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
-            _fileSystem.DeleteFile(@"{0}\{1}".Formatted(_dataDirectoryWithPort, MongoDbDefaults.Lockfile));
-            _mongoDbProcess = processStarter.Start(BinariesDirectory, _dataDirectoryWithPort, _port);
+            _fileSystem.DeleteFile(@"{0}{1}{2}".Formatted(_dataDirectoryWithPort, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
+           
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port);
 
             State = State.Running;
         }
 
-        private static string BinariesDirectory
+        private void MakeMongoBinarysExecutable() 
         {
-            get
+            if (Environment.OSVersion.Platform == PlatformID.Unix) 
             {
-                // 1st: path when installed via nuget
-                // 2nd: path when started from solution
-                string binariesFolder = FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPattern) ??
-                                        FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(BinariesSearchPatternSolution);
-
-                if (binariesFolder == null)
-                {
-                    throw new MonogDbBinariesNotFoundException(string.Format(
-                        "Could not find Mongo binaries using {0} or {1}.  We walk up the directories {2} levels from {3}",
-                        BinariesSearchPattern,
-                        BinariesSearchPatternSolution,
-                        FolderSearch.MaxLevelOfRecursion,
-                        FolderSearch.CurrentExecutingDirectory()));
-                }
-                return binariesFolder;
+                _fileSystem.MakeFileExecutable (System.IO.Path.Combine (_mongoBin.Directory, MongoDbDefaults.MongodExecutable));
+                _fileSystem.MakeFileExecutable (System.IO.Path.Combine (_mongoBin.Directory, MongoDbDefaults.MongoExportExecutable));
+                _fileSystem.MakeFileExecutable (System.IO.Path.Combine (_mongoBin.Directory, MongoDbDefaults.MongoImportExecutable));
             }
         }
     }

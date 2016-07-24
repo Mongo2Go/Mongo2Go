@@ -107,6 +107,10 @@
     <Compile Include="State.cs">
       <DependentUpon>MongoDbRunner.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\MongoBinaryLocator.cs" />
+    <Compile Include="Helper\IMongoBinaryLocator.cs" />
+    <Compile Include="Helper\UnixPortWatcher.cs" />
+    <Compile Include="Helper\PortWatcherFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

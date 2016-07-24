@@ -20,7 +20,7 @@ namespace Mongo2Go.Helper
         {
             string currentPath = startPath;
 
-            foreach (var part in searchPattern.Split(new[] { @"\" }, StringSplitOptions.None))
+            foreach (var part in searchPattern.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.None))
             {
                 string[] matchesDirectory = Directory.GetDirectories(currentPath, part);
                 if (!matchesDirectory.Any())
@@ -56,14 +56,14 @@ namespace Mongo2Go.Helper
 
         internal static string RemoveLastPart(this string path)
         {
-            if (!path.Contains(@"\"))
+            if (!path.Contains(Path.DirectorySeparatorChar))
             {
                 return null;
             }
 
-            List<string> parts = path.Split(new[] {@"\"}, StringSplitOptions.None).ToList();
+            List<string> parts = path.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.None).ToList();
             parts.RemoveAt(parts.Count() - 1);
-            return string.Join(@"\", parts.ToArray());
+            return string.Join(Path.DirectorySeparatorChar.ToString(), parts.ToArray());
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Mongo2Go.Helper
             }
             else
             {
-                finalPath = CurrentExecutingDirectory() + @"\" + fileName;
+                finalPath = Path.Combine (CurrentExecutingDirectory (), fileName);
                 finalPath = Path.GetFullPath(finalPath);
             }
 

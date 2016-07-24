@@ -16,6 +16,7 @@ namespace Mongo2GoTests.Runner
         static Mock<IPortPool> portPoolMock;
         static Mock<IFileSystem> fileSystemMock;
         static Mock<IMongoDbProcessStarter> processStarterMock;
+        static Mock<IMongoBinaryLocator> binaryLocatorMock;
 
         static readonly string exptectedDataDirectory = "{0}_{1}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.TestStartPort + 1);
         static readonly string exptectedLogfile = @"{0}_{1}\{2}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.TestStartPort + 1, MongoDbDefaults.Lockfile);
@@ -32,9 +33,12 @@ namespace Mongo2GoTests.Runner
 
             processStarterMock = new Mock<IMongoDbProcessStarter>();
             processStarterMock.Setup(m => m.Start(Moq.It.IsAny<string>(), Moq.It.IsAny<string>(), Moq.It.IsAny<int>())).Returns(processMock.Object);
+
+            binaryLocatorMock = new Mock<IMongoBinaryLocator> ();
+
         };
 
-        Because of = () => runner = MongoDbRunner.StartUnitTest(portPoolMock.Object, fileSystemMock.Object, processStarterMock.Object);
+        Because of = () => runner = MongoDbRunner.StartUnitTest(portPoolMock.Object, fileSystemMock.Object, processStarterMock.Object, binaryLocatorMock.Object);
 
         It should_create_the_data_directory             = () => fileSystemMock.Verify(x => x.CreateFolder(exptectedDataDirectory), Times.Exactly(1));
         It should_delete_old_lock_file                  = () => fileSystemMock.Verify(x => x.DeleteFile(exptectedLogfile), Times.Exactly(1));
@@ -53,6 +57,7 @@ namespace Mongo2GoTests.Runner
         static Mock<IProcessWatcher> processWatcherMock;
         static Mock<IFileSystem> fileSystemMock;
         static Mock<IMongoDbProcessStarter> processStarterMock;
+        static Mock<IMongoBinaryLocator> binaryLocatorMock;
 
         static readonly string exptectedLogfile = @"{0}\{1}".Formatted(MongoDbDefaults.DataDirectory, MongoDbDefaults.Lockfile);
 
@@ -69,9 +74,11 @@ namespace Mongo2GoTests.Runner
             var processMock = new Mock<IMongoDbProcess>();
             processStarterMock = new Mock<IMongoDbProcessStarter>();
             processStarterMock.Setup(m => m.Start(Moq.It.IsAny<string>(), MongoDbDefaults.DataDirectory, MongoDbDefaults.DefaultPort, true)).Returns(processMock.Object);
+
+            binaryLocatorMock = new Mock<IMongoBinaryLocator> ();
         };
 
-        Because of = () => runner = MongoDbRunner.StartForDebuggingUnitTest(processWatcherMock.Object, portWatcherMock.Object, fileSystemMock.Object, processStarterMock.Object);
+        Because of = () => runner = MongoDbRunner.StartForDebuggingUnitTest(processWatcherMock.Object, portWatcherMock.Object, fileSystemMock.Object, processStarterMock.Object, binaryLocatorMock.Object);
 
         It should_check_for_already_running_process = () => processWatcherMock.Verify(x => x.IsProcessRunning(MongoDbDefaults.ProcessName), Times.Exactly(1));
         It should_check_the_default_port = () => portWatcherMock.Verify(x => x.IsPortAvailable(MongoDbDefaults.DefaultPort), Times.Exactly(1));
