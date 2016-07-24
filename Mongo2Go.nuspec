@@ -4,7 +4,7 @@
     <metadata>
 
         <id>Mongo2Go</id>
-        <version>0.2.0</version>
+        <version>1.0.0-beta</version>
 
         <title>Mongo2Go</title>
         <authors>Johannes Hoppe and many contributors</authors>
@@ -13,7 +13,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
         <description>Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets .NET 3.5 and works in later versions, too.
-This Nuget package contains the executables of mongod, mongoimport and mongoexport v3.2.6 (64bit).
+This Nuget package contains the executables of mongod, mongoimport and mongoexport v3.2.7 for Windows, Linux and OS X.
 
 
 Mongo2Go has two use cases:
@@ -24,7 +24,7 @@ Mongo2Go has two use cases:
         <language>en-US</language>
         <summary>MongoDB for integration tests and local debugging</summary>
 
-        <releaseNotes>MongoDB is updated to win32/mongodb-win32-x86_64-2008plus-3.2.6, strong-name signing is dropped (breaking change)</releaseNotes>
+        <releaseNotes>This release introduces cross-platform support for Windows, Linux and OS X</releaseNotes>
         <tags>MongoDB Mongo unit test integration runner</tags>
 
         <projectUrl>http://github.com/JohannesHoppe/Mongo2Go</projectUrl>
