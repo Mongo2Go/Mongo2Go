@@ -15,8 +15,8 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 [assembly: Guid("7d1edeef-fa43-4f1e-907c-e540c2fac8cb")]
 
-[assembly: AssemblyVersion("0.2.0")]
-[assembly: AssemblyFileVersion("0.2.0")]
+[assembly: AssemblyVersion("1.0.0")]
+[assembly: AssemblyFileVersion("1.0.0")]
 [assembly: CLSCompliant(false)]
 
 [assembly: InternalsVisibleTo("Mongo2GoTests")]
