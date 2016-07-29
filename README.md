@@ -3,8 +3,9 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-Mongo2Go is a manged wrapper around the latest MongoDB binaries. It targets **.NET 3.5** and works in later versions, too.  
-This Nuget package contains the executables of _mongo**d**_, _mongoimport_ and _mongoexport_ **v3.2.6** (32bit).
+Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 3.5** and works in later versions, too.  
+Mongo2Go works with Windows, Linux and OS X (last two via Mono).
+This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **v3.2.7 for Windows, Linux and OS X** .
 
 Mongo2Go has two use cases:
 
@@ -130,18 +131,25 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
-### Mongo2Go 0.1.9, May 27 2016
-* includes mongod, mongoimport and mongoexport v3.2.6 (32bit)
-* MongoDB is updated to version 3.2.6
+### Mongo2Go 1.0.0-beta, July 24 2016
+* **:tada: NEW: support for Linux and OS X  :tada:**
+* many thanks to [Kristofer Linnestjerna](https://github.com/krippz) from [netclean.com](http://www.netclean.com/) for the new cross-platform support
+* includes mongod, mongoimport and mongoexport v3.2.7 for Windows, Linux and OS X
+* changes from pull request [#8](https://github.com/JohannesHoppe/Mongo2Go/pull/8), [#10](https://github.com/JohannesHoppe/Mongo2Go/pull/10), [#11](https://github.com/JohannesHoppe/Mongo2Go/pull/11) which fixes [#9](https://github.com/JohannesHoppe/Mongo2Go/issues/9)
+* please report any kind of [issues here on github](https://github.com/JohannesHoppe/Mongo2Go/issues) so that we can mark 1.0.0 as stable!
+
+### Mongo2Go 0.2, May 30 2016
+* includes mongod, mongoimport and mongoexport v3.2.6,   
+  (**64bit** from [win32/mongodb-win32-x86_64-2008plus-3.2.6.zip](http://downloads.mongodb.org/win32/mongodb-win32-x86_64-2008plus-3.2.6.zip?_ga=1.190428203.1815541971.1457905247) since 32bit builds are deprecated now)
+* removes outmoded Strong-Name signing from assemblies (please open an issue if you really need this, see also [mspec#190](https://github.com/machine/machine.specifications/issues/190))
+* changes from pull request [#7](https://github.com/JohannesHoppe/Mongo2Go/pull/7), thanks to [Mitch Ferrer](https://github.com/G3N7)
 
 ### Mongo2Go 0.1.8, March 13 2016
 * includes mongod, mongoimport and mongoexport v3.0.10 (32bit)
-* MongoDB is updated to version 3.0.10
 * changes from pull request [#5](https://github.com/JohannesHoppe/Mongo2Go/pull/5), thanks to [Aristarkh Zagorodnikov](https://github.com/onyxmaster)
 
 ### Mongo2Go 0.1.6, July 21 2015
 * includes mongod, mongoimport and mongoexport v3.0.4 (32bit)
-* MongoDB is updated to version 3.0.4
 * bug fix [#4](https://github.com/JohannesHoppe/Mongo2Go/issues/4):  
 Sometimes the runner tries to delete the database directory before the mongod process has been stopped, this throws an IOException. 
 Now the runner waits until the mongod process has been stopped before the database directory will be deleted.  

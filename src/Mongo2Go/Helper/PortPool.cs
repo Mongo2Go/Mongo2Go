@@ -38,7 +38,7 @@ namespace Mongo2Go.Helper
         {
             lock (_lock)
             {
-                PortWatcher portWatcher = new PortWatcher();
+                IPortWatcher portWatcher = PortWatcherFactory.CreatePortWatcher();
                 int newAvailablePort = portWatcher.FindOpenPort(_startPort);
 
                 _startPort = newAvailablePort + 1;
