@@ -133,7 +133,7 @@ Changelog
 -------------------------------------
 ### Mongo2Go 1.0.0-beta2, July 29 2016
 * fixes for bugs that were introduced by the big rewrite for cross-platform support
-* changes from pull request [#14](https://github.com/JohannesHoppe/Mongo2Go/pull/14), which fixes [#13](https://github.com/JohannesHoppe/Mongo2Go/issues/13) and [#15](https://github.com/JohannesHoppe/Mongo2Go/issues/15), many thanks to [Mitch Ferrer](https://github.com/G3N7)
+* changes from pull request [#14](https://github.com/JohannesHoppe/Mongo2Go/pull/14), which fixes [#12](https://github.com/JohannesHoppe/Mongo2Go/issues/12), [#13](https://github.com/JohannesHoppe/Mongo2Go/issues/13) and [#15](https://github.com/JohannesHoppe/Mongo2Go/issues/15), many thanks to [Mitch Ferrer](https://github.com/G3N7)
 * please report any kind of [issues here on github](https://github.com/JohannesHoppe/Mongo2Go/issues) so that we can mark 1.0.0 as stable!
 
 
