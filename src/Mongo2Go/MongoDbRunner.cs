@@ -29,9 +29,9 @@ namespace Mongo2Go
         /// On dispose: kills them and deletes their data directory
         /// </summary>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = MongoDbDefaults.DataDirectory, string mongoBinSearchPattern = @"tools\mongodb-win32*\bin")
+        public static MongoDbRunner Start(string dataDirectory = MongoDbDefaults.DataDirectory, string searchPatternOverride = null)
         {
-            return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator (mongoBinSearchPattern), dataDirectory);
+            return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
 
         internal static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
@@ -46,9 +46,9 @@ namespace Mongo2Go
         /// Should be used for local debugging only
         /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
         /// </remarks>
-        public static MongoDbRunner StartForDebugging(string dataDirectory = MongoDbDefaults.DataDirectory, string mongoBinSearchPattern = @"tools\mongodb-win32*\bin")
+        public static MongoDbRunner StartForDebugging(string dataDirectory = MongoDbDefaults.DataDirectory, string searchPatternOverride = null)
         {
-            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(mongoBinSearchPattern), dataDirectory);
+            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
 
         internal static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)

@@ -6,42 +6,63 @@ namespace Mongo2Go.Helper
 
     public class MongoBinaryLocator : IMongoBinaryLocator
     {
-        private string nugetPrefix = System.IO.Path.Combine ("packages", "Mongo2Go*");
-        private string searchPattern = "";
-        private string binFolder = string.Empty;
+        private readonly string _nugetPrefix = Path.Combine("packages", "Mongo2Go*");
+        public const string DefaultWindowsSearchPattern = @"tools\mongodb-win32*\bin";
+        public const string DefaultLinuxSearchPattern = "tools/mongodb-linux*/bin";
+        public const string DefaultOsxSearchPattern = "tools/mongodb-osx*/bin";
+        private string _binFolder = string.Empty;
+        private readonly string _searchPattern;
 
-        public MongoBinaryLocator (string binSearchPattern)
+        public MongoBinaryLocator (string searchPatternOverride)
         {
-            if (string.IsNullOrEmpty (binSearchPattern)) {
-                throw new ArgumentException ("Missing the search pattern for finding the mongoDb binaries.", "binSearchPattern");
+            if (string.IsNullOrEmpty(searchPatternOverride))
+            {
+                var operatingSystem = Environment.OSVersion.Platform;
+                switch (operatingSystem)
+                {
+                    case PlatformID.MacOSX:
+                        _searchPattern = DefaultOsxSearchPattern;
+                        break;
+                    case PlatformID.Unix:
+                        _searchPattern = DefaultLinuxSearchPattern;
+                        break;
+                    default:
+                        _searchPattern = DefaultWindowsSearchPattern;
+                        break;
+                }
             }
-
-            searchPattern = binSearchPattern;
+            else
+            {
+                _searchPattern = searchPatternOverride;
+            }
         }
 
         public string Directory {
             get {
-                if (string.IsNullOrEmpty (binFolder)){
-                    return binFolder = ResolveBinariesDirectory ();
+                if (string.IsNullOrEmpty(_binFolder)){
+                    return _binFolder = ResolveBinariesDirectory ();
                 } else {
-                    return binFolder;
+                    return _binFolder;
                 }
             }
         }
 
         private string ResolveBinariesDirectory ()
         {
-            // 1st: path when installed via nuget
-            // 2nd: path when started from solution
-            string binariesFolder = FolderSearch.CurrentExecutingDirectory ().FindFolderUpwards (System.IO.Path.Combine (nugetPrefix, searchPattern)) ??
-                                    FolderSearch.CurrentExecutingDirectory ().FindFolderUpwards (searchPattern);
+            var binariesFolder =
+                // First try path when installed via nuget
+                FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(Path.Combine(_nugetPrefix, _searchPattern)) ??
+                // second try path when started from solution
+                FolderSearch.CurrentExecutingDirectory().FindFolderUpwards(_searchPattern);
 
             if (binariesFolder == null) {
                 throw new MonogDbBinariesNotFoundException (string.Format (
-                    "Could not find Mongo binaries using {0}. We walk up the directories {1} levels from {2}",
-                    searchPattern,
+                    "Could not find Mongo binaries using the search pattern of \"{0}\". We walked up the directories {1} levels from {2} and {3}.  You can override the search pattern when calling MongoDbRunner.Start.  We have detected the OS as {4}",
+                    _searchPattern,
                     FolderSearch.MaxLevelOfRecursion,
-                    FolderSearch.CurrentExecutingDirectory ()));
+                    FolderSearch.CurrentExecutingDirectory(),
+                    Path.Combine(_nugetPrefix, _searchPattern),
+                    Environment.OSVersion.Platform));
             }
             return binariesFolder;
         }
