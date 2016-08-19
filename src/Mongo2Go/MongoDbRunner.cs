@@ -29,12 +29,9 @@ namespace Mongo2Go
         /// On dispose: kills them and deletes their data directory
         /// </summary>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = MongoDbDefaults.DataDirectory, string searchPatternOverride = null, bool useRandomDirectory = false)
+        public static MongoDbRunner Start(string dataDirectory = MongoDbDefaults.DataDirectory, string searchPatternOverride = null)
         {
-            if (useRandomDirectory)
-            {
-                dataDirectory += Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
-            }
+            dataDirectory += Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
 
             return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
