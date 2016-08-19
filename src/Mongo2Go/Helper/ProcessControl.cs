@@ -14,10 +14,11 @@ namespace Mongo2Go.Helper
             {
                 FileName = fileName,
                 Arguments = arguments,
-                CreateNoWindow = false,
+                CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                WindowStyle = ProcessWindowStyle.Hidden
             };
 
             WrappedProcess process = new WrappedProcess { StartInfo = startInfo };
@@ -28,8 +29,8 @@ namespace Mongo2Go.Helper
         {
             List<string> errorOutput = new List<string>();
             List<string> standardOutput = new List<string>();
-            
-            process.ErrorDataReceived  += (sender, args) => errorOutput.Add(args.Data);
+
+            process.ErrorDataReceived += (sender, args) => errorOutput.Add(args.Data);
             process.OutputDataReceived += (sender, args) => standardOutput.Add(args.Data);
 
             process.Start();
@@ -56,9 +57,10 @@ namespace Mongo2Go.Helper
 
             Thread.Sleep(100);
 
-            try {
+            try
+            {
                 NativeMethods.SetWindowText(process.MainWindowHandle, newName);
-            } 
+            }
             // ReSharper disable EmptyGeneralCatchClause
             catch (Exception) { }
             // ReSharper restore EmptyGeneralCatchClause
@@ -72,15 +74,15 @@ namespace Mongo2Go.Helper
             if (timeoutInSeconds < 1 ||
                 timeoutInSeconds > 10)
             {
-                 throw new ArgumentOutOfRangeException("timeoutInSeconds", "The amount in seconds should have a value between 1 and 10.");
+                throw new ArgumentOutOfRangeException("timeoutInSeconds", "The amount in seconds should have a value between 1 and 10.");
             }
-            
+
             List<string> errorOutput = new List<string>();
             List<string> standardOutput = new List<string>();
             bool processReady = false;
 
-            
-            process.ErrorDataReceived  += (sender, args) => errorOutput.Add(args.Data);
+
+            process.ErrorDataReceived += (sender, args) => errorOutput.Add(args.Data);
             process.OutputDataReceived += (sender, args) =>
                 {
                     standardOutput.Add(args.Data);
