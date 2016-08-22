@@ -4,7 +4,7 @@
     <metadata>
 
         <id>Mongo2Go</id>
-        <version>1.0.0-beta2</version>
+        <version>1.0.0-beta3</version>
 
         <title>Mongo2Go</title>
         <authors>Johannes Hoppe and many contributors</authors>
@@ -24,7 +24,7 @@ Mongo2Go has two use cases:
         <language>en-US</language>
         <summary>MongoDB for integration tests and local debugging</summary>
 
-        <releaseNotes>This release introduces cross-platform support for Windows, Linux and OS X</releaseNotes>
+        <releaseNotes>The 1.0 release introduces cross-platform support for Windows, Linux and OS X</releaseNotes>
         <tags>MongoDB Mongo unit test integration runner</tags>
 
         <projectUrl>http://github.com/JohannesHoppe/Mongo2Go</projectUrl>
