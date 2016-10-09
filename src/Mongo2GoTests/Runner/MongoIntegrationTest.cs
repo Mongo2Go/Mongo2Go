@@ -10,7 +10,7 @@ namespace Mongo2GoTests.Runner
     public class MongoIntegrationTest
     {
         internal static MongoDbRunner _runner;
-        internal static MongoCollection<TestDocument> _collection;
+        internal static IMongoCollection<TestDocument> _collection;
         internal static string _databaseName = "IntegrationTest";
         internal static string _collectionName = "TestCollection";
 
@@ -19,15 +19,14 @@ namespace Mongo2GoTests.Runner
             _runner = MongoDbRunner.Start();
             
             MongoClient client = new MongoClient(_runner.ConnectionString);
-            MongoServer server = client.GetServer();
-            MongoDatabase database = server.GetDatabase(_databaseName);
+            IMongoDatabase database = client.GetDatabase(_databaseName);
             _collection = database.GetCollection<TestDocument>(_collectionName);
         }
 
         public static IList<T> ReadBsonFile<T>(string fileName)
         {
             string[] content = File.ReadAllLines(fileName);
-            return content.Select(BsonSerializer.Deserialize<T>).ToList();
+            return content.Select(s => BsonSerializer.Deserialize<T>(s)).ToList();
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Threading;
 using FluentAssertions;
 using Machine.Specifications;
 using Mongo2Go.Helper;
+using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using It = Machine.Specifications.It;
 
@@ -22,11 +23,11 @@ namespace Mongo2GoTests.Runner
 
         {
             CreateConnection();
-            _collection.Drop();
+            _database.DropCollection(_collectionName);
 
-            _collection.Insert(TestDocument.DummyData1());
-            _collection.Insert(TestDocument.DummyData2());
-            _collection.Insert(TestDocument.DummyData3());
+            _collection.InsertOne(TestDocument.DummyData1());
+            _collection.InsertOne(TestDocument.DummyData2());
+            _collection.InsertOne(TestDocument.DummyData3());
         };
 
         Because of = () =>
@@ -61,7 +62,7 @@ namespace Mongo2GoTests.Runner
         Establish context = () =>
             {
                 CreateConnection();
-                _collection.Drop();
+                _database.DropCollection(_collectionName);
                 File.WriteAllText(_testFile, _filecontent);
             };
 
@@ -73,9 +74,9 @@ namespace Mongo2GoTests.Runner
 
             };
 
-        It should_return_document1 = () => query.ElementAt(0).ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
-        It should_return_document2 = () => query.ElementAt(1).ShouldBeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
-        It should_return_document3 = () => query.ElementAt(2).ShouldBeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document1 = () => query.ToList().ElementAt(0).ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document2 = () => query.ToList().ElementAt(1).ShouldBeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document3 = () => query.ToList().ElementAt(2).ShouldBeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
         
         Cleanup stuff = () =>
             {

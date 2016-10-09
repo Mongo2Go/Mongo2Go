@@ -2,6 +2,8 @@
 using System.Linq;
 using FluentAssertions;
 using Machine.Specifications;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using It = Machine.Specifications.It;
 
@@ -18,10 +20,10 @@ namespace Mongo2GoTests.Runner
         Establish context = () =>
             {
                 CreateConnection();
-                _collection.Insert(TestDocument.DummyData1());
+                _collection.InsertOne(TestDocument.DummyData1());
             };
 
-        Because of = () => findResult = _collection.FindOneAs<TestDocument>();
+        Because of = () => findResult = _collection.FindSync<TestDocument>(_ => true).First();
 
         It should_return_a_result = () => findResult.Should().NotBeNull();
         It should_hava_expected_data = () => findResult.ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
@@ -37,9 +39,9 @@ namespace Mongo2GoTests.Runner
         Establish context = () =>
         {
             CreateConnection();
-            _collection.Insert(TestDocument.DummyData1());
-            _collection.Insert(TestDocument.DummyData2());
-            _collection.Insert(TestDocument.DummyData3());
+            _collection.InsertOne(TestDocument.DummyData1());
+            _collection.InsertOne(TestDocument.DummyData2());
+            _collection.InsertOne(TestDocument.DummyData3());
         };
 
         Because of = () =>
