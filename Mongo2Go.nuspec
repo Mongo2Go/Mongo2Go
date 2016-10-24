@@ -4,7 +4,7 @@
     <metadata>
 
         <id>Mongo2Go</id>
-        <version>1.0.0-beta3</version>
+        <version>1.0.0-beta4</version>
 
         <title>Mongo2Go</title>
         <authors>Johannes Hoppe and many contributors</authors>
@@ -12,7 +12,7 @@
         <owners>Johannes Hoppe</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
-        <description>Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets .NET 3.5 and works in later versions, too.
+        <description>Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets .NET 4.6.
 This Nuget package contains the executables of mongod, mongoimport and mongoexport v3.2.7 for Windows, Linux and OS X.
 
 
