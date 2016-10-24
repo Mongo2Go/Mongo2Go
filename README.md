@@ -126,8 +126,8 @@ Changelog
 -------------------------------------
 ### Mongo2Go 1.0.0-beta4, October 24 2016
 * update to MongoDB.Driver 2.3.0 ([#23](https://github.com/Mongo2Go/Mongo2Go/pull/23))
+* upgraded to __.NET 4.6__
 * internal change: update MSpec as well and add MSTest Adapter for MSpec (ReSharper console runner doesn't support 4.6)
-* internal change: upgraded to .NET 4.6 instead of 4.5 as support for 4.5 has ended.
 * many thanks to [Alexander Zeitler](https://github.com/AlexZeitler)
 * please report any kind of [issues here on github](https://github.com/Mongo2Go/Mongo2Go/issues) so that we can mark 1.0.0 as stable!
 
