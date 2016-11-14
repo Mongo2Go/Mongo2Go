@@ -3,8 +3,8 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6** and works with Windows, Linux and OS X (last two via Mono).
-This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **v3.2.7 for Windows, Linux and OS X** .
+Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6** and works with Windows, Linux and macOS (last two via Mono).
+This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **v3.2.7 for Windows, Linux and macOS** .
 
 Mongo2Go has two use cases:
 
@@ -124,6 +124,17 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+### Mongo2Go 1.0.0, November 14 2016
+* v1.0 finally marked as stable
+* no changes to 1.0.0-beta4
+* changes since last stable version (0.2):
+	* includes mongod, mongoimport and mongoexport v3.2.7 for Windows, Linux and macOS
+	* support for Windows, Linux and macOS
+	* uses MongoDB.Driver 2.3.0
+	* requires .NET 4.6
+	* various small bugfixes and improvements
+
+
 ### Mongo2Go 1.0.0-beta4, October 24 2016
 * update to MongoDB.Driver 2.3.0 ([#23](https://github.com/Mongo2Go/Mongo2Go/pull/23))
 * upgraded to __.NET 4.6__
@@ -144,9 +155,9 @@ Changelog
 
 
 ### Mongo2Go 1.0.0-beta, July 24 2016
-* **:tada: NEW: support for Linux and OS X  :tada:**
+* **:tada: NEW: support for Linux and macOS :tada:**
 * many thanks to [Kristofer Linnestjerna](https://github.com/krippz) from [netclean.com](http://www.netclean.com/) for the new cross-platform support
-* includes mongod, mongoimport and mongoexport v3.2.7 for Windows, Linux and OS X
+* includes mongod, mongoimport and mongoexport v3.2.7 for Windows, Linux and macOS
 * changes from pull request [#8](https://github.com/Mongo2Go/Mongo2Go/pull/8), [#10](https://github.com/Mongo2Go/Mongo2Go/pull/10), [#11](https://github.com/Mongo2Go/Mongo2Go/pull/11) which fixes [#9](https://github.com/Mongo2Go/Mongo2Go/issues/9)
 * please report any kind of [issues here on github](https://github.com/Mongo2Go/Mongo2Go/issues) so that we can mark 1.0.0 as stable!
 
