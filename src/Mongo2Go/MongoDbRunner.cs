@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using Mongo2Go.Helper;
 
 namespace Mongo2Go
@@ -36,7 +37,7 @@ namespace Mongo2Go
             return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
 
-        internal static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
+        public static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
             return new MongoDbRunner(portPool, fileSystem, processStarter, mongoBin, MongoDbDefaults.DataDirectory);
         }
@@ -53,7 +54,7 @@ namespace Mongo2Go
             return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
 
-        internal static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
+        public static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
             return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter, mongoBin, MongoDbDefaults.DataDirectory);
         }
@@ -131,7 +132,7 @@ namespace Mongo2Go
 
         private void MakeMongoBinarysExecutable()
         {
-            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 _fileSystem.MakeFileExecutable(System.IO.Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongodExecutable));
                 _fileSystem.MakeFileExecutable(System.IO.Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongoExportExecutable));

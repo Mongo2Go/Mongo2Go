@@ -12,7 +12,7 @@ namespace Mongo2Go.Helper
 
         public static string CurrentExecutingDirectory()
         {
-            string filePath = new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath;
+            string filePath = new Uri(typeof(FolderSearch).GetTypeInfo().Assembly.CodeBase).LocalPath;
             return Path.GetDirectoryName(filePath);
         }
 
