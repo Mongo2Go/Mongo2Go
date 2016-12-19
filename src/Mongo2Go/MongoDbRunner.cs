@@ -36,6 +36,17 @@ namespace Mongo2Go
             return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
 
+       
+        public static MongoDbRunner Start(IMongoBinaryLocator mongoBinaryLocator, string dataDirectory = MongoDbDefaults.DataDirectory)
+        {
+            if (mongoBinaryLocator == null) throw new ArgumentNullException(nameof(mongoBinaryLocator));
+
+            dataDirectory += Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
+
+            return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), mongoBinaryLocator, dataDirectory);
+        }
+
+
         internal static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
             return new MongoDbRunner(portPool, fileSystem, processStarter, mongoBin, MongoDbDefaults.DataDirectory);
@@ -52,6 +63,16 @@ namespace Mongo2Go
         {
             return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
+
+        
+       
+        public static MongoDbRunner StartForDebugging(IMongoBinaryLocator mongoBinaryLocator, string dataDirectory = MongoDbDefaults.DataDirectory)
+        {
+            if (mongoBinaryLocator == null) throw new ArgumentNullException(nameof(mongoBinaryLocator));
+
+            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), mongoBinaryLocator, dataDirectory);
+        }
+
 
         internal static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
