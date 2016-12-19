@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace Mongo2Go.Helper
@@ -17,8 +16,7 @@ namespace Mongo2Go.Helper
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                WindowStyle = ProcessWindowStyle.Hidden
+                RedirectStandardError = true
             };
 
             WrappedProcess process = new WrappedProcess { StartInfo = startInfo };
@@ -38,7 +36,6 @@ namespace Mongo2Go.Helper
             process.BeginErrorReadLine();
             process.BeginOutputReadLine();
 
-            RenameWindow(process, windowTitle);
             process.WaitForExit();
 
             process.CancelErrorRead();
@@ -46,26 +43,7 @@ namespace Mongo2Go.Helper
 
             return new ProcessOutput(errorOutput, standardOutput);
         }
-
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
-        public static void RenameWindow(Process process, string newName)
-        {
-            if (String.IsNullOrEmpty(newName))
-            {
-                return;
-            }
-
-            Thread.Sleep(100);
-
-            try
-            {
-                NativeMethods.SetWindowText(process.MainWindowHandle, newName);
-            }
-            // ReSharper disable EmptyGeneralCatchClause
-            catch (Exception) { }
-            // ReSharper restore EmptyGeneralCatchClause
-        }
-
+        
         /// <summary>
         /// Reads from Output stream to determine if process is ready
         /// </summary>
@@ -98,8 +76,6 @@ namespace Mongo2Go.Helper
 
             process.BeginErrorReadLine();
             process.BeginOutputReadLine();
-
-            RenameWindow(process, windowTitle);
 
             int lastResortCounter = 0;
             int timeOut = timeoutInSeconds * 10;

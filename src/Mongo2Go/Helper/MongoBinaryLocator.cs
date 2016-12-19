@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Mongo2Go.Helper
 {
@@ -17,18 +17,21 @@ namespace Mongo2Go.Helper
         {
             if (string.IsNullOrEmpty(searchPatternOverride))
             {
-                var operatingSystem = Environment.OSVersion.Platform;
-                switch (operatingSystem)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    case PlatformID.MacOSX:
-                        _searchPattern = DefaultOsxSearchPattern;
-                        break;
-                    case PlatformID.Unix:
-                        _searchPattern = DefaultLinuxSearchPattern;
-                        break;
-                    default:
-                        _searchPattern = DefaultWindowsSearchPattern;
-                        break;
+                    _searchPattern = DefaultOsxSearchPattern;
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    _searchPattern = DefaultLinuxSearchPattern;
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    _searchPattern = DefaultWindowsSearchPattern;
+                }
+                else
+                {
+                    throw new MonogDbBinariesNotFoundException($"Unknown OS: {RuntimeInformation.OSDescription}");
                 }
             }
             else
@@ -62,7 +65,7 @@ namespace Mongo2Go.Helper
                     FolderSearch.MaxLevelOfRecursion,
                     FolderSearch.CurrentExecutingDirectory(),
                     Path.Combine(_nugetPrefix, _searchPattern),
-                    Environment.OSVersion.Platform));
+                    RuntimeInformation.OSDescription));
             }
             return binariesFolder;
         }
