@@ -3,7 +3,7 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6** and works with Windows, Linux and macOS (last two via Mono).
+Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6** (and **.NET Standard 1.6**,   prerelease package!) and works with Windows, Linux and macOS (last two via Mono).
 This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **v3.2.7 for Windows, Linux and macOS** .
 
 Mongo2Go has two use cases:
@@ -40,6 +40,11 @@ The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/
 Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
 
     PM> Install-Package Mongo2Go
+
+or for .NET Core support:
+
+	PM> Install-Package Mongo2Go -Version 2.0.0-alpha1 -Pre
+
 
 in the Package Manager Console. 
 
@@ -124,6 +129,13 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+
+### Mongo2Go 2.0.0-alpha1, December 19 2016
+* first support of .NET Standard 1.6 ([#25](https://github.com/Mongo2Go/Mongo2Go/pull/25))
+    * many thanks to [Hassaan Ahmed](https://github.com/bannerflow-hassaan)    
+	* see the [Wiki](https://github.com/Mongo2Go/Mongo2Go/wiki/NetStandard) for more information about .NET Core 1.0 / .NET Standard 1.6
+* **any help in targeting older versions of the .NET Framework / testing this against .NET Framework (4.6.2) is highly appreciated!**
+
 ### Mongo2Go 1.0.0, November 14 2016
 * v1.0 finally marked as stable
 * no changes to 1.0.0-beta4
@@ -133,7 +145,6 @@ Changelog
 	* uses MongoDB.Driver 2.3.0
 	* requires .NET 4.6
 	* various small bugfixes and improvements
-
 
 ### Mongo2Go 1.0.0-beta4, October 24 2016
 * update to MongoDB.Driver 2.3.0 ([#23](https://github.com/Mongo2Go/Mongo2Go/pull/23))
