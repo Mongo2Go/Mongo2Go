@@ -33,8 +33,7 @@ Mongo2Go has two use cases:
     </metadata>
     <files>
 
-        <file src="src\Mongo2Go\bin\Release\netstandard1.6\Mongo2Go.dll" target="lib\netstandard1.6" />
-        <file src="src\Mongo2Go\bin\Release\netstandard1.6\Mongo2Go.deps.json" target="lib\netstandard1.6" />
+        <file src="src\Mongo2Go\bin\Release\**" target="lib" />
         <file src="tools\**" target="tools\" />
         
     </files>
