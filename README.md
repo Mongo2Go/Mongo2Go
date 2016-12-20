@@ -131,10 +131,12 @@ Changelog
 -------------------------------------
 
 ### Mongo2Go 2.0.0-alpha1, December 19 2016
-* first support of .NET Standard 1.6 ([#25](https://github.com/Mongo2Go/Mongo2Go/pull/25))
+* :warning: **this version has no support for .NET Framework 4.6, please continue to use the stable package v.1.0.0**
+* NEW: first support of .NET Standard 1.6 ([#25](https://github.com/Mongo2Go/Mongo2Go/pull/25))
     * many thanks to [Hassaan Ahmed](https://github.com/bannerflow-hassaan)    
 	* see the [Wiki](https://github.com/Mongo2Go/Mongo2Go/wiki/NetStandard) for more information about .NET Core 1.0 / .NET Standard 1.6
-* **any help in targeting older versions of the .NET Framework / testing this against .NET Framework (4.6.2) is highly appreciated!**
+* ** :heavy_exclamation_mark: HELP WANTED :heavy_exclamation_mark:  
+  Any help in targeting older versions of the .NET Framework, tuning the build and/or testing this against older .NET Framework versions is highly appreciated!**
 
 ### Mongo2Go 1.0.0, November 14 2016
 * v1.0 finally marked as stable
@@ -143,7 +145,7 @@ Changelog
 	* includes mongod, mongoimport and mongoexport v3.2.7 for Windows, Linux and macOS
 	* support for Windows, Linux and macOS
 	* uses MongoDB.Driver 2.3.0
-	* requires .NET 4.6
+	* **requires .NET 4.6**
 	* various small bugfixes and improvements
 
 ### Mongo2Go 1.0.0-beta4, October 24 2016
