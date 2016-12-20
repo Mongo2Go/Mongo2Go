@@ -135,8 +135,8 @@ Changelog
 * NEW: first support of .NET Standard 1.6 ([#25](https://github.com/Mongo2Go/Mongo2Go/pull/25))
     * many thanks to [Hassaan Ahmed](https://github.com/bannerflow-hassaan)    
 	* see the [Wiki](https://github.com/Mongo2Go/Mongo2Go/wiki/NetStandard) for more information about .NET Core 1.0 / .NET Standard 1.6
-* :heavy_exclamation_mark: ** HELP WANTED ** :heavy_exclamation_mark:  
-  ** Any help in targeting older versions of the .NET Framework, tuning the build and/or testing this against older .NET Framework versions is highly appreciated! **
+* :heavy_exclamation_mark: __HELP WANTED__ :heavy_exclamation_mark:  
+  __Any help in targeting older versions of the .NET Framework, tuning the build and/or testing this against older .NET Framework versions is highly appreciated!__
 
 ### Mongo2Go 1.0.0, November 14 2016
 * v1.0 finally marked as stable
