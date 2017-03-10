@@ -3,7 +3,7 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6** and works with Windows, Linux and macOS (last two via Mono).
+Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6.1** and works with Windows, Linux and macOS (last two via Mono).
 This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **v3.2.7 for Windows, Linux and macOS** .
 
 Mongo2Go has two use cases:
@@ -124,6 +124,14 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+### Mongo2Go 1.1.0, March 10 2017
+* no MongoDB binaries changed since v1.0
+* targets .NET 4.6.1 now
+* bugfix: prevent windows firewall popup (PR [#29](https://github.com/Mongo2Go/Mongo2Go/pull/29), which fixes [#21](https://github.com/Mongo2Go/Mongo2Go/pull/18))
+* many thanks to [kubal5003](https://github.com/kubal5003)
+
+
+
 ### Mongo2Go 1.0.0, November 14 2016
 * v1.0 finally marked as stable
 * no changes to 1.0.0-beta4
