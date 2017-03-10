@@ -129,16 +129,33 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
-Developers Hint: Use Visual Studio 2017!
+Developers Hint: Use Visual Studio 2017 to create a new version!
+
+:heavy_exclamation_mark: __HELP WANTED__ :heavy_exclamation_mark:  
+  __Any help in targeting older versions of the .NET Framework in one project, tuning the build and/or testing this against older .NET Framework versions is highly appreciated!__ As a workaround, the 1.x branch targets classic .NET 4.6.1, and the 2.x branch targets .NET Standard 1.6.
+
+-------------------------------------
+
+### Mongo2Go 2.1.0, March 10 2017
+* skips v2.0 to have same numbers as v1.x.
+* no MongoDB binaries changed since 2.0.0-alpha1 (still MongoDB v3.2.7 for Windows, Linux and macOS)
+* targets .NET Standard 1.6 (can be used with .NET Core 1.0 / 1.1)
+* bugfix: prevent windows firewall popup (PR [#30](https://github.com/Mongo2Go/Mongo2Go/pull/30), which fixes [#21](https://github.com/Mongo2Go/Mongo2Go/pull/21))
+* many thanks to [kubal5003](https://github.com/kubal5003)
+
+### Mongo2Go 1.1.0, March 10 2017
+* no MongoDB binaries changed since v1.0 (still MongoDB v3.2.7 for Windows, Linux and macOS)
+* targets .NET 4.6.1
+* bugfix: prevent windows firewall popup (PR [#29](https://github.com/Mongo2Go/Mongo2Go/pull/29), which fixes [#21](https://github.com/Mongo2Go/Mongo2Go/pull/21))
+* many thanks to [kubal5003](https://github.com/kubal5003)
 
 
 ### Mongo2Go 2.0.0-alpha1, December 19 2016
-* :warning: **this version has no support for .NET Framework 4.6, please continue to use the stable package v.1.0.0**
+* this version has no support for .NET Framework 4.6, please continue to use the stable package v.1.0.0
 * NEW: first support of .NET Standard 1.6 ([#25](https://github.com/Mongo2Go/Mongo2Go/pull/25))
     * many thanks to [Hassaan Ahmed](https://github.com/bannerflow-hassaan)    
 	* see the [Wiki](https://github.com/Mongo2Go/Mongo2Go/wiki/NetStandard) for more information about .NET Core 1.0 / .NET Standard 1.6
-* :heavy_exclamation_mark: __HELP WANTED__ :heavy_exclamation_mark:  
-  __Any help in targeting older versions of the .NET Framework, tuning the build and/or testing this against older .NET Framework versions is highly appreciated!__
+
 
 ### Mongo2Go 1.0.0, November 14 2016
 * v1.0 finally marked as stable
