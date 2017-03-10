@@ -1,18 +1,13 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26114.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0B557702-3C09-4514-BDD5-55A44F22113F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6B112C76-76CA-4EA1-A6F3-EBB5B113C286}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mongo2Go", "src\Mongo2Go\Mongo2Go.csproj", "{040A1626-1D04-40D6-BCCF-2D207AE648FC}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Mongo2Go", "src\Mongo2Go\Mongo2Go.xproj", "{040A1626-1D04-40D6-BCCF-2D207AE648FC}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Mongo2GoTests", "src\Mongo2GoTests\Mongo2GoTests.xproj", "{ADE5A672-6A00-4561-BCC1-E5497016DE24}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mongo2GoTests", "src\Mongo2GoTests\Mongo2GoTests.csproj", "{ADE5A672-6A00-4561-BCC1-E5497016DE24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

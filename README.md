@@ -129,6 +129,8 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+Developers Hint: Use Visual Studio 2017!
+
 
 ### Mongo2Go 2.0.0-alpha1, December 19 2016
 * :warning: **this version has no support for .NET Framework 4.6, please continue to use the stable package v.1.0.0**
