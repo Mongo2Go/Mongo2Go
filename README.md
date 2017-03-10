@@ -127,10 +127,8 @@ Changelog
 ### Mongo2Go 1.1.0, March 10 2017
 * no MongoDB binaries changed since v1.0
 * targets .NET 4.6.1 now
-* bugfix: prevent windows firewall popup (PR [#29](https://github.com/Mongo2Go/Mongo2Go/pull/29), which fixes [#21](https://github.com/Mongo2Go/Mongo2Go/pull/18))
+* bugfix: prevent windows firewall popup (PR [#29](https://github.com/Mongo2Go/Mongo2Go/pull/29), which fixes [#21](https://github.com/Mongo2Go/Mongo2Go/pull/21))
 * many thanks to [kubal5003](https://github.com/kubal5003)
-
-
 
 ### Mongo2Go 1.0.0, November 14 2016
 * v1.0 finally marked as stable
