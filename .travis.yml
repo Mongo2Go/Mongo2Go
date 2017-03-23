@@ -2,7 +2,7 @@ language: csharp
 dist: trusty
 sudo: required
 mono: none
-dotnet: 1.0.0-preview2-1-003177
+dotnet: 1.0.0
 
 before_script:
   - chmod a+x ./travis-build.sh
