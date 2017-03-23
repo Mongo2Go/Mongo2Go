@@ -3,12 +3,10 @@ dist: trusty
 sudo: required
 mono: none
 dotnet: 1.0.0-preview2-1-003177
-branches:
-  only:
-    - master
+
 before_script:
   - chmod a+x ./travis-build.sh
-  - chmod a+x ./run-tests.sh
+  - chmod a+x ./travis-tests.sh
 script:
   - ./travis-build.sh
   - ./travis-tests.sh
