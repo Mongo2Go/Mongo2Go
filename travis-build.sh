@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 dotnet restore
-dotnet build
+dotnet build -c Release
