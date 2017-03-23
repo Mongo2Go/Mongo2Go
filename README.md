@@ -6,6 +6,8 @@ Mongo2Go - MongoDB for integration tests & local debugging
 Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6** (and **.NET Standard 1.6**,   prerelease package!) and works with Windows, Linux and macOS (last two via Mono).
 This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **v3.2.7 for Windows, Linux and macOS** .
 
+[![Build Status](https://travis-ci.org/Mongo2Go/Mongo2Go.svg?branch=master)](https://travis-ci.org/Mongo2Go/Mongo2Go)
+
 Mongo2Go has two use cases:
 
 1. Providing multiple, temporary and isolated MongoDB databases for unit tests (or to be precise: integration tests)
