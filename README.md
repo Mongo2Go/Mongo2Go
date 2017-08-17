@@ -137,6 +137,10 @@ Developers Hint: Use Visual Studio 2017 to create a new version!
   __Any help in targeting older versions of the .NET Framework in one project, tuning the build and/or testing this against older .NET Framework versions is highly appreciated!__ As a workaround, the 1.x branch targets classic .NET 4.6.1, and the 2.x branch targets .NET Standard 1.6.
 
 -------------------------------------
+### Mongo2Go 2.2.0, August 17 2017
+* includes mongod, mongoimport and mongoexport v3.4.7 for Windows, Linux and macOS
+* targets .NET Standard 1.6 (can be used with .NET Core 1.0 / 1.1 / 2.0)
+* many thanks to [Aviram Fireberger](https://github.com/avrum)
 
 ### Mongo2Go 2.1.0, March 10 2017
 * skips v2.0 to have same numbers as v1.x.
