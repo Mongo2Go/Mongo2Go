@@ -13,14 +13,14 @@ namespace Mongo2GoTests
         public static string directory;
 
         Because of = () => directory = FolderSearch.CurrentExecutingDirectory();
-        It should_contain_correct_path = () => directory.Should().Contain(@"Mongo2GoTests\bin");
+        It should_contain_correct_path = () => directory.Should().Contain(Path.Combine("Mongo2GoTests", "bin"));
     }
 
     [Subject("FolderSearch")]
     public class when_searching_for_folder : FolderSearchSpec
     {
-        const string startDirectory = @"C:\test1\test2";
-        const string searchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
+        static string startDirectory = Path.Combine(BaseDir, "test1", "test2");
+        static string searchPattern = Path.Combine("packages", "Mongo2Go*", "tools", "mongodb-win32-i386*", "bin");
         static string directory;
 
         Because of = () => directory = startDirectory.FindFolder(searchPattern);
@@ -30,8 +30,8 @@ namespace Mongo2GoTests
     [Subject("FolderSearch")]
     public class when_searching_for_not_existing_folder : FolderSearchSpec
     {
-        const string startDirectory = @"C:\test1\test2";
-        const string searchPattern = @"packages\Mongo2Go*\XXX\mongodb-win32-i386*\bin";
+        static string startDirectory = Path.Combine(BaseDir, "test1", "test2");
+        static string searchPattern = Path.Combine("packages", "Mongo2Go*", "XXX", "mongodb-win32-i386*", "bin");
         static string directory;
 
         Because of = () => directory = startDirectory.FindFolder(searchPattern);
@@ -41,7 +41,7 @@ namespace Mongo2GoTests
     [Subject("FolderSearch")]
     public class when_searching_for_folder_upwards : FolderSearchSpec
     {
-        const string searchPattern = @"packages\Mongo2Go*\tools\mongodb-win32-i386*\bin";
+        static string searchPattern = Path.Combine("packages", "Mongo2Go*", "tools", "mongodb-win32-i386*", "bin");
         static string directory;
 
         Because of = () => directory = LocationOfAssembly.FindFolderUpwards(searchPattern);
@@ -51,7 +51,7 @@ namespace Mongo2GoTests
     [Subject("FolderSearch")]
     public class when_searching_for_not_existing_folder_upwards : FolderSearchSpec
     {
-        const string searchPattern = @"packages\Mongo2Go*\XXX\mongodb-win32-i386*\bin";
+        static string searchPattern = Path.Combine("packages", "Mongo2Go*", "XXX", "mongodb-win32-i386*", "bin");
         static string directory;
 
         Because of = () => directory = LocationOfAssembly.FindFolderUpwards(searchPattern);
@@ -63,8 +63,8 @@ namespace Mongo2GoTests
     {
         static string directory;
 
-        Because of = () => directory = @"test1\test2\test3".RemoveLastPart();
-        It should_remove_the_element = () => directory.Should().Be(@"test1\test2");
+        Because of = () => directory = Path.Combine("test1", "test2", "test3").RemoveLastPart();
+        It should_remove_the_element = () => directory.Should().Be(Path.Combine("test1", "test2"));
     }
 
     [Subject("FolderSearch")]
@@ -78,18 +78,20 @@ namespace Mongo2GoTests
 
     public class FolderSearchSpec
     {
-        public const string MongoBinaries = @"C:\test1\test2\packages\Mongo2Go.1.2.3\tools\mongodb-win32-i386-2.0.7-rc0\bin";
-        public const string MongoOlderBinaries = @"C:\test1\test2\packages\Mongo2Go.1.1.1\tools\mongodb-win32-i386-2.0.7-rc0\bin";
-        public const string LocationOfAssembly = @"C:\test1\test2\Project\bin";
+        public static string BaseDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        public static string MongoBinaries = Path.Combine(BaseDir, "test1", "test2", "packages", "Mongo2Go.1.2.3", "tools", "mongodb-win32-i386-2.0.7-rc0", "bin");
+        public static string MongoOlderBinaries = Path.Combine(BaseDir, "test1", "test2", "packages", "Mongo2Go.1.1.1", "tools", "mongodb-win32-i386-2.0.7-rc0", "bin");
+        public static string LocationOfAssembly = Path.Combine(BaseDir, "test1", "test2", "Project", "bin");
 
         Establish context = () =>
         {
+            if (!Directory.Exists(BaseDir)) { Directory.CreateDirectory(BaseDir); }
             if (!Directory.Exists(MongoBinaries)) { Directory.CreateDirectory(MongoBinaries); }
             if (!Directory.Exists(MongoOlderBinaries)) { Directory.CreateDirectory(MongoOlderBinaries); }
             if (!Directory.Exists(LocationOfAssembly)) { Directory.CreateDirectory(LocationOfAssembly); }
         };
 
-        Cleanup stuff = () => { if (Directory.Exists(@"C:\test1")) { Directory.Delete(@"C:\test1", true); }};
+        Cleanup stuff = () => { if (Directory.Exists(BaseDir)) { Directory.Delete(BaseDir, true); }};
     }
 }
 // ReSharper restore UnusedMember.Local
