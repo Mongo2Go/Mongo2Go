@@ -15,8 +15,6 @@
         // but we don't want to get in trouble with productive systems
         public const int TestStartPort = 27018;
 
-        public const string DataDirectory = @"C:\data\db";
-
         public const string Lockfile = "mongod.lock";
     }
 }
