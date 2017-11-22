@@ -17,7 +17,7 @@ namespace Mongo2Go.Helper
                 throw new FileNotFoundException("File not found", finalPath);
             }
             
-            string fileName = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongoImportExecutable);
+            string fileName = Path.Combine("{0}", "{1}").Formatted(binariesDirectory, MongoDbDefaults.MongoImportExecutable);
             string arguments = @"--host localhost --port {0} --db {1} --collection {2} --file ""{3}""".Formatted(port, database, collection, finalPath);
             if (drop) { arguments += " --drop"; }
 
@@ -34,7 +34,7 @@ namespace Mongo2Go.Helper
         {
             string finalPath = FolderSearch.FinalizePath(outputFile);
 
-            string fileName = @"{0}\{1}".Formatted(binariesDirectory, MongoDbDefaults.MongoExportExecutable);
+            string fileName = Path.Combine("{0}", "{1}").Formatted(binariesDirectory, MongoDbDefaults.MongoExportExecutable);
             string arguments = @"--host localhost --port {0} --db {1} --collection {2} --out ""{3}""".Formatted(port, database, collection, finalPath);
 
             Process process = ProcessControl.ProcessFactory(fileName, arguments);

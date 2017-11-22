@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Mongo2Go.Helper;
 
@@ -30,7 +31,7 @@ namespace Mongo2Go
         /// On dispose: kills them and deletes their data directory
         /// </summary>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = MongoDbDefaults.DataDirectory, string searchPatternOverride = null)
+        public static MongoDbRunner Start(string dataDirectory = null, string searchPatternOverride = null)
         {
             dataDirectory += Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
 
@@ -39,7 +40,7 @@ namespace Mongo2Go
 
         public static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
-            return new MongoDbRunner(portPool, fileSystem, processStarter, mongoBin, MongoDbDefaults.DataDirectory);
+            return new MongoDbRunner(portPool, fileSystem, processStarter, mongoBin);
         }
 
         /// <summary>
@@ -49,14 +50,14 @@ namespace Mongo2Go
         /// Should be used for local debugging only
         /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
         /// </remarks>
-        public static MongoDbRunner StartForDebugging(string dataDirectory = MongoDbDefaults.DataDirectory, string searchPatternOverride = null)
+        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string searchPatternOverride = null)
         {
             return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
 
         public static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
         {
-            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter, mongoBin, MongoDbDefaults.DataDirectory);
+            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter, mongoBin, null);
         }
 
         /// <summary>
@@ -80,7 +81,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: local debugging
         /// </summary>
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null)
         {
             _fileSystem = fileSystem;
             _port = MongoDbDefaults.DefaultPort;
@@ -101,6 +102,10 @@ namespace Mongo2Go
                 throw new MongoDbPortAlreadyTakenException("MongoDB can't be started. The TCP port {0} is already taken.".Formatted(_port));
             }
 
+            if (dataDirectory == null) {
+                dataDirectory = CreateTemporaryDataDirectory();
+            }
+
             _fileSystem.CreateFolder(dataDirectory);
             _fileSystem.DeleteFile(@"{0}{1}{2}".Formatted(dataDirectory, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
             _mongoDbProcess = processStarter.Start(_mongoBin.Directory, dataDirectory, _port, true);
@@ -111,11 +116,15 @@ namespace Mongo2Go
         /// <summary>
         /// usage: integration tests
         /// </summary>
-        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory)
+        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null)
         {
             _fileSystem = fileSystem;
             _port = portPool.GetNextOpenPort();
             _mongoBin = mongoBin;
+
+            if (dataDirectory == null) {
+                dataDirectory = CreateTemporaryDataDirectory();
+            }
 
             MakeMongoBinarysExecutable();
 
@@ -138,6 +147,12 @@ namespace Mongo2Go
                 _fileSystem.MakeFileExecutable(System.IO.Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongoExportExecutable));
                 _fileSystem.MakeFileExecutable(System.IO.Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongoImportExecutable));
             }
+        }
+
+        private string CreateTemporaryDataDirectory() {
+            var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(path);
+            return path;
         }
     }
 }
