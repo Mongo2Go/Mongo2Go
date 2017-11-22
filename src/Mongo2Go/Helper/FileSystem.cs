@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 
 namespace Mongo2Go.Helper
 {
@@ -31,7 +32,13 @@ namespace Mongo2Go.Helper
         public void MakeFileExecutable (string path) 
         {
             //when on linux or osx we must set the executeble flag on mongo binarys
-            File.SetAttributes (path, (FileAttributes)((int)File.GetAttributes (path) | 0x80000000));
+            var p = Process.Start("chmod", $"+x {path}");
+            p.WaitForExit();
+
+            if (p.ExitCode != 0) 
+            {
+                throw new IOException($"Could not set executable bit for {path}");
+            }
         }
     }
 }
