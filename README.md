@@ -3,7 +3,8 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets **.NET 4.6** (and **.NET Standard 1.6**) and works with Windows, Linux and macOS (last two via Mono).
+Mongo2Go is a managed wrapper around the latest MongoDB binaries.
+It targets **.NET Standard 1.6** (and **.NET 4.6** for legacy environments) and works with Windows, Linux and macOS.
 This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **for Windows, Linux and macOS** .
 
 [![Build Status](https://travis-ci.org/Mongo2Go/Mongo2Go.svg?branch=master)](https://travis-ci.org/Mongo2Go/Mongo2Go)
@@ -39,16 +40,18 @@ Installation
 --------------
 The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/](https://nuget.org/packages/Mongo2Go/)
 
-Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run for **.NET 4.6**:
+Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
+
+    PM> Install-Package Mongo2Go -Version 2.2.1
+
+or run for the legacy **.NET 4.6** package:
 
     PM> Install-Package Mongo2Go -Version 1.1.0
 
-or for **.NET Standard 1.6** (.NET Core) support:
-
-    PM> Install-Package Mongo2Go -Version 2.1.0
-
-
 in the Package Manager Console. 
+
+* The new 2.x branch targets __.NET Standard 1.6__, please use the latest packages if possible. 
+* The old 1.x branch targets good-old classic __.NET 4.6.1__. This is for legacy environments only. No new features will be added, only bugfixes will be made.
 
 
 Examples
@@ -133,10 +136,15 @@ Changelog
 -------------------------------------
 Developers Hint: Use Visual Studio 2017 to create a new version!
 
-:heavy_exclamation_mark: __HELP WANTED__ :heavy_exclamation_mark:  
-  __Any help in targeting older versions of the .NET Framework in one project, tuning the build and/or testing this against older .NET Framework versions is highly appreciated!__ As a workaround, the 1.x branch targets classic .NET 4.6.1, and the 2.x branch targets .NET Standard 1.6.
-
 -------------------------------------
+### Mongo2Go 2.2.1, November 23 2017 (NOT RELEASED YET!)
+* no MongoDB binaries changed, still .NET Standard 1.6
+* feature: uses temporary directory instead of good-old windows style `C:\data\db` by default (PR [#42](https://github.com/Mongo2Go/Mongo2Go/pull/42)) - `MongoDbRunner.Start()` and `MongoDbRunner.StartForDebugging()` will now work without any extra parameters for Linux/macOS
+* bugfix: runs again on Linux/macOS, by making the binaries executable (PR [#42](https://github.com/Mongo2Go/Mongo2Go/pull/42), which fixes [#37](https://github.com/Mongo2Go/Mongo2Go/issues/37) and might also fix [#43](https://github.com/Mongo2Go/Mongo2Go/issues/43))
+* internal: Unit Tests are running again (PR [#44](https://github.com/Mongo2Go/Mongo2Go/pull/44), which fixes [#31](https://github.com/Mongo2Go/Mongo2Go/issues/31), [#40](https://github.com/Mongo2Go/Mongo2Go/issues/40))
+* internal: No hardcoded path passed to MongoDbRunner constructor (fixes [41](https://github.com/Mongo2Go/Mongo2Go/issues/41))
+* many thanks to [Per Liedman](https://github.com/perliedman)
+
 ### Mongo2Go 2.2.0, August 17 2017
 * includes mongod, mongoimport and mongoexport v3.4.7 for Windows, Linux and macOS
 * targets .NET Standard 1.6 (can be used with .NET Core 1.0 / 1.1 / 2.0)
@@ -149,7 +157,7 @@ Developers Hint: Use Visual Studio 2017 to create a new version!
 * bugfix: prevent windows firewall popup (PR [#30](https://github.com/Mongo2Go/Mongo2Go/pull/30), which fixes [#21](https://github.com/Mongo2Go/Mongo2Go/pull/21))
 * many thanks to [kubal5003](https://github.com/kubal5003)
 
-### Mongo2Go 1.1.0, March 10 2017
+### Mongo2Go 1.1.0, March 10 2017 _(legacy branch!)_
 * no MongoDB binaries changed since v1.0 (still MongoDB v3.2.7 for Windows, Linux and macOS)
 * targets .NET 4.6.1
 * bugfix: prevent windows firewall popup (PR [#29](https://github.com/Mongo2Go/Mongo2Go/pull/29), which fixes [#21](https://github.com/Mongo2Go/Mongo2Go/pull/21))
