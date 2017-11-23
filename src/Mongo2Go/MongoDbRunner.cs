@@ -185,7 +185,8 @@ namespace Mongo2Go
 
         private void MakeMongoBinarysExecutable()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 _fileSystem.MakeFileExecutable(Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongodExecutable));
                 _fileSystem.MakeFileExecutable(Path.Combine(_mongoBin.Directory, MongoDbDefaults.MongoExportExecutable));
