@@ -33,6 +33,11 @@ namespace Mongo2Go
         /// <remarks>Should be used for integration tests</remarks>
         public static MongoDbRunner Start(string dataDirectory = null, string searchPatternOverride = null)
         {
+            if (dataDirectory == null) {
+                dataDirectory = CreateTemporaryDataDirectory();
+            }
+
+            // this is required to support multiple instances to run in parallel
             dataDirectory += Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
 
             return new MongoDbRunner(
@@ -194,7 +199,7 @@ namespace Mongo2Go
             }
         }
 
-        private string CreateTemporaryDataDirectory() {
+        private static string CreateTemporaryDataDirectory() {
             var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             Directory.CreateDirectory(path);
             return path;
