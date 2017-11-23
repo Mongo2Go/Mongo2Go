@@ -265,5 +265,4 @@ In the root folder, just run:
 dotnet restore
 dotnet build
 dotnet test src/Mongo2GoTests/Mongo2GoTests.csproj
-dotnet pack -o ..\..\
 ```
