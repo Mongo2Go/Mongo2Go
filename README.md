@@ -135,7 +135,7 @@ public class WebApiApplication : System.Web.HttpApplication
 Changelog
 -------------------------------------
 
-### Mongo2Go 2.2.1, November 23 2017 (NOT RELEASED YET!)
+### Mongo2Go 2.2.1, November 23 2017
 * no MongoDB binaries changed, still .NET Standard 1.6
 * feature: uses temporary directory instead of good-old windows style `C:\data\db` by default (PR [#42](https://github.com/Mongo2Go/Mongo2Go/pull/42)) - `MongoDbRunner.Start()` and `MongoDbRunner.StartForDebugging()` will now work without any extra parameters for Linux/macOS
 * bugfix: runs again on Linux/macOS, by making the binaries executable (PR [#42](https://github.com/Mongo2Go/Mongo2Go/pull/42), which fixes [#37](https://github.com/Mongo2Go/Mongo2Go/issues/37) and might also fix [#43](https://github.com/Mongo2Go/Mongo2Go/issues/43))
