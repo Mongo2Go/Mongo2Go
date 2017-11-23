@@ -35,12 +35,34 @@ namespace Mongo2Go
         {
             dataDirectory += Guid.NewGuid().ToString().Replace("-", "").Substring(0, 20);
 
-            return new MongoDbRunner(PortPool.GetInstance, new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
+            return new MongoDbRunner(
+                PortPool.GetInstance,
+                new FileSystem(),
+                new MongoDbProcessStarter(),
+                new MongoBinaryLocator(searchPatternOverride),
+                dataDirectory);
         }
 
-        public static MongoDbRunner StartUnitTest(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
+        /// <summary>
+        /// !!!
+        /// This method is only used for an internal unit test. Use MongoDbRunner.Start() instead.
+        /// But if you find it to be useful (eg. to change every aspect on your own) feel free to implement the interfaces on your own!
+        /// </summary>
+        /// <remarks>see https://github.com/Mongo2Go/Mongo2Go/issues/41 </remarks>
+        [Obsolete("Use MongoDbRunner.Start() if possible.")]
+        public static MongoDbRunner StartUnitTest(
+            IPortPool portPool,
+            IFileSystem fileSystem,
+            IMongoDbProcessStarter processStarter,
+            IMongoBinaryLocator mongoBin,
+            string dataDirectory = null)
         {
-            return new MongoDbRunner(portPool, fileSystem, processStarter, mongoBin);
+            return new MongoDbRunner(
+                portPool,
+                fileSystem,
+                processStarter,
+                mongoBin,
+                dataDirectory);
         }
 
         /// <summary>
@@ -52,12 +74,36 @@ namespace Mongo2Go
         /// </remarks>
         public static MongoDbRunner StartForDebugging(string dataDirectory = null, string searchPatternOverride = null)
         {
-            return new MongoDbRunner(new ProcessWatcher(), new PortWatcher(), new FileSystem(), new MongoDbProcessStarter(), new MongoBinaryLocator(searchPatternOverride), dataDirectory);
+            return new MongoDbRunner(
+                new ProcessWatcher(),
+                new PortWatcher(),
+                new FileSystem(),
+                new MongoDbProcessStarter(),
+                new MongoBinaryLocator(searchPatternOverride), dataDirectory);
         }
 
-        public static MongoDbRunner StartForDebuggingUnitTest(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin)
+        /// <summary>
+        /// !!!
+        /// This method is only used for an internal unit test. Use MongoDbRunner.StartForDebugging() instead.
+        /// But if you find it to be useful (eg. to change every aspect on your own) feel free to implement the interfaces on your own!
+        /// </summary>
+        /// <remarks>see https://github.com/Mongo2Go/Mongo2Go/issues/41 </remarks>
+        [Obsolete("Use MongoDbRunner.StartForDebugging() if possible.")]
+        public static MongoDbRunner StartForDebuggingUnitTest(
+            IProcessWatcher processWatcher,
+            IPortWatcher portWatcher,
+            IFileSystem fileSystem,
+            IMongoDbProcessStarter processStarter,
+            IMongoBinaryLocator mongoBin,
+            string dataDirectory = null)
         {
-            return new MongoDbRunner(processWatcher, portWatcher, fileSystem, processStarter, mongoBin, null);
+            return new MongoDbRunner(
+                processWatcher,
+                portWatcher,
+                fileSystem,
+                processStarter,
+                mongoBin,
+                dataDirectory);
         }
 
         /// <summary>
