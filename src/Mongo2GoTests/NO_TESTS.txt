@@ -1,2 +1,0 @@
-﻿Right now the mspec tests can't be executed, see
-https://github.com/machine/machine.specifications/issues/322
