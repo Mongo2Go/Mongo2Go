@@ -7,8 +7,11 @@ using Mongo2Go.Helper;
 using Moq;
 using It = Machine.Specifications.It;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 // ReSharper disable InconsistentNaming
 // ReSharper disable UnusedMember.Local
+
 namespace Mongo2GoTests.Runner
 {
     [Subject("Runner")]
@@ -47,7 +50,6 @@ namespace Mongo2GoTests.Runner
 
         Because of = () => runner = MongoDbRunner.StartUnitTest(portPoolMock.Object, fileSystemMock.Object, processStarterMock.Object, binaryLocatorMock.Object);
 
-        string dataDirectory;
         It should_create_the_data_directory             = () => fileSystemMock.Verify(x => x.CreateFolder(Moq.It.Is<string>(s => s.StartsWith(Path.GetTempPath()))), Times.Exactly(1));
         It should_delete_old_lock_file                  = () => fileSystemMock.Verify(x => x.DeleteFile(exptectedLogfile), Times.Exactly(1));
 

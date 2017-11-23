@@ -134,9 +134,7 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
-Developers Hint: Use Visual Studio 2017 to create a new version!
 
--------------------------------------
 ### Mongo2Go 2.2.1, November 23 2017 (NOT RELEASED YET!)
 * no MongoDB binaries changed, still .NET Standard 1.6
 * feature: uses temporary directory instead of good-old windows style `C:\data\db` by default (PR [#42](https://github.com/Mongo2Go/Mongo2Go/pull/42)) - `MongoDbRunner.Start()` and `MongoDbRunner.StartForDebugging()` will now work without any extra parameters for Linux/macOS
@@ -255,3 +253,17 @@ Now the runner waits until the mongod process has been stopped before the databa
 * first alpha version
 * includes mongod, mongoimport and mongoexport v2.2.0-rc1 (32bit)
 
+
+How to contribute
+-------------------------------------
+
+Just fork the project, make your changes send us a PR.  
+You can compile the project with Visual Studio 2017 and/or the [.NET Core 2.0](https://www.microsoft.com/net/core) CLI!
+
+In the root folder, just run:
+```
+dotnet restore
+dotnet build
+dotnet test src/Mongo2GoTests/Mongo2GoTests.csproj
+dotnet pack -o ..\..\
+```

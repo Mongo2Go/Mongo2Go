@@ -1,6 +1,6 @@
 @echo off
 
 del *.nupkg
-nuget pack Mongo2Go.nuspec
+dotnet pack -o ..\..\ /p:NuspecFile=..\..\Mongo2Go.nuspec
 
 pause
