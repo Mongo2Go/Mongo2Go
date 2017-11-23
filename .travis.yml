@@ -2,11 +2,9 @@ language: csharp
 dist: trusty
 sudo: required
 mono: none
-dotnet: 1.0.0
+dotnet: 2.0.0
 
-before_script:
-  - chmod a+x ./travis-build.sh
-  - chmod a+x ./travis-tests.sh
 script:
-  - ./travis-build.sh
-  - ./travis-tests.sh
+  - dotnet restore
+  - dotnet build
+  - dotnet test src/Mongo2GoTests/Mongo2GoTests.csproj
