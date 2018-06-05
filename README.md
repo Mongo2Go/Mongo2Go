@@ -136,7 +136,7 @@ Changelog
 -------------------------------------
 
 ### Mongo2Go 2.2.2, June 05 2018
-* includes mongod, mongoimport and mongoexport v3.6.1 for Windows, Linux and macOS via PR [#46](https://github.com/Mongo2Go/Mongo2Go/pull/46, which fixes [#45](https://github.com/Mongo2Go/Mongo2Go/issues/45)
+* includes mongod, mongoimport and mongoexport v3.6.1 for Windows, Linux and macOS via PR [#46](https://github.com/Mongo2Go/Mongo2Go/pull/46), which fixes [#45](https://github.com/Mongo2Go/Mongo2Go/issues/45)
 * many thanks to [Joe Chan](https://github.com/joehmchan)
 
 ### Mongo2Go 2.2.1, November 23 2017
