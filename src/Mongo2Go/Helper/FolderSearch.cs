@@ -33,7 +33,7 @@ namespace Mongo2Go.Helper
 
         public static string FindFolderUpwards(this string startPath, string searchPattern)
         {
-            if (startPath == null)
+            if (string.IsNullOrEmpty(startPath))
             {
                 return null;
             }
