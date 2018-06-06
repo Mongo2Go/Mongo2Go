@@ -60,9 +60,8 @@ namespace Mongo2Go.Helper
 
             if (binariesFolder == null) {
                 throw new MonogDbBinariesNotFoundException (string.Format (
-                    "Could not find Mongo binaries using the search pattern of \"{0}\". We walked up the directories {1} levels from {2} and {3}.  You can override the search pattern when calling MongoDbRunner.Start.  We have detected the OS as {4}",
+                    "Could not find Mongo binaries using the search pattern of \"{0}\". We walked up to root directory from {1} and {2}.  You can override the search pattern when calling MongoDbRunner.Start.  We have detected the OS as {3}",
                     _searchPattern,
-                    FolderSearch.MaxLevelOfRecursion,
                     FolderSearch.CurrentExecutingDirectory(),
                     Path.Combine(_nugetPrefix, _searchPattern),
                     RuntimeInformation.OSDescription));
