@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Mongo2Go;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
 namespace Mongo2GoTests.Runner
@@ -17,16 +16,31 @@ namespace Mongo2GoTests.Runner
         internal static void CreateConnection()
         {
             _runner = MongoDbRunner.Start();
-            
+
             MongoClient client = new MongoClient(_runner.ConnectionString);
             IMongoDatabase database = client.GetDatabase(_databaseName);
             _collection = database.GetCollection<TestDocument>(_collectionName);
         }
+    }
 
-        public static IList<T> ReadBsonFile<T>(string fileName)
+    public static class TaskExtensions
+    {
+        public static async Task WithTimeout(this Task task, TimeSpan timeout)
         {
-            string[] content = File.ReadAllLines(fileName);
-            return content.Select(s => BsonSerializer.Deserialize<T>(s)).ToList();
+            using (var cancellationTokenSource = new CancellationTokenSource())
+            {
+
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, cancellationTokenSource.Token));
+                if (completedTask == task)
+                {
+                    cancellationTokenSource.Cancel();
+                    await task;
+                }
+                else
+                {
+                    throw new TimeoutException("The operation has timed out.");
+                }
+            }
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Mongo2Go.Helper
 
             return new ProcessOutput(errorOutput, standardOutput);
         }
-        
+
         /// <summary>
         /// Reads from Output stream to determine if process is ready
         /// </summary>
@@ -60,17 +60,28 @@ namespace Mongo2Go.Helper
             bool processReady = false;
 
 
-            process.ErrorDataReceived += (sender, args) => errorOutput.Add(args.Data);
-            process.OutputDataReceived += (sender, args) =>
-                {
-                    standardOutput.Add(args.Data);
+            void OnProcessOnErrorDataReceived(object sender, DataReceivedEventArgs args) => errorOutput.Add(args.Data);
+            void OnProcessOnOutputDataReceived(object sender, DataReceivedEventArgs args)
+            {
+                standardOutput.Add(args.Data);
 
-                    if (!string.IsNullOrEmpty(args.Data) &&
-                        args.Data.Contains(processReadyIdentifier))
-                    {
-                        processReady = true;
-                    }
-                };
+                if (!string.IsNullOrEmpty(args.Data) && args.Data.Contains(processReadyIdentifier))
+                {
+                    processReady = true;
+                }
+            }
+
+            process.ErrorDataReceived += OnProcessOnErrorDataReceived;
+            process.OutputDataReceived += OnProcessOnOutputDataReceived;
+
+            void DebugOutputHandler(object sender, DataReceivedEventArgs args) => Debug.WriteLine(args.Data);
+            void ConsoleOutputHandler(object sender, DataReceivedEventArgs args) => Console.WriteLine(args.Data);
+
+            //Writing to debug trace & console to enable test runners to capture the output
+            process.ErrorDataReceived += DebugOutputHandler;
+            process.ErrorDataReceived += ConsoleOutputHandler;
+            process.OutputDataReceived += DebugOutputHandler;
+            process.OutputDataReceived += ConsoleOutputHandler;
 
             process.Start();
 
@@ -91,8 +102,9 @@ namespace Mongo2Go.Helper
                 }
             }
 
-            process.CancelErrorRead();
-            process.CancelOutputRead();
+            //unsubscribing writing to list - to prevent memory overflow.
+            process.ErrorDataReceived -= OnProcessOnErrorDataReceived;
+            process.OutputDataReceived -= OnProcessOnOutputDataReceived;
 
             return new ProcessOutput(errorOutput, standardOutput);
         }
