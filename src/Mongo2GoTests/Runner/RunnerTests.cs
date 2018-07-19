@@ -25,7 +25,7 @@ namespace Mongo2GoTests.Runner
 
         static string exptectedDataDirectory;
         static string exptectedLogfile;
-        static readonly string exptectedConnectString = "mongodb://localhost:{0}/".Formatted(MongoDbDefaults.TestStartPort + 1);
+        static readonly string exptectedConnectString = "mongodb://127.0.0.1:{0}/".Formatted(MongoDbDefaults.TestStartPort + 1);
 
         Establish context = () =>
         {
