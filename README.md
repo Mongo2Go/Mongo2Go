@@ -44,7 +44,7 @@ The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/
 
 Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
 
-    PM> Install-Package Mongo2Go -Version 2.2.5
+    PM> Install-Package Mongo2Go -Version 2.2.6
 
 or run for the legacy **.NET 4.6** package:
 
@@ -136,6 +136,9 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+
+### Mongo2Go 2.2.6, July 20 2018
+* fixes broken linux support (fixes [#47](https://github.com/Mongo2Go/Mongo2Go/issues/47))
 
 ### Mongo2Go 2.2.5, July 19 2018
 * fixes unresponsive process issue (PR [#52](https://github.com/Mongo2Go/Mongo2Go/pull/52), fixes [#49](https://github.com/Mongo2Go/Mongo2Go/issues/49))
