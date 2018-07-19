@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HAUS HOPPE - ITS")]
 [assembly: AssemblyProduct("Mongo2Go")]
-[assembly: AssemblyCopyright("Copyright © 2012-2017 Johannes Hoppe")]
+[assembly: AssemblyCopyright("Copyright © 2012-2018 Johannes Hoppe")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

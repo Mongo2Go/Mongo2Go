@@ -44,7 +44,7 @@ The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/
 
 Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
 
-    PM> Install-Package Mongo2Go -Version 2.2.4
+    PM> Install-Package Mongo2Go -Version 2.2.5
 
 or run for the legacy **.NET 4.6** package:
 
@@ -136,6 +136,10 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+
+### Mongo2Go 2.2.5, July 19 2018
+* fixes unresponsive process issue (PR [#52](https://github.com/Mongo2Go/Mongo2Go/pull/52), fixes [#49](https://github.com/Mongo2Go/Mongo2Go/issues/49))
+* many thanks to [narendrachava](https://github.com/narendrachava)
 
 ### Mongo2Go 2.2.4, June 06 2018
 * better support for TeamCity: removed MaxLevelOfRecursion limitation when searching for MongoDb binaries (PR [#50](https://github.com/Mongo2Go/Mongo2Go/pull/50), fixes [#39](https://github.com/Mongo2Go/Mongo2Go/issues/39))
