@@ -91,7 +91,7 @@ namespace Mongo2Go.Helper
             }
             throw new MonogDbBinariesNotFoundException(
                 $"Could not find Mongo binaries using the search patterns \"{_searchPattern}\", \"{Path.Combine(_nugetPrefix, _searchPattern)}\", and \"{Path.Combine(_nugetCachePrefix, _searchPattern)}\".  " +
-                $"You can override the search pattern when calling MongoDbRunner.Start.  We have detected the OS as {RuntimeInformation.OSDescription}.\n" +
+                $"You can override the search pattern and directory when calling MongoDbRunner.Start.  We have detected the OS as {RuntimeInformation.OSDescription}.\n" +
                 $"We walked up to root directory from the following locations.\n {string.Join("\n", searchDirectories)}");
         }
     }
