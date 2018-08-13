@@ -139,7 +139,7 @@ Changelog
 
 ### Mongo2Go 2.2.7, August 13 2018
 * updates the `MongoBinaryLocator` to look for binaries in the nuget cache if they are not found in the project directory.
-    * this will make Mongo2Go compatible with projects using the nuget `PackageReference` option. (PR [#56](https://github.com/Mongo2Go/Mongo2Go/pull/56), fixes [#39](https://github.com/Mongo2Go/Mongo2Go/issues/#39) and [#55](https://github.com/Mongo2Go/Mongo2Go/issues/#55))
+    * this will make Mongo2Go compatible with projects using the nuget `PackageReference` option. (PR [#56](https://github.com/Mongo2Go/Mongo2Go/pull/56), fixes [#39](https://github.com/Mongo2Go/Mongo2Go/issues/39) and [#55](https://github.com/Mongo2Go/Mongo2Go/issues/55))
 * adds the `binariesSearchDirectory` parameter to `MongoDbRunner.Start` which allows an additional binaries search directory to be provided.
     * this will make the db runner more flexible if someone decides to use it in some unpredictable way.
 * many thanks to [Nicholas Markkula](https://github.com/nickmkk)
