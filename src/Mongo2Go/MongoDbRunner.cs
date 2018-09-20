@@ -31,7 +31,7 @@ namespace Mongo2Go
         /// On dispose: kills them and deletes their data directory
         /// </summary>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null)
+        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false)
         {
             if (dataDirectory == null) {
                 dataDirectory = CreateTemporaryDataDirectory();

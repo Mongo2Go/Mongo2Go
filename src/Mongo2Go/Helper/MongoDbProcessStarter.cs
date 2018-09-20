@@ -19,7 +19,7 @@ namespace Mongo2Go.Helper
         /// <summary>
         /// Starts a new process.
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet = false)
         {
             string fileName = @"{0}{1}{2}".Formatted(binariesDirectory, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.MongodExecutable);
 			
@@ -27,6 +27,7 @@ namespace Mongo2Go.Helper
 				@"--dbpath ""{0}"" --port {1} --nojournal --bind_ip 127.0.0.1".Formatted(dataDirectory, port) :
 				@"--sslMode disabled --dbpath ""{0}"" --port {1} --nojournal --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
 
+            arguments = singleNodeReplSet ? arguments + @"--replSet singleNodeReplSet" : arguments;
             WrappedProcess wrappedProcess = ProcessControl.ProcessFactory(fileName, arguments);
             wrappedProcess.DoNotKill = doNotKill;
 
