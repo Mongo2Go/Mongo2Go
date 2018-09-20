@@ -45,7 +45,7 @@ namespace Mongo2Go
                 new FileSystem(),
                 new MongoDbProcessStarter(),
                 new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory),
-                dataDirectory);
+                dataDirectory, singleNodeReplSet);
         }
 
         /// <summary>
@@ -77,14 +77,14 @@ namespace Mongo2Go
         /// Should be used for local debugging only
         /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
         /// </remarks>
-        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null)
+        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false)
         {
             return new MongoDbRunner(
                 new ProcessWatcher(),
                 new PortWatcher(),
                 new FileSystem(),
                 new MongoDbProcessStarter(),
-                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory), dataDirectory);
+                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory), dataDirectory, singleNodeReplSet);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: local debugging
         /// </summary>
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false)
         {
             _fileSystem = fileSystem;
             _port = MongoDbDefaults.DefaultPort;
@@ -157,7 +157,7 @@ namespace Mongo2Go
 
             _fileSystem.CreateFolder(dataDirectory);
             _fileSystem.DeleteFile(@"{0}{1}{2}".Formatted(dataDirectory, Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
-            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, dataDirectory, _port, true);
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, dataDirectory, _port, true, singleNodeReplSet);
 
             State = State.Running;
         }
@@ -165,7 +165,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: integration tests
         /// </summary>
-        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null)
+        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false)
         {
             _fileSystem = fileSystem;
             _port = portPool.GetNextOpenPort();
@@ -183,7 +183,7 @@ namespace Mongo2Go
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
             _fileSystem.DeleteFile(@"{0}{1}{2}".Formatted(_dataDirectoryWithPort, Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
 
-            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port);
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port, singleNodeReplSet);
 
             State = State.Running;
         }

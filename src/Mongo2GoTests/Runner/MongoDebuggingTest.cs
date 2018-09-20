@@ -17,7 +17,7 @@ namespace Mongo2GoTests.Runner
 
         internal static void CreateConnection()
         {
-            _runner = MongoDbRunner.StartForDebugging();
+            _runner = MongoDbRunner.StartForDebugging(singleNodeReplSet: false);
 
             MongoClient client = new MongoClient(_runner.ConnectionString);
             _database = client.GetDatabase(_databaseName);

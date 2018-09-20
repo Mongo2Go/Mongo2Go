@@ -7,27 +7,27 @@ namespace Mongo2Go.Helper
     public class MongoDbProcessStarter : IMongoDbProcessStarter
     {
         private const string ProcessReadyIdentifier = "waiting for connections";
-
+        private const string Space = " "; 
         /// <summary>
         /// Starts a new process. Process can be killed
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool singleNodeReplSet)
         {
-            return Start(binariesDirectory, dataDirectory, port, false);
+            return Start(binariesDirectory, dataDirectory, port, false, singleNodeReplSet);
         }
 
         /// <summary>
         /// Starts a new process.
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet = false)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet)
         {
             string fileName = @"{0}{1}{2}".Formatted(binariesDirectory, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.MongodExecutable);
 			
 			string arguments = (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ?
-				@"--dbpath ""{0}"" --port {1} --nojournal --bind_ip 127.0.0.1".Formatted(dataDirectory, port) :
-				@"--sslMode disabled --dbpath ""{0}"" --port {1} --nojournal --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
+				@"--dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port) :
+				@"--sslMode disabled --dbpath ""{0}"" --port {1}  --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
 
-            arguments = singleNodeReplSet ? arguments + @"--replSet singleNodeReplSet" : arguments;
+            arguments = singleNodeReplSet ? arguments + Space + @"--replSet singleNodeReplSet" : arguments;
             WrappedProcess wrappedProcess = ProcessControl.ProcessFactory(fileName, arguments);
             wrappedProcess.DoNotKill = doNotKill;
 
