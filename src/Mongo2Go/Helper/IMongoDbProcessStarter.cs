@@ -4,6 +4,6 @@ namespace Mongo2Go.Helper
     {
         IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port);
 
-        IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill);
+        IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet = false);
     }
 }
