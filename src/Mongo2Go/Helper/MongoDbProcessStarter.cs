@@ -11,7 +11,8 @@ namespace Mongo2Go.Helper
     public class MongoDbProcessStarter : IMongoDbProcessStarter
     {
         private const string ProcessReadyIdentifier = "waiting for connections";
-        private const string Space = " "; 
+        private const string Space = " ";
+        private const string ReplicaSetName = "singleNodeReplSet";
         /// <summary>
         /// Starts a new process. Process can be killed
         /// </summary>
@@ -31,23 +32,26 @@ namespace Mongo2Go.Helper
 				@"--dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port) :
 				@"--sslMode disabled --dbpath ""{0}"" --port {1}  --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
 
-            arguments = singleNodeReplSet ? arguments + Space + @"--replSet singleNodeReplSet" : arguments;
+            arguments = singleNodeReplSet ? arguments + Space + @"--replSet" + Space + ReplicaSetName : arguments;
             WrappedProcess wrappedProcess = ProcessControl.ProcessFactory(fileName, arguments);
             wrappedProcess.DoNotKill = doNotKill;
 
             string windowTitle = "mongod | port: {0}".Formatted(port);
             
             ProcessOutput output = ProcessControl.StartAndWaitForReady(wrappedProcess, 5, ProcessReadyIdentifier, windowTitle);
-
-            MongoClient client = new MongoClient(@"mongodb://127.0.0.1:{0}/".Formatted(port));
-            var admin = client.GetDatabase("admin");
-            var replConfig = new BsonDocument(new List<BsonElement>()
+            if (singleNodeReplSet)
             {
-                new BsonElement("_id", "singleNodeReplSet"),
-                new BsonElement("members", new BsonArray { new BsonDocument { { "_id", 0 }, { "host", "127.0.0.1:27017" } } })
-            });
-            var commandDocument = new BsonDocument("replSetInitiate", replConfig);
-            var replSet = admin.RunCommand<BsonDocument>(replConfig);
+                MongoClient client = new MongoClient(@"mongodb://127.0.0.1:{0}/?connect=direct;replicaSet={1}".Formatted(port, ReplicaSetName));
+                var admin = client.GetDatabase("admin");
+                var replConfig = new BsonDocument(new List<BsonElement>()
+                {
+                    new BsonElement("_id", ReplicaSetName),
+                    new BsonElement("members",
+                        new BsonArray {new BsonDocument {{"_id", 0}, {"host", "127.0.0.1:27017"}}})
+                });
+                var command = new BsonDocument("replSetInitiate", replConfig);
+                admin.RunCommand<BsonDocument>(command);
+            }
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)
                 {
