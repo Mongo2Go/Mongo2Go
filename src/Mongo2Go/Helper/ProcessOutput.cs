@@ -4,7 +4,7 @@ namespace Mongo2Go.Helper
 {
     public class ProcessOutput
     {
-        public ProcessOutput(IEnumerable<string> standardOutput, IEnumerable<string> errorOutput)
+        public ProcessOutput(IEnumerable<string> errorOutput, IEnumerable<string> standardOutput)
         {
             StandardOutput = standardOutput;
             ErrorOutput = errorOutput;

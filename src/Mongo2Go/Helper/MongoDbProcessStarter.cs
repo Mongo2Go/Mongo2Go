@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Mongo2Go.Helper
 {
@@ -34,6 +38,16 @@ namespace Mongo2Go.Helper
             string windowTitle = "mongod | port: {0}".Formatted(port);
             
             ProcessOutput output = ProcessControl.StartAndWaitForReady(wrappedProcess, 5, ProcessReadyIdentifier, windowTitle);
+
+            MongoClient client = new MongoClient(@"mongodb://127.0.0.1:{0}/".Formatted(port));
+            var admin = client.GetDatabase("admin");
+            var replConfig = new BsonDocument(new List<BsonElement>()
+            {
+                new BsonElement("_id", "singleNodeReplSet"),
+                new BsonElement("members", new BsonArray { new BsonDocument { { "_id", 0 }, { "host", "127.0.0.1:27017" } } })
+            });
+            var commandDocument = new BsonDocument("replSetInitiate", replConfig);
+            var replSet = admin.RunCommand<BsonDocument>(replConfig);
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)
                 {

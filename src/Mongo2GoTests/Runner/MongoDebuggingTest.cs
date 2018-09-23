@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Mongo2Go;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
@@ -17,7 +18,7 @@ namespace Mongo2GoTests.Runner
 
         internal static void CreateConnection()
         {
-            _runner = MongoDbRunner.StartForDebugging(singleNodeReplSet: false);
+            _runner = MongoDbRunner.StartForDebugging(singleNodeReplSet: true);
 
             MongoClient client = new MongoClient(_runner.ConnectionString);
             _database = client.GetDatabase(_databaseName);
