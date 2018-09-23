@@ -138,7 +138,8 @@ namespace Mongo2Go
 
             MakeMongoBinarysExecutable();
 
-            ConnectionString = "mongodb://127.0.0.1:{0}/".Formatted(_port);
+            ConnectionString = singleNodeReplSet? @"mongodb://127.0.0.1:{0}/?connect=direct;replicaSet=singleNodeReplSet".Formatted(_port) :
+                "mongodb://127.0.0.1:{0}/".Formatted(_port);
 
             if (processWatcher.IsProcessRunning(MongoDbDefaults.ProcessName) && !portWatcher.IsPortAvailable(_port))
             {
@@ -177,7 +178,8 @@ namespace Mongo2Go
 
             MakeMongoBinarysExecutable();
 
-            ConnectionString = "mongodb://127.0.0.1:{0}/".Formatted(_port);
+            ConnectionString = singleNodeReplSet ? @"mongodb://127.0.0.1:{0}/?connect=direct;replicaSet=singleNodeReplSet".Formatted(_port) :
+                "mongodb://127.0.0.1:{0}/".Formatted(_port);
 
             _dataDirectoryWithPort = "{0}_{1}".Formatted(dataDirectory, _port);
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
