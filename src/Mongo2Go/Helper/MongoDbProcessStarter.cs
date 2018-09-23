@@ -46,8 +46,8 @@ namespace Mongo2Go.Helper
                 var replConfig = new BsonDocument(new List<BsonElement>()
                 {
                     new BsonElement("_id", ReplicaSetName),
-                    new BsonElement("members",
-                        new BsonArray {new BsonDocument {{"_id", 0}, {"host", "127.0.0.1:27017"}}})
+                    new BsonElement("members", 
+                        new BsonArray {new BsonDocument {{"_id", 0}, {"host", "127.0.0.1:{0}".Formatted(port)}}})
                 });
                 var command = new BsonDocument("replSetInitiate", replConfig);
                 admin.RunCommand<BsonDocument>(command);
