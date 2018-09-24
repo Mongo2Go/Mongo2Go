@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -51,6 +52,8 @@ namespace Mongo2Go.Helper
                 });
                 var command = new BsonDocument("replSetInitiate", replConfig);
                 admin.RunCommand<BsonDocument>(command);
+                //Need to sleep here so the replica set initialization is complete
+                Thread.Sleep(5000);
             }
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)
