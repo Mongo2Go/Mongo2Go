@@ -27,21 +27,17 @@ namespace Mongo2Go.Helper
 
         public bool IsPortAvailable (int portNumber)
         {
-            bool result = false;
-
             TcpListener tcpListener = new TcpListener (IPAddress.Loopback, portNumber);
             try {                
                 tcpListener.Start ();
-            } catch (SocketException) {
-                result = false;
-
+                return true;
+            }
+            catch (SocketException) {
+                return false;
             } finally 
             {
                 tcpListener.Stop ();
-                result = true;
             }
-
-            return result;
         }
     }
 }
