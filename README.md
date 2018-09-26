@@ -44,7 +44,7 @@ The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/
 
 Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
 
-    PM> Install-Package Mongo2Go -Version 2.2.6
+    PM> Install-Package Mongo2Go
 
 or run for the legacy **.NET 4.6** package:
 
