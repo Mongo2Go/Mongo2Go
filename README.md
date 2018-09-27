@@ -37,6 +37,9 @@ Here you should set up a MongoDB as it is described in the manual.
 For you convenience the MongoDbRunner also exposes _mongoexport_ and _mongoimport_
 which allow you to quickly set up a working environment.
 
+Single server replica set mode to enable transaction 
+-------------------------
+MongoDbRunner.Start() has been modified to take in an optional boolean parameter called singleNodeReplSet. When passed in with the value true - **MongoDbRunner.Start(singleNodeReplSet: true)** - a single node mongod instance will be started as a replica set with the name set to "singleNodeReplSet". Replica set mode is required for transactions to work in MongoDB 4.0 or greater
 
 Installation
 --------------
@@ -134,8 +137,104 @@ public class WebApiApplication : System.Web.HttpApplication
 }
 ```
 
+**Example: Transaction **
+
+```c#
+ public class when_transaction_completes : MongoTransactionTest
+    {
+        private static TestDocument mainDocument;
+        private static TestDocument dependentDocument;
+        Establish context = () =>
+
+        {
+            _runner = MongoDbRunner.Start(singleNodeReplSet: true);
+             client = new MongoClient(_runner.ConnectionString);
+            database = client.GetDatabase(_databaseName);
+            _mainCollection = database.GetCollection<TestDocument>(_mainCollectionName);
+            _dependentCollection = database.GetCollection<TestDocument>(_dependentCollectionName);
+            _mainCollection.InsertOne(TestDocument.DummyData2());
+            _dependentCollection.InsertOne(TestDocument.DummyData2());
+        };
+
+        private Because of = () =>
+        {
+            var filter = Builders<TestDocument>.Filter.Where(x => x.IntTest == 23);
+            var update = Builders<TestDocument>.Update.Inc(i => i.IntTest, 10);
+
+            using (var sessionHandle = client.StartSession())
+            {
+                try
+                {
+                    var i = 0;
+                    while (i < 10)
+                    {
+                        try
+                        {
+                            i++;
+                            sessionHandle.StartTransaction(new TransactionOptions(
+                                readConcern: ReadConcern.Local,
+                                writeConcern: WriteConcern.W1)); 
+                            try
+                            {
+                                var first = _mainCollection.UpdateOne(sessionHandle, filter, update);
+                                var second = _dependentCollection.UpdateOne(sessionHandle, filter, update);
+                            }
+                            catch (Exception e)
+                            {
+                                sessionHandle.AbortTransaction();
+                                throw;
+                            }
+
+                            var j = 0;
+                            while (j < 10)
+                            {
+                                try
+                                {
+                                    j++;
+                                    sessionHandle.CommitTransaction();
+                                    break;
+                                }
+                                catch (MongoException e)
+                                {
+                                    if (e.HasErrorLabel("UnknownTransactionCommitResult"))
+                                        continue;
+                                    throw;
+                                }
+                            }
+                            break;
+                        }
+                        catch (MongoException e)
+                        {
+                            if (e.HasErrorLabel("TransientTransactionError"))
+                                continue;
+                            throw;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    //failed after multiple attempts so log and do what is appropriate in your case
+                }
+            }
+
+             mainDocument = _mainCollection.FindSync(Builders<TestDocument>.Filter.Empty).FirstOrDefault();
+             dependentDocument = _dependentCollection.FindSync(Builders<TestDocument>.Filter.Empty).FirstOrDefault();
+        };
+        
+        It main_should_be_33 = () => mainDocument.IntTest.Should().Be(33);
+        It dependent_should_be_33 = () => dependentDocument.IntTest.Should().Be(33);
+        Cleanup cleanup = () => _runner.Dispose();
+    }
+
+```
+
 Changelog
 -------------------------------------
+### Mongo2Go 2.2.8, September 27 2018
+* updated MongoDB binaries to 4.0.2 to support tests leveraging transaction across different collections and databases
+* updated MongoDB C# driver to 2.7.0 to be compatible with MongoDB 4.0
+* added `singleNodeReplSet` paramter to `MongoDbRunner.Start` which allows mongod instance to be started as a replica set to enable transaction support
+
 
 ### Mongo2Go 2.2.7, August 13 2018
 * updates the `MongoBinaryLocator` to look for binaries in the nuget cache if they are not found in the project directory.
