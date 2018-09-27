@@ -13,6 +13,7 @@ namespace Mongo2GoTests.Runner
     {
         private static TestDocument mainDocument;
         private static TestDocument dependentDocument;
+
         Establish context = () =>
 
         {
@@ -99,6 +100,8 @@ namespace Mongo2GoTests.Runner
     {
         private static TestDocument mainDocument;
         private static TestDocument dependentDocument;
+        private static TestDocument mainDocument_before_commit;
+        private static TestDocument dependentDocument_before_commit;
         Establish context = () =>
 
         {
@@ -132,6 +135,8 @@ namespace Mongo2GoTests.Runner
                             {
                                 var first = _mainCollection.UpdateOne(sessionHandle, filter, update);
                                 var second = _dependentCollection.UpdateOne(sessionHandle, filter, update);
+                                mainDocument_before_commit = _mainCollection.FindSync(sessionHandle, Builders<TestDocument>.Filter.Empty).ToList().FirstOrDefault();
+                                dependentDocument_before_commit = _dependentCollection.FindSync(sessionHandle, Builders<TestDocument>.Filter.Empty).ToList().FirstOrDefault();
                             }
                             catch (Exception e)
                             {
@@ -163,7 +168,8 @@ namespace Mongo2GoTests.Runner
 
         It main_should_be_still_23_after_aborting = () => mainDocument.IntTest.Should().Be(23);
         It dependent_should_be_still_23_after_aborting = () => dependentDocument.IntTest.Should().Be(23);
-
+        It main_should_be_33_before_aborting = () => mainDocument_before_commit.IntTest.Should().Be(33);
+        It dependent_should_be_33_before_aborting = () => dependentDocument_before_commit.IntTest.Should().Be(33);
         Cleanup cleanup = () => _runner.Dispose();
     }
 }
