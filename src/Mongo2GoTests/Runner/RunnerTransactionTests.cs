@@ -47,7 +47,7 @@ namespace Mongo2GoTests.Runner
                                 var first = _mainCollection.UpdateOne(sessionHandle, filter, update);
                                 var second = _dependentCollection.UpdateOne(sessionHandle, filter, update);
                             }
-                            catch (Exception e)
+                            catch (Exception)
                             {
                                 sessionHandle.AbortTransaction();
                                 throw;
@@ -79,7 +79,7 @@ namespace Mongo2GoTests.Runner
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     
                 }
@@ -138,7 +138,7 @@ namespace Mongo2GoTests.Runner
                                 mainDocument_before_commit = _mainCollection.FindSync(sessionHandle, Builders<TestDocument>.Filter.Empty).ToList().FirstOrDefault();
                                 dependentDocument_before_commit = _dependentCollection.FindSync(sessionHandle, Builders<TestDocument>.Filter.Empty).ToList().FirstOrDefault();
                             }
-                            catch (Exception e)
+                            catch (Exception)
                             {
                                 sessionHandle.AbortTransaction();
                                 throw;
@@ -156,7 +156,7 @@ namespace Mongo2GoTests.Runner
 
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
 
                 }

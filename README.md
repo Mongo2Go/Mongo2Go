@@ -37,9 +37,13 @@ Here you should set up a MongoDB as it is described in the manual.
 For you convenience the MongoDbRunner also exposes _mongoexport_ and _mongoimport_
 which allow you to quickly set up a working environment.
 
-Single server replica set mode to enable transaction 
+
+Single server replica set mode to enable transactions 
 -------------------------
-MongoDbRunner.Start() has been modified to take in an optional boolean parameter called singleNodeReplSet. When passed in with the value true - **MongoDbRunner.Start(singleNodeReplSet: true)** - a single node mongod instance will be started as a replica set with the name set to "singleNodeReplSet". Replica set mode is required for transactions to work in MongoDB 4.0 or greater
+`MongoDbRunner.Start()` can be set up to take in an optional boolean parameter called `singleNodeReplSet`.
+When passed in with the value `true` - (**`MongoDbRunner.Start(singleNodeReplSet: true)`**)
+- a single node mongod instance will be started as a replica set with the name `singleNodeReplSet`.
+Replica set mode is required for transactions to work in MongoDB 4.0 or greater
 
 Installation
 --------------
@@ -62,7 +66,7 @@ in the Package Manager Console.
 Examples
 --------
 
-**Example: Integration Test (Machine.Specifications & Fluent Assertions)**
+**Example: Integration Test (here: Machine.Specifications & Fluent Assertions)**
 
 ```c#
 [Subject("Runner Integration Test")]
@@ -102,7 +106,7 @@ public class MongoIntegrationTest
 
 More tests can be found at https://github.com/Mongo2Go/Mongo2Go/tree/master/src/Mongo2GoTests/Runner
 
-**Example: Exporting**
+**Example: Exporting seed data**
 
 ```c#
 using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
@@ -111,7 +115,7 @@ using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 }
 ```
 
-**Example: Importing (ASP.NET MVC 4 Web API)**
+**Example: Importing for local debugging (compatible with ASP.NET MVC 4 Web API as well as ASP.NET Core)**
 
 ```c#
 public class WebApiApplication : System.Web.HttpApplication
@@ -137,7 +141,11 @@ public class WebApiApplication : System.Web.HttpApplication
 }
 ```
 
-**Example: Transaction **
+**Example: Transactions (New feature since v2.2.8)**
+
+<details>
+  <summary><b>Full integration test with transaction handling</b> (click to show)</summary>
+
 
 ```c#
  public class when_transaction_completes : MongoTransactionTest
@@ -227,14 +235,15 @@ public class WebApiApplication : System.Web.HttpApplication
     }
 
 ```
+</details>
 
 Changelog
 -------------------------------------
-### Mongo2Go 2.2.8, September 27 2018
+### Mongo2Go 2.2.8, October 12 2018
 * updated MongoDB binaries to 4.0.2 to support tests leveraging transaction across different collections and databases
 * updated MongoDB C# driver to 2.7.0 to be compatible with MongoDB 4.0
-* added `singleNodeReplSet` paramter to `MongoDbRunner.Start` which allows mongod instance to be started as a replica set to enable transaction support
-
+* adds `singleNodeReplSet` paramter to `MongoDbRunner.Start` which allows mongod instance to be started as a replica set to enable transaction support (PR [#57](https://github.com/Mongo2Go/Mongo2Go/pull/57) - many thanks to [Mahi Satyanarayana](https://github.com/gbackmania) 
+* fixes port lookup for UnixPortWatcher (PR [#58](https://github.com/Mongo2Go/Mongo2Go/pull/58) - many thanks to [Viktor Kolybaba](https://github.com/VikKol) 
 
 ### Mongo2Go 2.2.7, August 13 2018
 * updates the `MongoBinaryLocator` to look for binaries in the nuget cache if they are not found in the project directory.
@@ -291,6 +300,8 @@ Changelog
     * many thanks to [Hassaan Ahmed](https://github.com/bannerflow-hassaan)    
 	* see the [Wiki](https://github.com/Mongo2Go/Mongo2Go/wiki/NetStandard) for more information about .NET Core 1.0 / .NET Standard 1.6
 
+<details>
+  <summary><b>Changelog v0.1.0 to v1.0.0</b> (click to show)</summary>
 
 ### Mongo2Go 1.0.0, November 14 2016
 * v1.0 finally marked as stable
@@ -376,6 +387,7 @@ Now the runner waits until the mongod process has been stopped before the databa
 * first alpha version
 * includes mongod, mongoimport and mongoexport v2.2.0-rc1 (32bit)
 
+</details>
 
 How to contribute
 -------------------------------------
