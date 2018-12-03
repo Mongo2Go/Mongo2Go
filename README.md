@@ -111,7 +111,7 @@ More tests can be found at https://github.com/Mongo2Go/Mongo2Go/tree/master/src/
 ```c#
 using (MongoDbRunner runner = MongoDbRunner.StartForDebugging()) {
 
-    runner.Export("TestDatase", "TestCollection", @"..\..\App_Data\test.json");
+    runner.Export("TestDatabase", "TestCollection", @"..\..\App_Data\test.json");
 }
 ```
 
@@ -125,7 +125,7 @@ public class WebApiApplication : System.Web.HttpApplication
     protected void Application_Start()
     {
         _runner = MongoDbRunner.StartForDebugging();
-        _runner.Import("TestDatase", "TestCollection", @"..\..\App_Data\test.json", true);
+        _runner.Import("TestDatabase", "TestCollection", @"..\..\App_Data\test.json", true);
 
         MongoServer server = MongoServer.Create(_runner.ConnectionString);
         MongoDatabase database = server.GetDatabase("TestDatabase");
