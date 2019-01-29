@@ -3,16 +3,23 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
 
-        <id>Mongo2Go-temp-linux-fix</id>
-        <version>0.0.6</version>
+        <id>Mongo2Go</id>
+        <version>2.2.9</version>
 
         <title>Mongo2Go</title>
         <authors>Johannes Hoppe and many contributors</authors>
 
-        <owners>Jeroen Vannevel</owners>
+        <owners>Johannes Hoppe</owners>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
-        <description>Temporary package to verify a fix in teamcity</description>
+        <description>Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets .NET Standard 1.6.
+This Nuget package contains the executables of mongod, mongoimport and mongoexport v3.6.1 for Windows, Linux and macOS.
+
+
+Mongo2Go has two use cases:
+
+1. Providing multiple, temporary and isolated MongoDB databases for unit tests (or to be precise: integration tests)
+2. Providing a quick to set up MongoDB database for a local developer environment</description>
 
         <language>en-US</language>
         <summary>MongoDB for integration tests and local debugging</summary>
