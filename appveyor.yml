@@ -4,9 +4,26 @@ image: Visual Studio 2017
 branches:
   only:
   - master
+  - deploy
+skip_tags: true
+environment:
+  # this is how to set encrypted variable. Go to "Settings" -> "Encrypt YAML" page in account menu to encrypt data.
+  nuget_api_key:
+    secure: bQrrcrk3oT7hObubXjbx6Qkw76tsKeDzC6r7cLhc9pEzy8T75uQDQIJhu800BDaw
 
 build_script:
   - dotnet restore
   - dotnet build
-test_script:
+#test_script:
   - dotnet test src/Mongo2GoTests 
+
+
+for:
+-
+  branches:
+    only:
+    - "deploy"
+
+  deploy_script:
+    - call package_create.cmd
+    - call package_push.cmd %nuget_api_key%
