@@ -243,7 +243,7 @@ public class WebApiApplication : System.Web.HttpApplication
 Changelog
 -------------------------------------
 ### Mongo2Go 2.2.9, February 04 2019
-* fixes a file path issue on Linux if you run on an SDK version beyond .NET Standard 1.6 (PR [#63](https://github.com/Mongo2Go/Mongo2Go/pull/63), fixes [#62](https://github.com/Mongo2Go/Mongo2Go/issues/62) and [#61] and (https://github.com/Mongo2Go/Mongo2Go/issues/61)) - many thanks to [Jeroen Vannevel](https://github.com/Vannevelj))
+* fixes a file path issue on Linux if you run on an SDK version beyond .NET Standard 1.6 (PR [#63](https://github.com/Mongo2Go/Mongo2Go/pull/63), fixes [#62](https://github.com/Mongo2Go/Mongo2Go/issues/62) and [#61] (https://github.com/Mongo2Go/Mongo2Go/issues/61)) - many thanks to [Jeroen Vannevel](https://github.com/Vannevelj))
 * continuous integration runs on Linux (Travis CI) and Windows (AppVeyor) now
 
 
