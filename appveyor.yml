@@ -1,0 +1,12 @@
+version: '{build}'
+skip_tags: true
+image: Visual Studio 2017
+branches:
+  only:
+  - master
+
+build_script:
+  - dotnet restore
+  - dotnet build
+test_script:
+  - dotnet test src/Mongo2GoTests 
