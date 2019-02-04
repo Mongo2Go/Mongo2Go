@@ -3,7 +3,10 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-Linux Build (Ubuntu Trusty): [![Build Status](https://travis-ci.org/Mongo2Go/Mongo2Go.svg?branch=master)](https://travis-ci.org/Mongo2Go/Mongo2Go)
+Linux Build (Ubuntu Trusty): [![Build Status](https://travis-ci.org/Mongo2Go/Mongo2Go.svg?branch=master)](https://travis-ci.org/Mongo2Go/Mongo2Go)          
+Windows Build (Windows Server 2016): [![Build status](https://ci.appveyor.com/api/projects/status/u9mp0ceh57sdsx97/branch/master?svg=true)](https://ci.appveyor.com/project/JohannesHoppe/mongo2go-pc320/branch/master)
+
+
 
 Mongo2Go is a managed wrapper around the latest MongoDB binaries.
 It targets **.NET Standard 1.6** (and **.NET 4.6** for legacy environments) and works with Windows, Linux and macOS.
@@ -239,11 +242,17 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+### Mongo2Go 2.2.9, February 04 2019
+* fixes a file path issue on Linux if you run on an SDK version beyond .NET Standard 1.6 (PR [#63](https://github.com/Mongo2Go/Mongo2Go/pull/63), fixes [#62](https://github.com/Mongo2Go/Mongo2Go/issues/62) and [#61] and (https://github.com/Mongo2Go/Mongo2Go/issues/61)) - many thanks to [Jeroen Vannevel](https://github.com/Vannevelj))
+* continuous integration runs on Linux (Travis CI) and Windows (AppVeyor) now
+
+
+-------------------------------------
 ### Mongo2Go 2.2.8, October 12 2018
 * updated MongoDB binaries to 4.0.2 to support tests leveraging transaction across different collections and databases
 * updated MongoDB C# driver to 2.7.0 to be compatible with MongoDB 4.0
-* adds `singleNodeReplSet` paramter to `MongoDbRunner.Start` which allows mongod instance to be started as a replica set to enable transaction support (PR [#57](https://github.com/Mongo2Go/Mongo2Go/pull/57) - many thanks to [Mahi Satyanarayana](https://github.com/gbackmania) 
-* fixes port lookup for UnixPortWatcher (PR [#58](https://github.com/Mongo2Go/Mongo2Go/pull/58) - many thanks to [Viktor Kolybaba](https://github.com/VikKol) 
+* adds `singleNodeReplSet` paramter to `MongoDbRunner.Start` which allows mongod instance to be started as a replica set to enable transaction support (PR [#57](https://github.com/Mongo2Go/Mongo2Go/pull/57) - many thanks to [Mahi Satyanarayana](https://github.com/gbackmania))
+* fixes port lookup for UnixPortWatcher (PR [#58](https://github.com/Mongo2Go/Mongo2Go/pull/58) - many thanks to [Viktor Kolybaba](https://github.com/VikKol))
 
 ### Mongo2Go 2.2.7, August 13 2018
 * updates the `MongoBinaryLocator` to look for binaries in the nuget cache if they are not found in the project directory.
