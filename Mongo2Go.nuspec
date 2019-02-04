@@ -4,7 +4,7 @@
     <metadata>
 
         <id>Mongo2Go</id>
-        <version>2.2.8</version>
+        <version>2.2.9</version>
 
         <title>Mongo2Go</title>
         <authors>Johannes Hoppe and many contributors</authors>
@@ -35,6 +35,6 @@ Mongo2Go has two use cases:
 
         <file src="src\Mongo2Go\bin\Release\**" target="lib" />
         <file src="tools\**" target="tools\" />
-        
+
     </files>
 </package>
