@@ -3,8 +3,8 @@ skip_tags: true
 image: Visual Studio 2017
 branches:
   only:
-  - master
-  - deploy
+    - master
+    - deploy
 skip_tags: true
 environment:
   # this is how to set encrypted variable. Go to "Settings" -> "Encrypt YAML" page in account menu to encrypt data.
@@ -14,9 +14,7 @@ environment:
 build_script:
   - dotnet restore
   - dotnet build
-#test_script:
   - dotnet test src/Mongo2GoTests 
-
 
 for:
 -
