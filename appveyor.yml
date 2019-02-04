@@ -5,7 +5,6 @@ branches:
   only:
     - master
     - deploy
-skip_tags: true
 environment:
   # this is how to set encrypted variable. Go to "Settings" -> "Encrypt YAML" page in account menu to encrypt data.
   nuget_api_key:
