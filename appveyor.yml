@@ -14,7 +14,7 @@ build_script:
   - dotnet restore
   - dotnet build
   - dotnet test src/Mongo2GoTests 
-
+  - echo *** Test finished ***
 for:
 -
   branches:
