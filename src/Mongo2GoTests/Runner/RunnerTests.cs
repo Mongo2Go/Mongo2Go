@@ -33,16 +33,16 @@ namespace Mongo2GoTests.Runner
             portPoolMock.Setup(m => m.GetNextOpenPort()).Returns(MongoDbDefaults.TestStartPort + 1);
 
             fileSystemMock = new Mock<IFileSystem>();
-            fileSystemMock.Setup(m => m.CreateFolder(Moq.It.IsAny<string>())).Callback<string>(s => 
+            fileSystemMock.Setup(m => m.CreateFolder(Moq.It.IsAny<string>())).Callback<string>(s =>
             {
                 exptectedDataDirectory = s;
                 exptectedLogfile = Path.Combine(exptectedDataDirectory, MongoDbDefaults.Lockfile);
             });
-            
+
             var processMock = new Mock<IMongoDbProcess>();
 
             processStarterMock = new Mock<IMongoDbProcessStarter>();
-            processStarterMock.Setup(m => m.Start(Moq.It.IsAny<string>(), Moq.It.IsAny<string>(), Moq.It.IsAny<int>(), false)).Returns(processMock.Object);
+            processStarterMock.Setup(m => m.Start(Moq.It.IsAny<string>(), Moq.It.IsAny<string>(), Moq.It.IsAny<int>(), false, Moq.It.IsAny<string>())).Returns(processMock.Object);
 
             binaryLocatorMock = new Mock<IMongoBinaryLocator> ();
             binaryLocatorMock.Setup(m => m.Directory).Returns(string.Empty);
@@ -53,7 +53,7 @@ namespace Mongo2GoTests.Runner
         It should_create_the_data_directory             = () => fileSystemMock.Verify(x => x.CreateFolder(Moq.It.Is<string>(s => s.StartsWith(Path.GetTempPath()))), Times.Exactly(1));
         It should_delete_old_lock_file                  = () => fileSystemMock.Verify(x => x.DeleteFile(exptectedLogfile), Times.Exactly(1));
 
-        It should_start_the_process                     = () => processStarterMock.Verify(x => x.Start(Moq.It.IsAny<string>(), Moq.It.IsAny<string>(), Moq.It.IsAny<int>(), false), Times.Exactly(1));
+        It should_start_the_process                     = () => processStarterMock.Verify(x => x.Start(Moq.It.IsAny<string>(), Moq.It.IsAny<string>(), Moq.It.IsAny<int>(), false, Moq.It.IsAny<string>()), Times.Exactly(1));
 
         It should_have_expected_connection_string       = () => runner.ConnectionString.Should().Be(exptectedConnectString);
 		It should_return_an_instance_with_state_running = () => runner.State.Should().Be(State.Running);
@@ -81,7 +81,7 @@ namespace Mongo2GoTests.Runner
             portWatcherMock.Setup(m => m.IsPortAvailable(Moq.It.IsAny<int>())).Returns(true);
 
             fileSystemMock = new Mock<IFileSystem>();
-            fileSystemMock.Setup(m => m.CreateFolder(Moq.It.IsAny<string>())).Callback<string>(s => 
+            fileSystemMock.Setup(m => m.CreateFolder(Moq.It.IsAny<string>())).Callback<string>(s =>
             {
                 exptectedDataDirectory = s;
                 exptectedLogfile = Path.Combine(exptectedDataDirectory, MongoDbDefaults.Lockfile);
@@ -89,7 +89,7 @@ namespace Mongo2GoTests.Runner
 
             var processMock = new Mock<IMongoDbProcess>();
             processStarterMock = new Mock<IMongoDbProcessStarter>();
-            processStarterMock.Setup(m => m.Start(Moq.It.IsAny<string>(), exptectedDataDirectory, MongoDbDefaults.DefaultPort, true, false)).Returns(processMock.Object);
+            processStarterMock.Setup(m => m.Start(Moq.It.IsAny<string>(), exptectedDataDirectory, MongoDbDefaults.DefaultPort, true, false, Moq.It.IsAny<string>())).Returns(processMock.Object);
 
             binaryLocatorMock = new Mock<IMongoBinaryLocator> ();
             binaryLocatorMock.Setup(m => m.Directory).Returns(string.Empty);
@@ -102,7 +102,7 @@ namespace Mongo2GoTests.Runner
         It should_create_the_data_directory = () => fileSystemMock.Verify(x => x.CreateFolder(Moq.It.Is<string>(s => s.StartsWith(Path.GetTempPath()))), Times.Exactly(1));
         It should_delete_old_lock_file = () => fileSystemMock.Verify(x => x.DeleteFile(exptectedLogfile), Times.Exactly(1));
 		It should_return_an_instance_with_state_running = () => runner.State.Should().Be(State.Running);
-        It should_start_the_process_without_kill = () => processStarterMock.Verify(x => x.Start(Moq.It.IsAny<string>(), exptectedDataDirectory, MongoDbDefaults.DefaultPort, true, false), Times.Exactly(1));
+        It should_start_the_process_without_kill = () => processStarterMock.Verify(x => x.Start(Moq.It.IsAny<string>(), exptectedDataDirectory, MongoDbDefaults.DefaultPort, true, false, Moq.It.IsAny<string>()), Times.Exactly(1));
     }
 }
 // ReSharper restore UnusedMember.Local
