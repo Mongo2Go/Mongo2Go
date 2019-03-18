@@ -9,11 +9,12 @@ namespace Mongo2Go.Helper
         private const string Space = " ";
 
         /// <summary>
-        /// This method will cleanup the additional mongod arguments to make sure the Mongo2Go arguments are not overriden
+        /// Returns the <paramref name="additionalMongodArguments" /> if it is verified that it does not contain any mongod argument already defined by Mongo2Go.
         /// </summary>
-        /// <param name="existingMongodArguments">Mongo2Go defined mongod arguments</param>
-        /// <param name="additionalMongodArguments">Additional custom mongod arguments</param>
-        /// <returns>Additional mongod arguments excluding the Mogo2Go defined mongod arguments</returns>
+        /// <param name="existingMongodArguments">mongod arguments defined by Mongo2Go</param>
+        /// <param name="additionalMongodArguments">Additional mongod arguments</param>
+        /// <exception cref="T:System.ArgumentException"><paramref name="additionalMongodArguments" /> contains at least one mongod argument already defined by Mongo2Go</exception>
+        /// <returns>A string with the additional mongod arguments</returns>
         public static string GetValidAdditionalArguments(string existingMongodArguments, string additionalMongodArguments)
         {
             if (string.IsNullOrWhiteSpace(additionalMongodArguments))
@@ -46,10 +47,14 @@ namespace Mongo2Go.Helper
                 var argumentOptionSplit = additionalArgument.Split(' ');
 
                 if (argumentOptionSplit.Length == 0
-                    || string.IsNullOrWhiteSpace(argumentOptionSplit[0].Trim())
-                    || existingMongodArgumentOptions.Contains(argumentOptionSplit[0].Trim()))
+                    || string.IsNullOrWhiteSpace(argumentOptionSplit[0].Trim()))
                 {
                     continue;
+                }
+
+                if (existingMongodArgumentOptions.Contains(argumentOptionSplit[0].Trim()))
+                {
+                    throw new ArgumentException($"mongod arguments defined by Mongo2Go ({string.Join(", ", existingMongodArgumentOptions)}) cannot be overriden. Please remove '{argumentOptionSplit[0].Trim()}' from the additional mongod arguments.");
                 }
 
                 validAdditionalMongodArguments.Add(ArgumentSeparator + additionalArgument);
