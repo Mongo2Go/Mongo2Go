@@ -32,7 +32,7 @@ namespace Mongo2GoTests
         private const string expectedAdditionalArguments = " --argument_1 under_test --argument_2 under test";
 
         Because of = () => validAdditionalArguments = MongodArguments.GetValidAdditionalArguments(string.Empty, additionalArgumentsUnderTest);
-        It should_be_empty_string = () => validAdditionalArguments.Should().Be(expectedAdditionalArguments);
+        It should_be_expected_additional_arguments = () => validAdditionalArguments.Should().Be(expectedAdditionalArguments);
     }
 
     [Subject(typeof(MongodArguments))]
@@ -43,7 +43,7 @@ namespace Mongo2GoTests
         private const string expectedAdditionalArguments = " --argument_1 under_test --argument_2 under test";
 
         Because of = () => validAdditionalArguments = MongodArguments.GetValidAdditionalArguments(string.Empty, additionalArgumentsUnderTest);
-        It should_be_empty_string = () => validAdditionalArguments.Should().Be(expectedAdditionalArguments);
+        It should_be_expected_additional_arguments = () => validAdditionalArguments.Should().Be(expectedAdditionalArguments);
     }
 
     [Subject(typeof(MongodArguments))]
@@ -55,7 +55,7 @@ namespace Mongo2GoTests
         private const string expectedAdditionalArguments = " --argument_1 under_test --argument_2 under test";
 
         Because of = () => validAdditionalArguments = MongodArguments.GetValidAdditionalArguments(existingArguments, additionalArgumentsUnderTest);
-        It should_be_empty_string = () => validAdditionalArguments.Should().Be(expectedAdditionalArguments);
+        It should_be_expected_additional_arguments = () => validAdditionalArguments.Should().Be(expectedAdditionalArguments);
     }
 
     [Subject(typeof(MongodArguments))]
