@@ -41,6 +41,7 @@ namespace Mongo2Go.Helper
             var additionalMongodArgumentArray = additionalMongodArguments.Trim().Split(new[] { ArgumentSeparator }, StringSplitOptions.RemoveEmptyEntries);
 
             var validAdditionalMongodArguments = new List<string>();
+            var duplicateMongodArguments = new List<string>();
             for (var i = 0; i < additionalMongodArgumentArray.Length; i++)
             {
                 var additionalArgument = additionalMongodArgumentArray[i].Trim();
@@ -54,10 +55,15 @@ namespace Mongo2Go.Helper
 
                 if (existingMongodArgumentOptions.Contains(argumentOptionSplit[0].Trim()))
                 {
-                    throw new ArgumentException($"mongod arguments defined by Mongo2Go ({string.Join(", ", existingMongodArgumentOptions)}) cannot be overriden. Please remove '{argumentOptionSplit[0].Trim()}' from the additional mongod arguments.");
+                    duplicateMongodArguments.Add(argumentOptionSplit[0].Trim());
                 }
 
                 validAdditionalMongodArguments.Add(ArgumentSeparator + additionalArgument);
+            }
+
+            if (duplicateMongodArguments.Count != 0)
+            {
+                throw new ArgumentException($"mongod arguments defined by Mongo2Go ({string.Join(", ", existingMongodArgumentOptions)}) cannot be overriden. Please remove the following additional argument(s): {string.Join(", ", duplicateMongodArguments)}.");
             }
 
             return validAdditionalMongodArguments.Count == 0
