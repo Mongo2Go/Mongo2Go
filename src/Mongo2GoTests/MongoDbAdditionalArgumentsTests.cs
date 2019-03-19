@@ -63,11 +63,13 @@ namespace Mongo2GoTests
     public class when_existing_arguments_and_additional_arguments_have_shared_options_throw_argument_exception
     {
         private static Exception exception;
-        private const string existingArguments = "--existing_argument1 --existing_argument2";
-        private const string additionalArgumentsUnderTest = " --argument_1 under_test --existing_argument2 argument2_new_value --argument_2 under test";
+        private const string duplicateArgument = "existing_argument2";
+        private static readonly string existingArguments = $"--existing_argument1 --{duplicateArgument}";
+        private static readonly string additionalArgumentsUnderTest = $" --argument_1 under_test --{duplicateArgument} argument2_new_value --argument_2 under test";
 
         Because of = () => exception = Catch.Exception(() => MongodArguments.GetValidAdditionalArguments(existingArguments, additionalArgumentsUnderTest));
         It should_throw_argument_exception = () => exception.Should().BeOfType<ArgumentException>();
+        It should_contain_more_than_instance_of_the_duplicate_argument = () => exception.Message.IndexOf(duplicateArgument, StringComparison.InvariantCultureIgnoreCase).Should().NotBe(exception.Message.LastIndexOf(duplicateArgument, StringComparison.InvariantCultureIgnoreCase));
     }
 }
 // ReSharper restore UnusedMember.Local
