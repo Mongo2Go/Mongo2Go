@@ -77,14 +77,14 @@ namespace Mongo2Go
         /// Should be used for local debugging only
         /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
         /// </remarks>
-        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false)
+        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, int port = MongoDbDefaults.DefaultPort)
         {
             return new MongoDbRunner(
                 new ProcessWatcher(),
                 new PortWatcher(),
                 new FileSystem(),
                 new MongoDbProcessStarter(),
-                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory), dataDirectory, singleNodeReplSet);
+                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory), port, dataDirectory, singleNodeReplSet);
         }
 
         /// <summary>
@@ -108,6 +108,7 @@ namespace Mongo2Go
                 fileSystem,
                 processStarter,
                 mongoBin,
+                MongoDbDefaults.DefaultPort,
                 dataDirectory);
         }
 
@@ -130,11 +131,11 @@ namespace Mongo2Go
         /// <summary>
         /// usage: local debugging
         /// </summary>
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, int port, string dataDirectory = null, bool singleNodeReplSet = false)
         {
             _fileSystem = fileSystem;
-            _port = MongoDbDefaults.DefaultPort;
             _mongoBin = mongoBin;
+            _port = port;
 
             MakeMongoBinarysExecutable();
 

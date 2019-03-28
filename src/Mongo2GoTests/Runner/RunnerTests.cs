@@ -15,7 +15,7 @@ using It = Machine.Specifications.It;
 namespace Mongo2GoTests.Runner
 {
     [Subject("Runner")]
-    public class when_instanciating_the_runner_for_integration_test
+    public class when_instantiating_the_runner_for_integration_test
     {
         static MongoDbRunner runner;
         static Mock<IPortPool> portPoolMock;
@@ -60,7 +60,7 @@ namespace Mongo2GoTests.Runner
     }
 
     [Subject("Runner")]
-    public class when_instanciating_the_runner_for_local_debugging
+    public class when_instantiating_the_runner_for_local_debugging
     {
         static MongoDbRunner runner;
         static Mock<IPortWatcher> portWatcherMock;
