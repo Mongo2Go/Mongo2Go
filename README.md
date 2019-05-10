@@ -251,7 +251,7 @@ Changelog
 -------------------------------------
 
 
-### Mongo2Go 2.2.10, May 10 2019
+### Mongo2Go 2.2.11, May 10 2019
 * allows additional custom MongoDB arguments (PR [#69](https://github.com/Mongo2Go/Mongo2Go/pull/69), fixes [#68](https://github.com/Mongo2Go/Mongo2Go/issues/68) - many thanks to [José Mira](https://github.com/zmira))
 * adds option to set port for `StartForDebugging()` (PR [#72](https://github.com/Mongo2Go/Mongo2Go/pull/72), fixes [#71](https://github.com/Mongo2Go/Mongo2Go/issues/71) - many thanks to [Danny Bies](https://github.com/dannyBies))
 
