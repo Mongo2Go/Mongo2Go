@@ -17,12 +17,4 @@ build_script:
   # see https://github.com/Mongo2Go/Mongo2Go/issues/65
   # - dotnet test src/Mongo2GoTests --diag
   # - echo *** Test finished ***
-for:
--
-  branches:
-    only:
-    - "deploy"
 
-  deploy_script:
-    - call package_create.cmd
-    - call package_push.cmd %nuget_api_key%
