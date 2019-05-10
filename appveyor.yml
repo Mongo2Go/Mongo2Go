@@ -16,7 +16,7 @@ build_script:
   - dotnet build
   # see https://github.com/Mongo2Go/Mongo2Go/issues/65
   # - dotnet test src/Mongo2GoTests --diag
-  - echo *** Test finished ***
+  # - echo *** Test finished ***
 for:
 -
   branches:

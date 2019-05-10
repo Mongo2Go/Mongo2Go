@@ -11,4 +11,3 @@ echo *** ERROR!
 echo *** Please privide the API key from nuget.org like this: package_push [key]
 
 :end
-pause
