@@ -249,12 +249,15 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+
+
+### Mongo2Go 2.2.10, May 10 2019
+* allows additional custom MongoDB arguments (PR [#68](https://github.com/Mongo2Go/Mongo2Go/pull/68), fixes [#68](https://github.com/Mongo2Go/Mongo2Go/issues/68) - many thanks to [José Mira](https://github.com/zmira))
+
 ### Mongo2Go 2.2.9, February 04 2019
 * fixes a file path issue on Linux if you run on an SDK version beyond .NET Standard 1.6 (PR [#63](https://github.com/Mongo2Go/Mongo2Go/pull/63), fixes [#62](https://github.com/Mongo2Go/Mongo2Go/issues/62) and [#61](https://github.com/Mongo2Go/Mongo2Go/issues/61)) - many thanks to [Jeroen Vannevel](https://github.com/Vannevelj))
 * continuous integration runs on Linux (Travis CI) and Windows (AppVeyor) now
 
-
--------------------------------------
 ### Mongo2Go 2.2.8, October 12 2018
 * updated MongoDB binaries to 4.0.2 to support tests leveraging transaction across different collections and databases
 * updated MongoDB C# driver to 2.7.0 to be compatible with MongoDB 4.0
