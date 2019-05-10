@@ -48,6 +48,13 @@ When passed in with the value `true` - (**`MongoDbRunner.Start(singleNodeReplSet
 - a single node mongod instance will be started as a replica set with the name `singleNodeReplSet`.
 Replica set mode is required for transactions to work in MongoDB 4.0 or greater
 
+Additional mongod arguments
+---------------------------
+`MongoDbRunner.Start()` can be set up to consume additional `mongod` arguments.
+This can be done using the string parameter called `additionalMongodArguments`.
+The list of additional arguments cannot contain arguments already defined internally by Mongo2Go. An `ArgumentException` will be thrown in this case, specifying which additional arguments are required to be discarded.
+Example of usage of the additional `mongod` arguments: **`MongoDbRunner.Start(additionalMongodArguments: "--quiet")`**
+
 Installation
 --------------
 The Mongo2Go Nuget package can be found at [https://nuget.org/packages/Mongo2Go/](https://nuget.org/packages/Mongo2Go/)
@@ -242,12 +249,15 @@ public class WebApiApplication : System.Web.HttpApplication
 
 Changelog
 -------------------------------------
+
+
+### Mongo2Go 2.2.10, May 10 2019
+* allows additional custom MongoDB arguments (PR [#68](https://github.com/Mongo2Go/Mongo2Go/pull/68), fixes [#68](https://github.com/Mongo2Go/Mongo2Go/issues/68) - many thanks to [José Mira](https://github.com/zmira))
+
 ### Mongo2Go 2.2.9, February 04 2019
 * fixes a file path issue on Linux if you run on an SDK version beyond .NET Standard 1.6 (PR [#63](https://github.com/Mongo2Go/Mongo2Go/pull/63), fixes [#62](https://github.com/Mongo2Go/Mongo2Go/issues/62) and [#61](https://github.com/Mongo2Go/Mongo2Go/issues/61)) - many thanks to [Jeroen Vannevel](https://github.com/Vannevelj))
 * continuous integration runs on Linux (Travis CI) and Windows (AppVeyor) now
 
-
--------------------------------------
 ### Mongo2Go 2.2.8, October 12 2018
 * updated MongoDB binaries to 4.0.2 to support tests leveraging transaction across different collections and databases
 * updated MongoDB C# driver to 2.7.0 to be compatible with MongoDB 4.0
