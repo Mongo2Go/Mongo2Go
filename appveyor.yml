@@ -11,11 +11,12 @@ environment:
     secure: bQrrcrk3oT7hObubXjbx6Qkw76tsKeDzC6r7cLhc9pEzy8T75uQDQIJhu800BDaw
 
 build_script:
+  - dotnet --info
   - dotnet restore
   - dotnet build
-  # builds get stuck?!
-  #- dotnet test src/Mongo2GoTests 
-
+  # see https://github.com/Mongo2Go/Mongo2Go/issues/65
+  # - dotnet test src/Mongo2GoTests --diag
+  # - echo *** Test finished ***
 for:
 -
   branches:

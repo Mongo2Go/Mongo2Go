@@ -5,6 +5,7 @@ mono: none
 dotnet: 2.0.0
 
 script:
+  - dotnet --info
   - dotnet restore
   - dotnet build
   - dotnet test src/Mongo2GoTests
