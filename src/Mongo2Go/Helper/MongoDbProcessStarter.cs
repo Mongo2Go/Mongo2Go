@@ -57,8 +57,11 @@ namespace Mongo2Go.Helper
                 });
                 var command = new BsonDocument("replSetInitiate", replConfig);
                 admin.RunCommand<BsonDocument>(command);
-                //Need to sleep here so the replica set initialization is complete
-                Thread.Sleep(5000);
+
+                // TODO: add parameterized timeout
+                do
+                {
+                } while (!isReady);
             }
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)
