@@ -42,6 +42,11 @@ namespace Mongo2Go.Helper
             ProcessOutput output = ProcessControl.StartAndWaitForReady(wrappedProcess, 5, ProcessReadyIdentifier, windowTitle);
             if (singleNodeReplSet)
             {
+                var readyMessage = "transition to primary complete; database writes are now permitted";
+                var isReady = false;
+
+                wrappedProcess.OutputDataReceived += (_, args) => isReady = !string.IsNullOrWhiteSpace(args.Data) && args.Data.Contains(readyMessage);
+
                 MongoClient client = new MongoClient("mongodb://127.0.0.1:{0}/?connect=direct;replicaSet={1}".Formatted(port, ReplicaSetName));
                 var admin = client.GetDatabase("admin");
                 var replConfig = new BsonDocument(new List<BsonElement>()
