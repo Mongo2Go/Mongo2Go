@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System;
 
 namespace Mongo2Go.Helper
 {
@@ -61,7 +62,11 @@ namespace Mongo2Go.Helper
 
                 // wait until replica set is ready or until the timeout is reached
                 SpinWait.SpinUntil(() => replicaSetReady, TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
+
+                if (!replicaSetReady)
                 {
+                    throw new TimeoutException($"Replica set initialization took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the timeout value.");
+                }
             }
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)
