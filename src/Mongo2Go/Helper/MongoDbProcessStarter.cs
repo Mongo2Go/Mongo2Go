@@ -59,10 +59,9 @@ namespace Mongo2Go.Helper
                 var command = new BsonDocument("replSetInitiate", replConfig);
                 admin.RunCommand<BsonDocument>(command);
 
-                // TODO: add parameterized timeout
-                do
+                // wait until replica set is ready or until the timeout is reached
+                SpinWait.SpinUntil(() => replicaSetReady, TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
                 {
-                } while (!isReady);
             }
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)
