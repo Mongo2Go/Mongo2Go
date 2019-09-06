@@ -31,7 +31,7 @@ namespace Mongo2Go
         /// On dispose: kills them and deletes their data directory
         /// </summary>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null)
+        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
         {
             if (dataDirectory == null) {
                 dataDirectory = CreateTemporaryDataDirectory();
@@ -47,7 +47,8 @@ namespace Mongo2Go
                 new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory),
                 dataDirectory,
                 singleNodeReplSet,
-                additionalMongodArguments);
+                additionalMongodArguments,
+                singleNodeReplSetWaitTimeout);
         }
 
         /// <summary>
@@ -81,14 +82,14 @@ namespace Mongo2Go
         /// Should be used for local debugging only
         /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
         /// </remarks>
-        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, int port = MongoDbDefaults.DefaultPort, string additionalMongodArguments = null)
+        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, int port = MongoDbDefaults.DefaultPort, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
         {
             return new MongoDbRunner(
                 new ProcessWatcher(),
                 new PortWatcher(),
                 new FileSystem(),
                 new MongoDbProcessStarter(),
-                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory), port, dataDirectory, singleNodeReplSet, additionalMongodArguments);
+                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory), port, dataDirectory, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout);
         }
 
         /// <summary>
@@ -137,7 +138,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: local debugging
         /// </summary>
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, int port, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, int port, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
         {
             _fileSystem = fileSystem;
             _mongoBin = mongoBin;
@@ -145,8 +146,9 @@ namespace Mongo2Go
 
             MakeMongoBinarysExecutable();
 
-            ConnectionString = singleNodeReplSet? "mongodb://127.0.0.1:{0}/?connect=direct&replicaSet=singleNodeReplSet&readPreference=primary".Formatted(_port) :
-                "mongodb://127.0.0.1:{0}/".Formatted(_port);
+            ConnectionString = singleNodeReplSet
+                ? "mongodb://127.0.0.1:{0}/?connect=direct&replicaSet=singleNodeReplSet&readPreference=primary".Formatted(_port)
+                : "mongodb://127.0.0.1:{0}/".Formatted(_port);
 
             if (processWatcher.IsProcessRunning(MongoDbDefaults.ProcessName) && !portWatcher.IsPortAvailable(_port))
             {
@@ -165,7 +167,7 @@ namespace Mongo2Go
 
             _fileSystem.CreateFolder(dataDirectory);
             _fileSystem.DeleteFile("{0}{1}{2}".Formatted(dataDirectory, Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
-            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, dataDirectory, _port, true, singleNodeReplSet, additionalMongodArguments);
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, dataDirectory, _port, true, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout);
 
             State = State.Running;
         }
@@ -173,7 +175,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: integration tests
         /// </summary>
-        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null)
+        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
         {
             _fileSystem = fileSystem;
             _port = portPool.GetNextOpenPort();
@@ -185,14 +187,15 @@ namespace Mongo2Go
 
             MakeMongoBinarysExecutable();
 
-            ConnectionString = singleNodeReplSet ? "mongodb://127.0.0.1:{0}/?connect=direct&replicaSet=singleNodeReplSet&readPreference=primary".Formatted(_port) :
-                "mongodb://127.0.0.1:{0}/".Formatted(_port);
+            ConnectionString = singleNodeReplSet
+                ? "mongodb://127.0.0.1:{0}/?connect=direct&replicaSet=singleNodeReplSet&readPreference=primary".Formatted(_port)
+                : "mongodb://127.0.0.1:{0}/".Formatted(_port);
 
             _dataDirectoryWithPort = "{0}_{1}".Formatted(dataDirectory, _port);
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
             _fileSystem.DeleteFile("{0}{1}{2}".Formatted(_dataDirectoryWithPort, Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
 
-            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port, singleNodeReplSet, additionalMongodArguments);
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout);
 
             State = State.Running;
         }
