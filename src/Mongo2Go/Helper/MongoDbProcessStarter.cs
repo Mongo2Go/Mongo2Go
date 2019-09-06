@@ -11,6 +11,7 @@ namespace Mongo2Go.Helper
         private const string ProcessReadyIdentifier = "waiting for connections";
         private const string Space = " ";
         private const string ReplicaSetName = "singleNodeReplSet";
+        private const string ReplicaSetReadyIdentifier = "transition to primary complete; database writes are now permitted";
 
         /// <summary>
         /// Starts a new process. Process can be killed
@@ -42,10 +43,10 @@ namespace Mongo2Go.Helper
             ProcessOutput output = ProcessControl.StartAndWaitForReady(wrappedProcess, 5, ProcessReadyIdentifier, windowTitle);
             if (singleNodeReplSet)
             {
-                var readyMessage = "transition to primary complete; database writes are now permitted";
-                var isReady = false;
+                var replicaSetReady = false;
 
-                wrappedProcess.OutputDataReceived += (_, args) => isReady = !string.IsNullOrWhiteSpace(args.Data) && args.Data.Contains(readyMessage);
+                // subscribe to output from mongod process and check for replica set ready message
+                wrappedProcess.OutputDataReceived += (_, args) => replicaSetReady = !string.IsNullOrWhiteSpace(args.Data) && args.Data.Contains(ReplicaSetReadyIdentifier);
 
                 MongoClient client = new MongoClient("mongodb://127.0.0.1:{0}/?connect=direct;replicaSet={1}".Formatted(port, ReplicaSetName));
                 var admin = client.GetDatabase("admin");
