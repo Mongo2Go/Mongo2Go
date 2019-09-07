@@ -65,7 +65,7 @@ namespace Mongo2Go.Helper
 
                 if (!replicaSetReady)
                 {
-                    throw new TimeoutException($"Replica set initialization took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the timeout value.");
+                    throw new TimeoutException($"Replica set initialization took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
                 }
             }
 
