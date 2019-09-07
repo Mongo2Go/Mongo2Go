@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System;
 
 namespace Mongo2Go.Helper
 {
@@ -11,19 +12,20 @@ namespace Mongo2Go.Helper
         private const string ProcessReadyIdentifier = "waiting for connections";
         private const string Space = " ";
         private const string ReplicaSetName = "singleNodeReplSet";
+        private const string ReplicaSetReadyIdentifier = "transition to primary complete; database writes are now permitted";
 
         /// <summary>
         /// Starts a new process. Process can be killed
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool singleNodeReplSet, string additionalMongodArguments)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = 5)
         {
-            return Start(binariesDirectory, dataDirectory, port, false, singleNodeReplSet, additionalMongodArguments);
+            return Start(binariesDirectory, dataDirectory, port, false, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout);
         }
 
         /// <summary>
         /// Starts a new process.
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet, string additionalMongodArguments)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = 5)
         {
             string fileName = @"{0}{1}{2}".Formatted(binariesDirectory, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.MongodExecutable);
 
@@ -42,6 +44,11 @@ namespace Mongo2Go.Helper
             ProcessOutput output = ProcessControl.StartAndWaitForReady(wrappedProcess, 5, ProcessReadyIdentifier, windowTitle);
             if (singleNodeReplSet)
             {
+                var replicaSetReady = false;
+
+                // subscribe to output from mongod process and check for replica set ready message
+                wrappedProcess.OutputDataReceived += (_, args) => replicaSetReady |= !string.IsNullOrWhiteSpace(args.Data) && args.Data.Contains(ReplicaSetReadyIdentifier);
+
                 MongoClient client = new MongoClient("mongodb://127.0.0.1:{0}/?connect=direct;replicaSet={1}".Formatted(port, ReplicaSetName));
                 var admin = client.GetDatabase("admin");
                 var replConfig = new BsonDocument(new List<BsonElement>()
@@ -52,8 +59,14 @@ namespace Mongo2Go.Helper
                 });
                 var command = new BsonDocument("replSetInitiate", replConfig);
                 admin.RunCommand<BsonDocument>(command);
-                //Need to sleep here so the replica set initialization is complete
-                Thread.Sleep(5000);
+
+                // wait until replica set is ready or until the timeout is reached
+                SpinWait.SpinUntil(() => replicaSetReady, TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
+
+                if (!replicaSetReady)
+                {
+                    throw new TimeoutException($"Replica set initialization took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
+                }
             }
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)

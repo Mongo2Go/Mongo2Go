@@ -48,11 +48,18 @@ When passed in with the value `true` - (**`MongoDbRunner.Start(singleNodeReplSet
 - a single node mongod instance will be started as a replica set with the name `singleNodeReplSet`.
 Replica set mode is required for transactions to work in MongoDB 4.0 or greater
 
+Replica set initialization requires the use of a short delay to allow for the replica set to stabilize. This delay is linked to a timeout value of 5 seconds.
+
+If the timeout expires before the replica set has stabilized a `TimeoutException` will be thrown.
+
+The default timeout can be changed through the optional parameter `singleNodeReplSetWaitTimeout`, which allows values between 0 and 65535 seconds: **`MongoDbRunner.Start(singleNodeReplSet: true, singleNodeReplSetWaitTimeout: 10)`**
+
 Additional mongod arguments
 ---------------------------
-`MongoDbRunner.Start()` can be set up to consume additional `mongod` arguments.
-This can be done using the string parameter called `additionalMongodArguments`.
+`MongoDbRunner.Start()` can be set up to consume additional `mongod` arguments. This can be done using the string parameter called `additionalMongodArguments`.
+
 The list of additional arguments cannot contain arguments already defined internally by Mongo2Go. An `ArgumentException` will be thrown in this case, specifying which additional arguments are required to be discarded.
+
 Example of usage of the additional `mongod` arguments: **`MongoDbRunner.Start(additionalMongodArguments: "--quiet")`**
 
 Installation

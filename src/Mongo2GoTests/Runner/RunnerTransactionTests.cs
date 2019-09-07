@@ -172,4 +172,13 @@ namespace Mongo2GoTests.Runner
         It dependent_should_be_33_before_aborting = () => dependentDocument_before_commit.IntTest.Should().Be(33);
         Cleanup cleanup = () => _runner.Dispose();
     }
+
+    [Subject("Runner Transaction Test")]
+    public class when_replica_set_not_ready_before_timeout_expires : MongoTransactionTest
+    {
+        private static Exception exception;
+
+        Because of = () => exception = Catch.Exception(() => CreateConnection(0));
+        It should_throw_timeout_exception = () => exception.Should().BeOfType<TimeoutException>();
+    }
 }

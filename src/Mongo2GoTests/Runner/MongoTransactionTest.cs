@@ -16,9 +16,16 @@ namespace Mongo2GoTests.Runner
         internal static string _dependentCollectionName = "DependentCollection";
         internal static IMongoDatabase database;
         internal static IMongoClient client;
-        internal static void CreateConnection()
+        internal static void CreateConnection(ushort? singleNodeReplSetWaitTimeout = null)
         {
-            _runner = MongoDbRunner.Start(singleNodeReplSet: true);
+            if (singleNodeReplSetWaitTimeout.HasValue)
+            {
+                _runner = MongoDbRunner.Start(singleNodeReplSet: true, singleNodeReplSetWaitTimeout: singleNodeReplSetWaitTimeout.Value);
+            }
+            else
+            {
+                _runner = MongoDbRunner.Start(singleNodeReplSet: true);
+            }
 
             client = new MongoClient(_runner.ConnectionString);
             database = client.GetDatabase(_databaseName);
