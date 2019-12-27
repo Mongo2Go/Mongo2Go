@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using FluentAssertions;
 using Machine.Specifications;
 using Mongo2Go.Helper;
@@ -74,6 +75,33 @@ namespace Mongo2GoTests
 
         Because of = () => directory = "test1".RemoveLastPart();
         It should_return_null = () => directory.Should().BeNull();
+    }
+
+    [Subject("FolderSearch")]
+    public class when_directory_contains_multiple_versions_mongo2go
+    {
+        private readonly string[] directories;
+
+        public when_directory_contains_multiple_versions_mongo2go()
+        {
+            // setup two directories
+            directories = new[]
+            {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.12a"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.9"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.12")
+            };
+
+            foreach (var d in directories)
+                Directory.CreateDirectory(d);
+        }
+
+        private static string path;
+
+        private Because of = () => path = FolderSearch.FindFolder(AppDomain.CurrentDomain.BaseDirectory, "*");
+
+        private It should_return_2212 =
+            () => path.Should().Be(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.12"));
     }
 
     public class FolderSearchSpec

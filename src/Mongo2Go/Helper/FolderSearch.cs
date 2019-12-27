@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using MongoDB.Bson.Serialization.Serializers;
 
 namespace Mongo2Go.Helper
 {
@@ -25,7 +27,16 @@ namespace Mongo2Go.Helper
                 {
                     return null;
                 }
-                currentPath = matchesDirectory.OrderBy(x => x).Last();
+
+                if (matchesDirectory.Length > 1)
+                {
+                    currentPath = MatchVersionToAssemblyVersion(matchesDirectory)
+                        ?? matchesDirectory.OrderBy(x => x).Last();
+                }
+                else
+                {
+                    currentPath = matchesDirectory.First();
+                }
             }
 
             return currentPath;
@@ -67,11 +78,25 @@ namespace Mongo2Go.Helper
             }
             else
             {
-                finalPath = Path.Combine (CurrentExecutingDirectory (), fileName);
+                finalPath = Path.Combine(CurrentExecutingDirectory(), fileName);
                 finalPath = Path.GetFullPath(finalPath);
             }
 
             return finalPath;
+        }
+
+        private static string MatchVersionToAssemblyVersion(string[] folders)
+        {
+            var version = typeof(FolderSearch).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+
+            foreach (var folder in folders)
+            {
+                var lastFolder = new DirectoryInfo(folder).Name;
+                if (lastFolder == version)
+                    return folder;
+            }
+
+            return null;
         }
     }
 }
