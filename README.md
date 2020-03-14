@@ -114,8 +114,8 @@ public class MongoIntegrationTest
     {
         _runner = MongoDbRunner.Start();
         
-        MongoServer server = MongoServer.Create(_runner.ConnectionString);
-        MongoDatabase database = server.GetDatabase("IntegrationTest");
+        MongoClient client = new MongoClient(_runner.ConnectionString);
+        MongoDatabase database = client.GetDatabase("IntegrationTest");
         _collection = database.GetCollection<TestDocument>("TestCollection");
     }
 }    
@@ -144,8 +144,8 @@ public class WebApiApplication : System.Web.HttpApplication
         _runner = MongoDbRunner.StartForDebugging();
         _runner.Import("TestDatabase", "TestCollection", @"..\..\App_Data\test.json", true);
 
-        MongoServer server = MongoServer.Create(_runner.ConnectionString);
-        MongoDatabase database = server.GetDatabase("TestDatabase");
+        MongoClient client = new MongoClient(_runner.ConnectionString);
+        MongoDatabase database = client.GetDatabase("TestDatabase");
         MongoCollection<TestObject> collection = database.GetCollection<TestObject>("TestCollection");
 
         /* happy coding! */
