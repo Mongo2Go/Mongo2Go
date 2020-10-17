@@ -179,6 +179,12 @@ namespace Mongo2GoTests.Runner
         private static Exception exception;
 
         Because of = () => exception = Catch.Exception(() => CreateConnection(0));
-        It should_throw_timeout_exception = () => exception.Should().BeOfType<TimeoutException>();
+
+        // this passes on Windows (TimeoutException as expected)
+        // but breaks on my Mac (MongoDB.Driver.MongoCommandException: Command replSetInitiate failed: already initialized.)
+        It should_throw_timeout_exception = () => {
+            Console.WriteLine(exception.ToString());
+            exception.Should().BeOfType<TimeoutException>();
+        };
     }
 }

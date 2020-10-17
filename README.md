@@ -257,6 +257,10 @@ public class WebApiApplication : System.Web.HttpApplication
 Changelog
 -------------------------------------
 
+### Mongo2Go 2.2.13, October 17 2020
+
+* fixes a bug with pulling mongo binaries from wrong version (PR [#87](https://github.com/Mongo2Go/Mongo2Go/pull/87), fixes [#86](https://github.com/Mongo2Go/Mongo2Go/issues/86) - many thanks to [mihevc](https://github.com/mihevc))
+* ensures transaction is ready (solves error message: `transition to primary complete; database writes are now permitted`) (PR [#101](https://github.com/Mongo2Go/Mongo2Go/pull/101), fixes [#89](https://github.com/Mongo2Go/Mongo2Go/issues/89) and [#100](https://github.com/Mongo2Go/Mongo2Go/issues/100) - many thanks to [liangshiwei](https://github.com/realLiangshiwei))
 
 ### Mongo2Go 2.2.12, September 07 2019
 * performance: waits for replica set ready log message, or throws if timeout expires, instead of using `Thread.Sleep(5000)` (PR [#83](https://github.com/Mongo2Go/Mongo2Go/pull/83), fixes [#80](https://github.com/Mongo2Go/Mongo2Go/issues/80) - many thanks again to [José Mira](https://github.com/zmira))

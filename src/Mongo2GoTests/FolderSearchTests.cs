@@ -87,9 +87,9 @@ namespace Mongo2GoTests
             // setup two directories
             directories = new[]
             {
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.12a"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.13a"),
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.9"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.12")
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.13")
             };
 
             foreach (var d in directories)
@@ -101,7 +101,7 @@ namespace Mongo2GoTests
         private Because of = () => path = FolderSearch.FindFolder(AppDomain.CurrentDomain.BaseDirectory, "*");
 
         private It should_return_2212 =
-            () => path.Should().Be(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.12"));
+            () => path.Should().Be(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.13"));
     }
 
     public class FolderSearchSpec
