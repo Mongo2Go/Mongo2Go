@@ -11,3 +11,4 @@ obj/
 *.nupkg
 **/.vs
 *.lock.json
+.idea/

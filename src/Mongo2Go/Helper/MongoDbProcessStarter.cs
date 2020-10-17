@@ -4,6 +4,8 @@ using System.Threading;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
+using System.Linq;
+using MongoDB.Driver.Core.Servers;
 
 namespace Mongo2Go.Helper
 {
@@ -62,6 +64,11 @@ namespace Mongo2Go.Helper
 
                 // wait until replica set is ready or until the timeout is reached
                 SpinWait.SpinUntil(() => replicaSetReady, TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
+
+                // wait until transaction is ready or until the timeout is reached
+                SpinWait.SpinUntil(() =>
+                    client.Cluster.Description.Servers.Any(s => s.State == ServerState.Connected && s.IsDataBearing),
+                    TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
 
                 if (!replicaSetReady)
                 {
