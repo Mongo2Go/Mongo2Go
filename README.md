@@ -257,7 +257,7 @@ public class WebApiApplication : System.Web.HttpApplication
 Changelog
 -------------------------------------
 
-### Mongo2Go 2.2.13, October 17 2020
+### Mongo2Go 2.2.14, October 17 2020
 
 * fixes a bug with pulling mongo binaries from wrong version (PR [#87](https://github.com/Mongo2Go/Mongo2Go/pull/87), fixes [#86](https://github.com/Mongo2Go/Mongo2Go/issues/86) - many thanks to [mihevc](https://github.com/mihevc))
 * ensures transaction is ready (solves error message: `System.NotSupportedException : StartTransaction cannot determine if transactions are supported because there are no connected servers.`) (PR [#101](https://github.com/Mongo2Go/Mongo2Go/pull/101), fixes [#89](https://github.com/Mongo2Go/Mongo2Go/issues/89), [#91](https://github.com/Mongo2Go/Mongo2Go/issues/91) and [#100](https://github.com/Mongo2Go/Mongo2Go/issues/100) - many thanks to [liangshiwei](https://github.com/realLiangshiwei))
