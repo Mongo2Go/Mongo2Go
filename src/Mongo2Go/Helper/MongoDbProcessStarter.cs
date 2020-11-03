@@ -75,9 +75,9 @@ namespace Mongo2Go.Helper
                     client.Cluster.Description.Servers.Any(s => s.State == ServerState.Connected && s.IsDataBearing),
                     TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
 
-                if (!replicaSetReady)
+                if (!client.Cluster.Description.Servers.Any(s => s.State == ServerState.Connected && s.IsDataBearing))
                 {
-                    throw new TimeoutException($"Replica set initialization took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
+                    throw new TimeoutException($"Cluster readiness for transactions took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
                 }
             }
 
