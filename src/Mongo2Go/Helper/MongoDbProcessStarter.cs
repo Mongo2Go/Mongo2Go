@@ -19,7 +19,7 @@ namespace Mongo2Go.Helper
         /// <summary>
         /// Starts a new process. Process can be killed
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = 5)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
         {
             return Start(binariesDirectory, dataDirectory, port, false, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout);
         }
@@ -27,7 +27,7 @@ namespace Mongo2Go.Helper
         /// <summary>
         /// Starts a new process.
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = 5)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
         {
             string fileName = @"{0}{1}{2}".Formatted(binariesDirectory, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.MongodExecutable);
 

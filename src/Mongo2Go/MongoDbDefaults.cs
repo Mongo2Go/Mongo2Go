@@ -16,5 +16,7 @@
         public const int TestStartPort = 27018;
 
         public const string Lockfile = "mongod.lock";
+
+        public const int SingleNodeReplicaSetWaitTimeout = 10;
     }
 }
