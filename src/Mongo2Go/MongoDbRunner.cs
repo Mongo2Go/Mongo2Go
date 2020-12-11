@@ -31,7 +31,7 @@ namespace Mongo2Go
         /// On dispose: kills them and deletes their data directory
         /// </summary>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
+        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
         {
             if (dataDirectory == null) {
                 dataDirectory = CreateTemporaryDataDirectory();
@@ -82,7 +82,7 @@ namespace Mongo2Go
         /// Should be used for local debugging only
         /// WARNING: one single instance on one single machine is not a suitable setup for productive environments!!!
         /// </remarks>
-        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, int port = MongoDbDefaults.DefaultPort, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
+        public static MongoDbRunner StartForDebugging(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, int port = MongoDbDefaults.DefaultPort, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
         {
             return new MongoDbRunner(
                 new ProcessWatcher(),
@@ -138,7 +138,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: local debugging
         /// </summary>
-        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, int port, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
+        private MongoDbRunner(IProcessWatcher processWatcher, IPortWatcher portWatcher, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, int port, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
         {
             _fileSystem = fileSystem;
             _mongoBin = mongoBin;
@@ -175,7 +175,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: integration tests
         /// </summary>
-        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = 5)
+        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
         {
             _fileSystem = fileSystem;
             _port = portPool.GetNextOpenPort();
