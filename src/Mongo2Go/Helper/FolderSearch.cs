@@ -10,6 +10,8 @@ namespace Mongo2Go.Helper
 {
     public static class FolderSearch
     {
+        private static readonly char[] _separators = { Path.DirectorySeparatorChar };
+
         public static string CurrentExecutingDirectory()
         {
             string filePath = new Uri(typeof(FolderSearch).GetTypeInfo().Assembly.CodeBase).LocalPath;
@@ -18,10 +20,20 @@ namespace Mongo2Go.Helper
 
         public static string FindFolder(this string startPath, string searchPattern)
         {
+            if (startPath == null || searchPattern == null)
+            {
+                return null;
+            }
+
             string currentPath = startPath;
 
-            foreach (var part in searchPattern.Split(new[] { Path.DirectorySeparatorChar }, StringSplitOptions.None))
+            foreach (var part in searchPattern.Split(_separators, StringSplitOptions.None))
             {
+                if (!Directory.Exists(currentPath))
+                {
+                    return null;
+                }
+
                 string[] matchesDirectory = Directory.GetDirectories(currentPath, part);
                 if (!matchesDirectory.Any())
                 {

@@ -28,10 +28,22 @@ namespace Mongo2GoTests
         It should_find_the_path_with_the_highest_version_number = () => directory.Should().Be(MongoBinaries);
     }
 
+
     [Subject("FolderSearch")]
     public class when_searching_for_not_existing_folder : FolderSearchSpec
     {
         static string startDirectory = Path.Combine(BaseDir, "test1", "test2");
+        static string searchPattern = Path.Combine("packages", "Mongo2Go*", "XXX", "mongodb-win32-i386*", "bin");
+        static string directory;
+
+        Because of = () => directory = startDirectory.FindFolder(searchPattern);
+        It should_return_null = () => directory.Should().BeNull();
+    }
+
+    [Subject("FolderSearch")]
+    public class when_searching_for_not_existing_start_dir : FolderSearchSpec
+    {
+        static string startDirectory = Path.Combine(Path.GetRandomFileName());
         static string searchPattern = Path.Combine("packages", "Mongo2Go*", "XXX", "mongodb-win32-i386*", "bin");
         static string directory;
 
