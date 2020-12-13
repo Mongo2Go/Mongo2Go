@@ -257,6 +257,10 @@ public class WebApiApplication : System.Web.HttpApplication
 Changelog
 -------------------------------------
 
+### Mongo2Go 2.2.16, December 13 2020
+
+* fix for non existing starting path for binary search (PR [#107](https://github.com/Mongo2Go/Mongo2Go/pull/107), fixes [#42](https://github.com/Mongo2Go/Mongo2Go/issues/42) - many thanks to [Gurov Yury](https://github.com/kenoma))
+
 ### Mongo2Go 2.2.15, December 12 2020
 
 * throw exception if cluster is not ready for transactions after `singleNodeReplSetWaitTimeout` (PR [#103](https://github.com/Mongo2Go/Mongo2Go/pull/103) - many thanks for the continued support by [José Mira](https://github.com/zmira))
