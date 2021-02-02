@@ -29,17 +29,17 @@ namespace Mongo2Go.Helper
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 _searchPattern = DefaultOsxSearchPattern;
-                _nugetCacheDirectory ??= OsxAndLinuxNugetCacheLocation;
+                _nugetCacheDirectory = _nugetCacheDirectory ?? OsxAndLinuxNugetCacheLocation;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 _searchPattern = DefaultLinuxSearchPattern;
-                _nugetCacheDirectory ??= OsxAndLinuxNugetCacheLocation;
+                _nugetCacheDirectory = _nugetCacheDirectory ?? OsxAndLinuxNugetCacheLocation;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 _searchPattern = DefaultWindowsSearchPattern;
-                _nugetCacheDirectory ??= Environment.ExpandEnvironmentVariables(WindowsNugetCacheLocation);
+                _nugetCacheDirectory = _nugetCacheDirectory ?? Environment.ExpandEnvironmentVariables(WindowsNugetCacheLocation);
             }
             else
             {
