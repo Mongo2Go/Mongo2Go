@@ -27,7 +27,7 @@ namespace Mongo2GoTests.Runner
         Because of = () => findResult = _collection.FindSync<TestDocument>(_ => true).First();
 
         It should_return_a_result = () => findResult.Should().NotBeNull();
-        It should_hava_expected_data = () => findResult.ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
+        It should_hava_expected_data = () => findResult.Should().BeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
 
         Cleanup stuff = () => _runner.Dispose();
     }
@@ -74,8 +74,9 @@ namespace Mongo2GoTests.Runner
 
             foreach (var count in Enumerable.Range(1, 10))
             {
-                //index operations produces std output 
-                taskList.Add(_collection.Indexes.CreateOneAsync(Builders<TestDocument>.IndexKeys.Ascending(x => x.IntTest)).WithTimeout(TimeSpan.FromMilliseconds(5000)));
+                //index operations produces std output
+                var createIndexModel = new CreateIndexModel<TestDocument>(Builders<TestDocument>.IndexKeys.Ascending(x => x.IntTest));
+                taskList.Add(_collection.Indexes.CreateOneAsync(createIndexModel).WithTimeout(TimeSpan.FromMilliseconds(5000)));
                 taskList.Add(_collection.Indexes.DropAllAsync().WithTimeout(TimeSpan.FromMilliseconds(5000)));
             }
         };
