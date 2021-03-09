@@ -8,6 +8,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mongo2Go", "src\Mongo2Go\Mo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mongo2GoTests", "src\Mongo2GoTests\Mongo2GoTests.csproj", "{ADE5A672-6A00-4561-BCC1-E5497016DE24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDownloader", "src\MongoDownloader\MongoDownloader.csproj", "{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{56AB91A3-555C-4D59-BB92-570465DC2CA0}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
@@ -27,6 +29,10 @@ Global
 		{ADE5A672-6A00-4561-BCC1-E5497016DE24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ADE5A672-6A00-4561-BCC1-E5497016DE24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ADE5A672-6A00-4561-BCC1-E5497016DE24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -34,6 +40,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{040A1626-1D04-40D6-BCCF-2D207AE648FC} = {0B557702-3C09-4514-BDD5-55A44F22113F}
 		{ADE5A672-6A00-4561-BCC1-E5497016DE24} = {0B557702-3C09-4514-BDD5-55A44F22113F}
+		{7E10E0DE-8092-4ECB-B05A-0A15472AB8D2} = {0B557702-3C09-4514-BDD5-55A44F22113F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {08364BFD-1801-4718-83F5-F6F99950B05E}
