@@ -37,9 +37,9 @@ namespace Mongo2GoTests.Runner
                 parsedContent = ReadBsonFile<TestDocument>(_testFile);
             };
 
-        It should_preserve_all_values1 = () => parsedContent[0].ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
-        It should_preserve_all_values2 = () => parsedContent[1].ShouldBeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
-        It should_preserve_all_values3 = () => parsedContent[2].ShouldBeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
+        It should_preserve_all_values1 = () => parsedContent[0].Should().BeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
+        It should_preserve_all_values2 = () => parsedContent[1].Should().BeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
+        It should_preserve_all_values3 = () => parsedContent[2].Should().BeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
 
         Cleanup stuff = () =>
             {
@@ -74,9 +74,9 @@ namespace Mongo2GoTests.Runner
 
             };
 
-        It should_return_document1 = () => query.ToList().ElementAt(0).ShouldBeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
-        It should_return_document2 = () => query.ToList().ElementAt(1).ShouldBeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
-        It should_return_document3 = () => query.ToList().ElementAt(2).ShouldBeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document1 = () => query.ToList().ElementAt(0).Should().BeEquivalentTo(TestDocument.DummyData1(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document2 = () => query.ToList().ElementAt(1).Should().BeEquivalentTo(TestDocument.DummyData2(), cfg => cfg.Excluding(d => d.Id));
+        It should_return_document3 = () => query.ToList().ElementAt(2).Should().BeEquivalentTo(TestDocument.DummyData3(), cfg => cfg.Excluding(d => d.Id));
         
         Cleanup stuff = () =>
             {

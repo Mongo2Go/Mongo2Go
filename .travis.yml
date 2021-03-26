@@ -1,11 +1,10 @@
 language: csharp
-dist: trusty
 sudo: required
 mono: none
-dotnet: 2.0.0
+dotnet: 5.0.201
 
 script:
   - dotnet --info
   - dotnet restore
   - dotnet build
-  - dotnet test src/Mongo2GoTests
+  - dotnet test --no-build --verbosity normal
