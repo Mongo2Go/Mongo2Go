@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
-using MongoDB.Bson.Serialization.Serializers;
 
 namespace Mongo2Go.Helper
 {

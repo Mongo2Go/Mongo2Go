@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using FluentAssertions;
 using Machine.Specifications;
 using Mongo2Go.Helper;
@@ -94,14 +95,21 @@ namespace Mongo2GoTests
     {
         private readonly string[] directories;
 
+        private static string getAssemblyVersion()
+        {
+            // ReSharper disable once PossibleNullReferenceException
+            return typeof(FolderSearch).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+        }
+
         public when_directory_contains_multiple_versions_mongo2go()
         {
-            // setup two directories
+            
+            // setup some directories
             directories = new[]
             {
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.16a"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, getAssemblyVersion() + "a"),
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.9"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.16")
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, getAssemblyVersion())
             };
 
             foreach (var d in directories)
@@ -112,8 +120,8 @@ namespace Mongo2GoTests
 
         private Because of = () => path = FolderSearch.FindFolder(AppDomain.CurrentDomain.BaseDirectory, "*");
 
-        private It should_return_2212 =
-            () => path.Should().Be(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "2.2.16"));
+        private It should_return_the_one_that_matches_our_own_assembly_version =
+            () => path.Should().Be(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, getAssemblyVersion()));
     }
 
     public class FolderSearchSpec

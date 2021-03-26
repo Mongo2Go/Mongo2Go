@@ -71,14 +71,13 @@ namespace Mongo2GoTests.Runner
 
         private Because of = () =>
         {
-
-            foreach (var count in Enumerable.Range(1, 10))
-            {
+        //     foreach (var count in Enumerable.Range(1, 10))
+        //     {
                 //index operations produces std output
                 var createIndexModel = new CreateIndexModel<TestDocument>(Builders<TestDocument>.IndexKeys.Ascending(x => x.IntTest));
                 taskList.Add(_collection.Indexes.CreateOneAsync(createIndexModel).WithTimeout(TimeSpan.FromMilliseconds(5000)));
                 taskList.Add(_collection.Indexes.DropAllAsync().WithTimeout(TimeSpan.FromMilliseconds(5000)));
-            }
+            // }
         };
 
         It should_not_timeout = () => Task.WaitAll(taskList.ToArray());
