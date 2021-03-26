@@ -12,6 +12,13 @@ namespace MongoDownloader
         {
             try
             {
+                var toolsDirectory = GetToolsDirectory();
+
+                foreach (DirectoryInfo dir in toolsDirectory.EnumerateDirectories())
+                {
+                    dir.Delete(true); 
+                }
+
                 var cancellationTokenSource = new CancellationTokenSource();
                 Console.CancelKeyPress += (_, eventArgs) =>
                 {
@@ -21,7 +28,6 @@ namespace MongoDownloader
                 };
                 var archiveExtractor = new ArchiveExtractor("mongod", "mongoexport", "mongoimport");
                 var downloader = new MongoDbDownloader(archiveExtractor, new Options());
-                var toolsDirectory = GetToolsDirectory();
                 await downloader.RunAsync(toolsDirectory, cancellationTokenSource.Token);
                 Console.WriteLine();
                 Console.WriteLine($"✅ Downloaded and extracted MongoDB archives into {toolsDirectory.FullName}");

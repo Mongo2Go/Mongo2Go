@@ -2,9 +2,8 @@ The binaries in this directory are automatically downloaded with the `MongoDownl
 
 In order to download the latest binary:
 
-1. Manually delete the three directories (linux + mac + windows) of the previous mongodb version (in this `tools` directory)
-2. Go into the `Mongo2Go/src/MongoDownloader` directory
-3. Run the downloader with `dotnet run`
+1. Go into the `Mongo2Go/src/MongoDownloader` directory
+2. Run the downloader with `dotnet run`
 
 * The _MongoDB Community Server_ binaries are fetched from [https://s3.amazonaws.com/downloads.mongodb.org/current.json](https://s3.amazonaws.com/downloads.mongodb.org/current.json)
   The latest production version is downloaded and extracted.
