@@ -9,7 +9,7 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 
 Mongo2Go is a managed wrapper around the latest MongoDB binaries.
-It targets **.NET Standard 1.6** (and **.NET 4.6** for legacy environments) and works with Windows, Linux and macOS.
+It targets **.NET Standard 2.1** (and **.NET 4.6** for legacy environments) and works with Windows, Linux and macOS.
 This Nuget package contains the executables of _mongod_, _mongoimport_ and _mongoexport_ **for Windows, Linux and macOS** .
 
 __Brought to you by [Johannes Hoppe](https://haushoppe-its.de), follow him on [Twitter](https://twitter.com/johanneshoppe).__ 
@@ -70,14 +70,19 @@ Search for „Mongo2Go“ in the Manage NuGet Packages dialog box or run:
 
     PM> Install-Package Mongo2Go
 
+or run for the deprecated **.NET Standard 1.6** package:
+
+    PM> Install-Package Mongo2Go -Version 2.2.16
+
 or run for the legacy **.NET 4.6** package:
 
     PM> Install-Package Mongo2Go -Version 1.1.0
 
 in the Package Manager Console. 
 
-* The new 2.x branch targets __.NET Standard 1.6__, please use the latest packages if possible. 
-* The old 1.x branch targets good-old classic __.NET 4.6.1__. This is for legacy environments only. No new features will be added, only bugfixes will be made.
+* The new 3.x branch targets __.NET Standard 2.1__. Please use this version if possible. 
+* The old 2.x branch targets __.NET Standard 1.6__. No new features will be added, only bugfixes might be made.
+* The old 1.x branch targets good-old classic __.NET 4.6.1__. This is for legacy environments only. No changes will be made.
 
 
 Examples
@@ -257,6 +262,17 @@ public class WebApiApplication : System.Web.HttpApplication
 Changelog
 -------------------------------------
 
+### Mongo2Go 3.0.0, March 26 2021
+
+* includes MongoDB binaries of **version 4.4.4** with support for Windows, Linux and macOS
+* targets **.NET Standard 2.1** (can be used with .NET Core 3.0 and .NET 5.0)
+
+* adds new MongoDownloader tool (PR [#109](https://github.com/Mongo2Go/Mongo2Go/pull/109), fixes [#82](https://github.com/Mongo2Go/Mongo2Go/issues/82) and [#112](https://github.com/Mongo2Go/Mongo2Go/issues/112) - many thanks to [Cédric Luthi](https://github.com/0xced))
+* adds support for `NUGET_PACKAGES` environment variable  (PR [#110](https://github.com/Mongo2Go/Mongo2Go/pull/110) - many thanks to [Bastian Eicher](https://github.com/bastianeicher))
+
+<details>
+  <summary><b>Changelog v2.0.0-alpha1 to v2.2.16</b> (click to show)</summary>
+
 ### Mongo2Go 2.2.16, December 13 2020
 
 * fix for non existing starting path for binary search (PR [#107](https://github.com/Mongo2Go/Mongo2Go/pull/107), fixes [#105](https://github.com/Mongo2Go/Mongo2Go/issues/105) - many thanks to [Gurov Yury](https://github.com/kenoma))
@@ -264,7 +280,7 @@ Changelog
 ### Mongo2Go 2.2.15, December 12 2020
 
 * throw exception if cluster is not ready for transactions after `singleNodeReplSetWaitTimeout` (PR [#103](https://github.com/Mongo2Go/Mongo2Go/pull/103) - many thanks for the continued support by [José Mira](https://github.com/zmira))
-
+s
 ### Mongo2Go 2.2.14, October 17 2020
 
 * fixes a bug with pulling mongo binaries from wrong version (PR [#87](https://github.com/Mongo2Go/Mongo2Go/pull/87), fixes [#86](https://github.com/Mongo2Go/Mongo2Go/issues/86) - many thanks to [mihevc](https://github.com/mihevc))
@@ -341,6 +357,8 @@ Changelog
 * NEW: first support of .NET Standard 1.6 ([#25](https://github.com/Mongo2Go/Mongo2Go/pull/25))
     * many thanks to [Hassaan Ahmed](https://github.com/bannerflow-hassaan)    
 	* see the [Wiki](https://github.com/Mongo2Go/Mongo2Go/wiki/NetStandard) for more information about .NET Core 1.0 / .NET Standard 1.6
+
+</details>
 
 <details>
   <summary><b>Changelog v0.1.0 to v1.0.0</b> (click to show)</summary>
