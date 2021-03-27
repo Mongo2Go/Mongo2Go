@@ -24,29 +24,29 @@ namespace Mongo2Go.Helper
         public MongoBinaryLocator(string searchPatternOverride, string additionalSearchDirectory)
         {
             _additionalSearchDirectory = additionalSearchDirectory;
-            if (string.IsNullOrEmpty(searchPatternOverride))
+            _nugetCacheDirectory = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    _searchPattern = DefaultOsxSearchPattern;
-                    _nugetCacheDirectory = OsxAndLinuxNugetCacheLocation;
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    _searchPattern = DefaultLinuxSearchPattern;
-                    _nugetCacheDirectory = OsxAndLinuxNugetCacheLocation;
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    _searchPattern = DefaultWindowsSearchPattern;
-                    _nugetCacheDirectory = Environment.ExpandEnvironmentVariables(WindowsNugetCacheLocation);
-                }
-                else
-                {
-                    throw new MonogDbBinariesNotFoundException($"Unknown OS: {RuntimeInformation.OSDescription}");
-                }
+                _searchPattern = DefaultOsxSearchPattern;
+                _nugetCacheDirectory = _nugetCacheDirectory ?? OsxAndLinuxNugetCacheLocation;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                _searchPattern = DefaultLinuxSearchPattern;
+                _nugetCacheDirectory = _nugetCacheDirectory ?? OsxAndLinuxNugetCacheLocation;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                _searchPattern = DefaultWindowsSearchPattern;
+                _nugetCacheDirectory = _nugetCacheDirectory ?? Environment.ExpandEnvironmentVariables(WindowsNugetCacheLocation);
             }
             else
+            {
+                throw new MonogDbBinariesNotFoundException($"Unknown OS: {RuntimeInformation.OSDescription}");
+            }
+
+            if (!string.IsNullOrEmpty(searchPatternOverride))
             {
                 _searchPattern = searchPatternOverride;
             }
