@@ -1,8 +1,9 @@
+using Microsoft.Extensions.Logging;
+using Mongo2Go;
+using MongoDB.Driver;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Mongo2Go;
-using MongoDB.Driver;
 
 namespace Mongo2GoTests.Runner
 {
@@ -13,9 +14,9 @@ namespace Mongo2GoTests.Runner
         internal static string _databaseName = "IntegrationTest";
         internal static string _collectionName = "TestCollection";
 
-        internal static void CreateConnection()
+        internal static void CreateConnection(ILogger logger = null)
         {
-            _runner = MongoDbRunner.Start(singleNodeReplSet: false);
+            _runner = MongoDbRunner.Start(singleNodeReplSet: false, logger: logger);
 
             MongoClient client = new MongoClient(_runner.ConnectionString);
             IMongoDatabase database = client.GetDatabase(_databaseName);

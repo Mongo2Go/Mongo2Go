@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Threading;
+﻿using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using System;
-using System.Linq;
 using MongoDB.Driver.Core.Servers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Mongo2Go.Helper
 {
@@ -19,21 +20,21 @@ namespace Mongo2Go.Helper
         /// <summary>
         /// Starts a new process. Process can be killed
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout, ILogger logger = null)
         {
-            return Start(binariesDirectory, dataDirectory, port, false, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout);
+            return Start(binariesDirectory, dataDirectory, port, false, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout, logger);
         }
 
         /// <summary>
         /// Starts a new process.
         /// </summary>
-        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
+        public IMongoDbProcess Start(string binariesDirectory, string dataDirectory, int port, bool doNotKill, bool singleNodeReplSet, string additionalMongodArguments, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout, ILogger logger = null)
         {
             string fileName = @"{0}{1}{2}".Formatted(binariesDirectory, System.IO.Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.MongodExecutable);
 
-			string arguments = (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ?
-				@"--dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port) :
-				@"--sslMode disabled --dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
+            string arguments = (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ?
+                @"--dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port) :
+                @"--sslMode disabled --dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
 
             arguments = singleNodeReplSet ? arguments + Space + "--replSet" + Space + ReplicaSetName : arguments;
             arguments += MongodArguments.GetValidAdditionalArguments(arguments, additionalMongodArguments);
@@ -41,9 +42,7 @@ namespace Mongo2Go.Helper
             WrappedProcess wrappedProcess = ProcessControl.ProcessFactory(fileName, arguments);
             wrappedProcess.DoNotKill = doNotKill;
 
-            string windowTitle = "mongod | port: {0}".Formatted(port);
-
-            ProcessOutput output = ProcessControl.StartAndWaitForReady(wrappedProcess, 5, ProcessReadyIdentifier, windowTitle);
+            ProcessOutput output = ProcessControl.StartAndWaitForReady(wrappedProcess, 5, ProcessReadyIdentifier, logger);
             if (singleNodeReplSet)
             {
                 var replicaSetReady = false;
@@ -82,10 +81,10 @@ namespace Mongo2Go.Helper
             }
 
             MongoDbProcess mongoDbProcess = new MongoDbProcess(wrappedProcess)
-                {
-                    ErrorOutput = output.ErrorOutput,
-                    StandardOutput = output.StandardOutput
-                };
+            {
+                ErrorOutput = output.ErrorOutput,
+                StandardOutput = output.StandardOutput
+            };
 
             return mongoDbProcess;
         }
