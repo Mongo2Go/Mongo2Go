@@ -145,7 +145,8 @@ namespace Mongo2Go.Helper
                 }
                 catch (Exception ex) when (ex is JsonException || ex is NotSupportedException)
                 {
-                    logger.LogWarning("Failed parsing the mongod logs {log}. It could be that the format has changed. " +
+                    logger.LogWarning(ex,
+                        "Failed parsing the mongod logs {log}. It could be that the format has changed. " +
                         "See: https://docs.mongodb.com/manual/reference/log-messages/#std-label-log-message-json-output-format",
                         args.Data);
                 }
