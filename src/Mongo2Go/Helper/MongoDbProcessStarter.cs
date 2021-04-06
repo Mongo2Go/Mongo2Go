@@ -34,7 +34,7 @@ namespace Mongo2Go.Helper
 
             string arguments = (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ?
                 @"--dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port) :
-                @"--sslMode disabled --dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
+                @"--tlsMode disabled --dbpath ""{0}"" --port {1} --bind_ip 127.0.0.1".Formatted(dataDirectory, port);
 
             arguments = singleNodeReplSet ? arguments + Space + "--replSet" + Space + ReplicaSetName : arguments;
             arguments += MongodArguments.GetValidAdditionalArguments(arguments, additionalMongodArguments);
