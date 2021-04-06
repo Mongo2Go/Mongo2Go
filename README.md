@@ -259,6 +259,69 @@ public class WebApiApplication : System.Web.HttpApplication
 ```
 </details>
 
+**Example: Logging with `ILogger`**
+<details>
+    <summary><b>Wire mongod's logs at info and above levels to a custom `ILogger`</b> (click to show)</summary>
+
+```c#
+public class MongoIntegrationTest
+{
+    internal static MongoDbRunner _runner;
+
+    internal static void CreateConnection()
+    {
+        // Create a custom logger. 
+        // Replace this code with your own configuration of an ILogger.
+        var provider = new ServiceCollection()
+            .AddLogging(config =>
+            {
+                // Log to a simple console and to event logs.
+                config.AddSimpleConsole();
+                config.AddEventLog();
+            })
+            .BuildServiceProvider();
+        var logger = provider.GetSerivce<ILoggerFactory>().CreateLogger("Mongo2Go");
+
+        _runner = MongoDbRunner.Start(logger: logger);
+    }
+}    
+```
+</details>
+
+<details>
+    <summary><b>Wire mongod's logs at debug levels to a custom `ILogger`</b> (click to show)</summary>
+
+```c#
+public class MongoIntegrationTest
+{
+    internal static MongoDbRunner _runner;
+
+    internal static void CreateConnection()
+    {
+        // Create a custom logger. 
+        // Replace this code with your own configuration of an ILogger.
+        var provider = new ServiceCollection()
+            .AddLogging(config =>
+            {
+                // Mongod's D1-D2 levels are logged with Debug level.
+                // D3-D5 levels are logged with Trace level.
+                config.SetMinimumLevel(LogLevel.Trace);
+
+                // Log to System.Diagnostics.Debug and to the event source.
+                config.AddDebug();
+                config.AddEventSourceLogger();
+            })
+            .BuildServiceProvider();
+        var logger = provider.GetSerivce<ILoggerFactory>().CreateLogger("Mongo2Go");
+
+        _runner = MongoDbRunner.Start(
+            additionalMongodArguments: "vvvvv", // Tell mongod to output its D5 level logs
+            logger: logger);
+    }
+}    
+```
+</details>
+
 Changelog
 -------------------------------------
 
