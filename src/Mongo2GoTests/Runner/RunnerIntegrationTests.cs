@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentAssertions;
+using Machine.Specifications;
+using MELT;
+using MongoDB.Driver;
+using MongoDB.Driver.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
-using Machine.Specifications;
-using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 using It = Machine.Specifications.It;
 
 // ReSharper disable InconsistentNaming
@@ -71,16 +72,44 @@ namespace Mongo2GoTests.Runner
 
         private Because of = () =>
         {
-        //     foreach (var count in Enumerable.Range(1, 10))
-        //     {
-                //index operations produces std output
-                var createIndexModel = new CreateIndexModel<TestDocument>(Builders<TestDocument>.IndexKeys.Ascending(x => x.IntTest));
-                taskList.Add(_collection.Indexes.CreateOneAsync(createIndexModel).WithTimeout(TimeSpan.FromMilliseconds(5000)));
-                taskList.Add(_collection.Indexes.DropAllAsync().WithTimeout(TimeSpan.FromMilliseconds(5000)));
-            // }
+            var createIndexModel = new CreateIndexModel<TestDocument>(Builders<TestDocument>.IndexKeys.Ascending(x => x.IntTest));
+            taskList.Add(_collection.Indexes.CreateOneAsync(createIndexModel).WithTimeout(TimeSpan.FromMilliseconds(5000)));
+            taskList.Add(_collection.Indexes.DropAllAsync().WithTimeout(TimeSpan.FromMilliseconds(5000)));
         };
 
         It should_not_timeout = () => Task.WaitAll(taskList.ToArray());
+
+        Cleanup stuff = () => _runner.Dispose();
+    }
+
+
+    [Subject("Runner Integration Test")]
+    public class when_using_microsoft_ilogger : MongoIntegrationTest
+    {
+        static List<Task> taskList = new List<Task>();
+        static ITestLoggerFactory loggerFactory;
+
+        private Establish context = () =>
+        {
+            loggerFactory = TestLoggerFactory.Create();
+            var logger = loggerFactory.CreateLogger("MyTestLogger");
+            CreateConnection(logger);
+        };
+
+        private Because of = () =>
+        {
+            var createIndexModel = new CreateIndexModel<TestDocument>(Builders<TestDocument>.IndexKeys.Ascending(x => x.IntTest));
+            taskList.Add(_collection.Indexes.CreateOneAsync(createIndexModel).WithTimeout(TimeSpan.FromMilliseconds(5000)));
+            taskList.Add(_collection.Indexes.DropAllAsync().WithTimeout(TimeSpan.FromMilliseconds(5000)));
+        };
+
+        It should_not_timeout = () => Task.WaitAll(taskList.ToArray());
+        It should_have_received_many_logs = () =>
+            loggerFactory.Sink.LogEntries.Count(l => l.LogLevel == Microsoft.Extensions.Logging.LogLevel.Information)
+            .Should().BeGreaterThan(10);
+        It should_have_created_collection_statement = () => loggerFactory.Sink.LogEntries
+            .Count(l => l.Properties.Any(p => p.Key == "message" && (string)p.Value == "createCollection"))
+            .Should().BeGreaterOrEqualTo(1);
 
         Cleanup stuff = () => _runner.Dispose();
     }

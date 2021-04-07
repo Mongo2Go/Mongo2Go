@@ -259,9 +259,80 @@ public class WebApiApplication : System.Web.HttpApplication
 ```
 </details>
 
+**Example: Logging with `ILogger`**
+<details>
+    <summary><b>Wire mongod's logs at info and above levels to a custom `ILogger`</b> (click to show)</summary>
+
+```c#
+public class MongoIntegrationTest
+{
+    internal static MongoDbRunner _runner;
+
+    internal static void CreateConnection()
+    {
+        // Create a custom logger. 
+        // Replace this code with your own configuration of an ILogger.
+        var provider = new ServiceCollection()
+            .AddLogging(config =>
+            {
+                // Log to a simple console and to event logs.
+                config.AddSimpleConsole();
+                config.AddEventLog();
+            })
+            .BuildServiceProvider();
+        var logger = provider.GetSerivce<ILoggerFactory>().CreateLogger("Mongo2Go");
+
+        _runner = MongoDbRunner.Start(logger: logger);
+    }
+}    
+```
+</details>
+
+<details>
+    <summary><b>Wire mongod's logs at debug levels to a custom `ILogger`</b> (click to show)</summary>
+
+```c#
+public class MongoIntegrationTest
+{
+    internal static MongoDbRunner _runner;
+
+    internal static void CreateConnection()
+    {
+        // Create a custom logger. 
+        // Replace this code with your own configuration of an ILogger.
+        var provider = new ServiceCollection()
+            .AddLogging(config =>
+            {
+                // Mongod's D1-D2 levels are logged with Debug level.
+                // D3-D5 levels are logged with Trace level.
+                config.SetMinimumLevel(LogLevel.Trace);
+
+                // Log to System.Diagnostics.Debug and to the event source.
+                config.AddDebug();
+                config.AddEventSourceLogger();
+            })
+            .BuildServiceProvider();
+        var logger = provider.GetSerivce<ILoggerFactory>().CreateLogger("Mongo2Go");
+
+        _runner = MongoDbRunner.Start(
+            additionalMongodArguments: "vvvvv", // Tell mongod to output its D5 level logs
+            logger: logger);
+    }
+}    
+```
+</details>
+
 Changelog
 -------------------------------------
 
+### Mongo2Go 3.1.0, Unreleased
+
+* replaces `--sslMode disabled` (deprecated) with `--tlsMode disabled` in command line arguments to mongod.
+* adds option to inject a `Microsoft.Extensions.Logging.ILogger` to `MongoDbRunner.Start(logger)` arguments.
+
+<details>
+  <summary><b>Changelog v3.0.0 to v3.0.0</b> (click to show)</summary>
+  
 ### Mongo2Go 3.0.0, March 26 2021
 
 * includes MongoDB binaries of **version 4.4.4** with support for Windows, Linux and macOS
@@ -269,6 +340,7 @@ Changelog
 
 * adds new MongoDownloader tool (PR [#109](https://github.com/Mongo2Go/Mongo2Go/pull/109), fixes [#82](https://github.com/Mongo2Go/Mongo2Go/issues/82) and [#112](https://github.com/Mongo2Go/Mongo2Go/issues/112) - many thanks to [Cédric Luthi](https://github.com/0xced))
 * adds support for `NUGET_PACKAGES` environment variable  (PR [#110](https://github.com/Mongo2Go/Mongo2Go/pull/110) - many thanks to [Bastian Eicher](https://github.com/bastianeicher))
+</details>
 
 <details>
   <summary><b>Changelog v2.0.0-alpha1 to v2.2.16</b> (click to show)</summary>

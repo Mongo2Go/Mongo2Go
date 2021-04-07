@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Mongo2Go.Helper;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Mongo2Go.Helper;
 
 namespace Mongo2Go
 {
@@ -30,8 +31,10 @@ namespace Mongo2Go
         /// Starts Multiple MongoDB instances with each call
         /// On dispose: kills them and deletes their data directory
         /// </summary>
+        /// <param name="logger">(Optional) If null, mongod logs are wired to .NET's Console and Debug output (provided you haven't added the --quiet additional argument).
+        /// If not null, mongod logs are parsed and wired to the provided logger.</param>
         /// <remarks>Should be used for integration tests</remarks>
-        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
+        public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout, ILogger logger = null)
         {
             if (dataDirectory == null) {
                 dataDirectory = CreateTemporaryDataDirectory();
@@ -48,7 +51,8 @@ namespace Mongo2Go
                 dataDirectory,
                 singleNodeReplSet,
                 additionalMongodArguments,
-                singleNodeReplSetWaitTimeout);
+                singleNodeReplSetWaitTimeout,
+                logger);
         }
 
         /// <summary>
@@ -175,7 +179,7 @@ namespace Mongo2Go
         /// <summary>
         /// usage: integration tests
         /// </summary>
-        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout)
+        private MongoDbRunner(IPortPool portPool, IFileSystem fileSystem, IMongoDbProcessStarter processStarter, IMongoBinaryLocator mongoBin, string dataDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout, ILogger logger = null)
         {
             _fileSystem = fileSystem;
             _port = portPool.GetNextOpenPort();
@@ -195,7 +199,7 @@ namespace Mongo2Go
             _fileSystem.CreateFolder(_dataDirectoryWithPort);
             _fileSystem.DeleteFile("{0}{1}{2}".Formatted(_dataDirectoryWithPort, Path.DirectorySeparatorChar.ToString(), MongoDbDefaults.Lockfile));
 
-            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout);
+            _mongoDbProcess = processStarter.Start(_mongoBin.Directory, _dataDirectoryWithPort, _port, singleNodeReplSet, additionalMongodArguments, singleNodeReplSetWaitTimeout, logger);
 
             State = State.Running;
         }
