@@ -325,13 +325,12 @@ public class MongoIntegrationTest
 Changelog
 -------------------------------------
 
-### Mongo2Go 3.1.0, Unreleased
+### Mongo2Go 3.1.0, April 07 2021
 
-* replaces `--sslMode disabled` (deprecated) with `--tlsMode disabled` in command line arguments to mongod.
-* adds option to inject a `Microsoft.Extensions.Logging.ILogger` to `MongoDbRunner.Start(logger)` arguments.
+* **NEW: Configurable logging!** adds the option to inject a `Microsoft.Extensions.Logging.ILogger` to `MongoDbRunner.Start(logger)` arguments. Now you can adjust or disable the console output to avoid noise in CI environments. Please note the two examples shown above. (PR [#113](https://github.com/Mongo2Go/Mongo2Go/pull/113), fixes [#94](https://github.com/Mongo2Go/Mongo2Go/issues/94), [#95](https://github.com/Mongo2Go/Mongo2Go/issues/95) and [#113](https://github.com/Mongo2Go/Mongo2Go/issues/113) - many thanks to [Corentin Altepe](https://github.com/corentinaltepe))
+* internal: replaces `--sslMode disabled` (deprecated) with `--tlsMode disabled` in command line arguments to mongod.
 
-<details>
-  <summary><b>Changelog v3.0.0 to v3.0.0</b> (click to show)</summary>
+
   
 ### Mongo2Go 3.0.0, March 26 2021
 
@@ -340,7 +339,6 @@ Changelog
 
 * adds new MongoDownloader tool (PR [#109](https://github.com/Mongo2Go/Mongo2Go/pull/109), fixes [#82](https://github.com/Mongo2Go/Mongo2Go/issues/82) and [#112](https://github.com/Mongo2Go/Mongo2Go/issues/112) - many thanks to [Cédric Luthi](https://github.com/0xced))
 * adds support for `NUGET_PACKAGES` environment variable  (PR [#110](https://github.com/Mongo2Go/Mongo2Go/pull/110) - many thanks to [Bastian Eicher](https://github.com/bastianeicher))
-</details>
 
 <details>
   <summary><b>Changelog v2.0.0-alpha1 to v2.2.16</b> (click to show)</summary>

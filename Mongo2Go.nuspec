@@ -4,7 +4,7 @@
     <metadata>
 
         <id>Mongo2Go</id>
-        <version>3.0.0</version>
+        <version>3.1.0</version>
 
         <title>Mongo2Go</title>
         <authors>Johannes Hoppe and many contributors</authors>
@@ -24,7 +24,7 @@ Mongo2Go has two use cases:
         <language>en-US</language>
         <summary>MongoDB for integration tests and local debugging</summary>
 
-        <releaseNotes>The 3.0.0 release sworks on top of .NET Standard 2.1 / .NET Core 3.0.</releaseNotes>
+        <releaseNotes>The 3.1.0 release sworks on top of .NET Standard 2.1 / .NET Core 3.0.</releaseNotes>
         <tags>MongoDB Mongo unit test integration runner</tags>
 
         <projectUrl>http://github.com/Mongo2Go/Mongo2Go</projectUrl>
