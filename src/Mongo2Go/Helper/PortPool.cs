@@ -7,10 +7,7 @@ namespace Mongo2Go.Helper
     /// </summary>
     public sealed class PortPool : IPortPool
     {
-        private readonly Object _lock = new Object();
         private static readonly PortPool Instance = new PortPool();
-
-        private int _startPort = MongoDbDefaults.TestStartPort;
 
         // Explicit static constructor to tell C# compiler
         // not to mark type as beforefieldinit
@@ -25,10 +22,7 @@ namespace Mongo2Go.Helper
 
         public static PortPool GetInstance
         {
-            get
-            {
-                return Instance;
-            }
+            get { return Instance; }
         }
 
         /// <summary>
@@ -36,14 +30,8 @@ namespace Mongo2Go.Helper
         /// </summary>
         public int GetNextOpenPort()
         {
-            lock (_lock)
-            {
-                IPortWatcher portWatcher = PortWatcherFactory.CreatePortWatcher();
-                int newAvailablePort = portWatcher.FindOpenPort(_startPort);
-
-                _startPort = newAvailablePort + 1;
-                return newAvailablePort;
-            }
+            IPortWatcher portWatcher = PortWatcherFactory.CreatePortWatcher();
+            return portWatcher.FindOpenPort();
         }
     }
 }
