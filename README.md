@@ -325,13 +325,15 @@ public class MongoIntegrationTest
 Changelog
 -------------------------------------
 
+### Mongo2Go 3.1.1, April 08 2021
+
+* internal: Better algorithm for determining a free port. This allows parallel execution of tests and increases compatibility with Raider and other test runners. (PR [#116](https://github.com/Mongo2Go/Mongo2Go/pull/116), fixes [#115](https://github.com/Mongo2Go/Mongo2Go/issues/115) and [#106](https://github.com/Mongo2Go/Mongo2Go/issues/106) - many thanks to [liangshiwei](https://github.com/realLiangshiwei))
+
 ### Mongo2Go 3.1.0, April 07 2021
 
 * **NEW: Configurable logging!** adds the option to inject a `Microsoft.Extensions.Logging.ILogger` to `MongoDbRunner.Start(logger)` arguments. Now you can adjust or disable the console output to avoid noise in CI environments. Please note the two examples shown above. (PR [#113](https://github.com/Mongo2Go/Mongo2Go/pull/113), fixes [#94](https://github.com/Mongo2Go/Mongo2Go/issues/94), [#95](https://github.com/Mongo2Go/Mongo2Go/issues/95) and [#113](https://github.com/Mongo2Go/Mongo2Go/issues/113) - many thanks to [Corentin Altepe](https://github.com/corentinaltepe))
 * internal: replaces `--sslMode disabled` (deprecated) with `--tlsMode disabled` in command line arguments to mongod.
 
-
-  
 ### Mongo2Go 3.0.0, March 26 2021
 
 * includes MongoDB binaries of **version 4.4.4** with support for Windows, Linux and macOS
