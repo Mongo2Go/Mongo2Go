@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Description>Mongo2Go - MongoDB for integration tests</Description>
     <Company>HAUS HOPPE - ITS</Company>
     <Copyright>Copyright © 2012-2021 Johannes Hoppe</Copyright>
