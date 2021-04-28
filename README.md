@@ -325,6 +325,12 @@ public class MongoIntegrationTest
 Changelog
 -------------------------------------
 
+### Mongo2Go 3.1.2, April 28 2021
+
+* targeting .NET Standard 2.0 instead of 2.1, this makes Mongo2Go compatible with .NET Framework (version 4.7.1 and later) (PR [#118](https://github.com/Mongo2Go/Mongo2Go/pull/118) - many thanks to [Cédric Luthi](https://github.com/0xced))
+* fixes handling of the path search for the NUGET_PACKAGE environment variable (PR [#119](https://github.com/Mongo2Go/Mongo2Go/pull/119) - many thanks to [Timm Hoffmeister](https://github.com/vader1986))
+
+
 ### Mongo2Go 3.1.1, April 08 2021
 
 * internal: Better algorithm for determining a free port. This allows parallel execution of tests and increases compatibility with Raider and other test runners. (PR [#116](https://github.com/Mongo2Go/Mongo2Go/pull/116), fixes [#115](https://github.com/Mongo2Go/Mongo2Go/issues/115) and [#106](https://github.com/Mongo2Go/Mongo2Go/issues/106) - many thanks to [liangshiwei](https://github.com/realLiangshiwei))
@@ -340,7 +346,7 @@ Changelog
 * targets **.NET Standard 2.1** (can be used with .NET Core 3.0 and .NET 5.0)
 
 * adds new MongoDownloader tool (PR [#109](https://github.com/Mongo2Go/Mongo2Go/pull/109), fixes [#82](https://github.com/Mongo2Go/Mongo2Go/issues/82) and [#112](https://github.com/Mongo2Go/Mongo2Go/issues/112) - many thanks to [Cédric Luthi](https://github.com/0xced))
-* adds support for `NUGET_PACKAGES` environment variable  (PR [#110](https://github.com/Mongo2Go/Mongo2Go/pull/110) - many thanks to [Bastian Eicher](https://github.com/bastianeicher))
+* adds support for `NUGET_PACKAGES` environment variable (PR [#110](https://github.com/Mongo2Go/Mongo2Go/pull/110) - many thanks to [Bastian Eicher](https://github.com/bastianeicher))
 
 <details>
   <summary><b>Changelog v2.0.0-alpha1 to v2.2.16</b> (click to show)</summary>
