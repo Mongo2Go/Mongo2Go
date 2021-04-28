@@ -11,6 +11,7 @@ namespace Mongo2Go.Helper
     {
         private readonly string _nugetPrefix = Path.Combine("packages", "Mongo2Go*");
         private readonly string _nugetCachePrefix = Path.Combine("packages", "mongo2go", "*");
+        private readonly string _nugetCacheBasePrefix = Path.Combine("mongo2go", "*");
         public const string DefaultWindowsSearchPattern = @"tools\mongodb-windows*\bin";
         public const string DefaultLinuxSearchPattern = "*/tools/mongodb-linux*/bin";
         public const string DefaultOsxSearchPattern = "tools/mongodb-macos*/bin";
@@ -86,7 +87,9 @@ namespace Mongo2Go.Helper
                     // Next try the search pattern with nuget installation prefix
                     directory.FindFolderUpwards(Path.Combine(_nugetPrefix, _searchPattern)) ??
                     // Finally try the search pattern with the nuget cache prefix
-                    directory.FindFolderUpwards(Path.Combine(_nugetCachePrefix, _searchPattern));
+                    directory.FindFolderUpwards(Path.Combine(_nugetCachePrefix, _searchPattern)) ??
+                    // Finally try the search pattern with the basic nuget cache prefix
+                    directory.FindFolderUpwards(Path.Combine(_nugetCacheBasePrefix, _searchPattern));
                 if (binaryFolder != null) return binaryFolder;
             }
             throw new MonogDbBinariesNotFoundException(
