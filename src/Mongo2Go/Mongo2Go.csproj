@@ -2,14 +2,46 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Mongo2Go - MongoDB for integration tests</Description>
+    <Authors>Johannes Hoppe and many contributors</Authors>
+    <Description>Mongo2Go is a managed wrapper around the latest MongoDB binaries. It targets .NET Standard 2.0.
+This Nuget package contains the executables of mongod, mongoimport and mongoexport v4.4.4 for Windows, Linux and macOS.
+
+
+Mongo2Go has two use cases:
+
+1. Providing multiple, temporary and isolated MongoDB databases for unit tests (or to be precise: integration tests)
+2. Providing a quick to set up MongoDB database for a local developer environment</Description>
     <Company>HAUS HOPPE - ITS</Company>
     <Copyright>Copyright © 2012-2021 Johannes Hoppe</Copyright>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Mongo2Go/Mongo2Go</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/Mongo2Go/Mongo2Go/releases</PackageReleaseNotes>
+    <PackageTags>MongoDB Mongo unit test integration runner</PackageTags>
     <Version>3.1.2</Version>
   </PropertyGroup>
 
+  <PropertyGroup Label="SourceLink">
+    <DebugType>embedded</DebugType>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../mongo2go_200_200.png" Visible="false">
+      <Pack>true</Pack>
+      <PackagePath>icon.png</PackagePath>
+    </None>
+    <None Include="../../tools/mongodb*/**" Visible="false">
+      <Pack>true</Pack>
+      <PackagePath>tools</PackagePath>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="MongoDB.Driver" Version="2.12.0" />
     <PackageReference Include="System.Text.Json" Version="5.0.1" />
   </ItemGroup>
