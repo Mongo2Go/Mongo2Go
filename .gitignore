@@ -11,5 +11,4 @@ obj/
 */StyleCop.Cache
 *.nupkg
 **/.vs
-*.lock.json
 .idea/
