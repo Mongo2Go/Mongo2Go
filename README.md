@@ -3,6 +3,9 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
+[![Continuous Integration](https://img.shields.io/github/workflow/status/Mongo2Go/Mongo2Go/Continuous%20Integration?label=Continuous%20Integration&logo=GitHub)](https://github.com/Mongo2Go/Mongo2Go/actions?query=workflow%3A%22Continuous+Integration%22)
+[![NuGet](https://img.shields.io/nuget/v/Mongo2Go.svg?label=NuGet&logo=NuGet)](https://www.nuget.org/packages/Mongo2Go/)
+
 
 Mongo2Go is a managed wrapper around the latest MongoDB binaries.
 It targets **.NET Standard 2.0** (and **.NET 4.6** for legacy environments) and works with Windows, Linux and macOS.
@@ -76,7 +79,7 @@ or run for the legacy **.NET 4.6** package:
 
 in the Package Manager Console. 
 
-* The new 3.x branch targets __.NET Standard 2.1__. Please use this version if possible. 
+* The new 3.x branch targets __.NET Standard 2.0__. Please use this version if possible. 
 * The old 2.x branch targets __.NET Standard 1.6__. No new features will be added, only bugfixes might be made.
 * The old 1.x branch targets good-old classic __.NET 4.6.1__. This is for legacy environments only. No changes will be made.
 
