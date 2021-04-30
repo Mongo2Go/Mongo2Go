@@ -3,7 +3,7 @@
 IF %1.==. GOTO NoParameter
 
 nuget.exe setApiKey %1
-nuget push *.nupkg -Timeout 1800 -Source https://www.nuget.org/api/v2/package
+nuget push *.nupkg -Timeout 3600 -Source https://www.nuget.org/api/v2/package
 goto end
 
 :NoParameter
