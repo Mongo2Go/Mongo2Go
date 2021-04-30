@@ -3,10 +3,6 @@ Mongo2Go - MongoDB for integration tests & local debugging
 
 ![Logo](src/mongo2go_200_200.png)
 
-<!--[![Build Status](https://travis-ci.org/Mongo2Go/Mongo2Go.svg?branch=master)](https://travis-ci.org/Mongo2Go/Mongo2Go) Linux Build (Ubuntu Trusty)-->
- [![Build status](https://ci.appveyor.com/api/projects/status/u9mp0ceh57sdsx97/branch/master?svg=true)](https://ci.appveyor.com/project/JohannesHoppe/mongo2go-pc320/branch/master) Windows Build (Windows Server 2016)
-
-
 
 Mongo2Go is a managed wrapper around the latest MongoDB binaries.
 It targets **.NET Standard 2.0** (and **.NET 4.6** for legacy environments) and works with Windows, Linux and macOS.
