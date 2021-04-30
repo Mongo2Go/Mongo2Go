@@ -325,11 +325,11 @@ public class MongoIntegrationTest
 Changelog
 -------------------------------------
 
-### Mongo2Go 3.1.2, April 28 2021
+### Mongo2Go 3.1.3, April 30 2021
 
 * targeting .NET Standard 2.0 instead of 2.1, this makes Mongo2Go compatible with .NET Framework (version 4.7.1 and later) (PR [#118](https://github.com/Mongo2Go/Mongo2Go/pull/118) - many thanks to [Cédric Luthi](https://github.com/0xced))
 * fixes handling of the path search for the NUGET_PACKAGE environment variable (PR [#119](https://github.com/Mongo2Go/Mongo2Go/pull/119) - many thanks to [Timm Hoffmeister](https://github.com/vader1986))
-
+* internal: `dotnet pack` is now used to create the nupkg file for a release (PR [#121](https://github.com/Mongo2Go/Mongo2Go/pull/121) - many thanks to [Cédric Luthi](https://github.com/0xced))
 
 ### Mongo2Go 3.1.1, April 08 2021
 
