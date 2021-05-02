@@ -48,10 +48,5 @@ namespace MongoDownloader
             [Platform.macOS] = new(@"macOS", RegexOptions.IgnoreCase),
             [Platform.Windows] = new(@"windows", RegexOptions.IgnoreCase),
         };
-
-        /// <summary>
-        /// The estimated ratio between download time and extraction time for the progress bar.
-        /// </summary>
-        public double DownloadExtractRatio { get; init; } = 0.99;
     }
 }

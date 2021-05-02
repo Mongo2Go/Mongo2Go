@@ -6,7 +6,6 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using ByteSizeLib;
 using HttpProgress;
 using Spectre.Console;
 
@@ -49,49 +48,24 @@ namespace MongoDownloader
             globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number}";
 
             var tasks = new List<Task>();
-            var allArchiveProgresses = new HashSet<ProgressTask>();
+            var allArchiveProgresses = new List<ProgressTask>();
             foreach (var download in communityServerDownloads.Concat(databaseToolsDownloads))
             {
                 var archiveProgress = context.AddTask($"Downloading {download.Product} for {download.Platform} from {download.Archive.Url}", maxValue: initialMaxValue);
                 var directoryName = $"mongodb-{download.Platform.ToString().ToLowerInvariant()}-{communityServerVersion.Number}-database-tools-{databaseToolsVersion.Number}";
                 var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
-                tasks.Add(ProcessArchiveAsync(download, extractDirectory, globalProgress, archiveProgress, allArchiveProgresses, cancellationToken));
+                allArchiveProgresses.Add(archiveProgress);
+                var progress = new DownloadProgress(archiveProgress, globalProgress, allArchiveProgresses, download, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
+                tasks.Add(ProcessArchiveAsync(download, extractDirectory, progress, cancellationToken));
             }
             await Task.WhenAll(tasks);
-            globalProgress.Description = $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}";
-            globalProgress.Value = globalProgress.MaxValue;
         }
 
-        private async Task ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, ProgressTask globalProgress, ProgressTask archiveProgress, ISet<ProgressTask> allArchiveProgresses, CancellationToken cancellationToken)
+        private async Task ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, DownloadProgress progress, CancellationToken cancellationToken)
         {
-            string Message(ICopyProgress progress)
-            {
-                var speed = ByteSize.FromBytes(progress.BytesTransferred / progress.TransferTime.TotalSeconds);
-                return $"Downloading {download.Product} for {download.Platform} from {download.Archive.Url} at {speed.ToString("0.0")}/s";
-            }
-            double? Percentage(ICopyProgress progress)
-            {
-                lock (allArchiveProgresses)
-                {
-                    allArchiveProgresses.Add(archiveProgress);
-                    globalProgress.Value = allArchiveProgresses.Sum(e => e.Value);
-                    globalProgress.MaxValue = allArchiveProgresses.Sum(e => e.MaxValue);
-                }
-                archiveProgress.MaxValue = progress.ExpectedBytes;
-                return _options.DownloadExtractRatio * progress.PercentComplete;
-            }
-            var downloadProgress = archiveProgress.AsProgress<ICopyProgress>(Message, Percentage);
-            var archiveFileInfo = await DownloadArchiveAsync(download.Archive, downloadProgress, cancellationToken);
-
-            archiveProgress.Description = $"Extracting {download.Product} for {download.Platform}";
-            archiveProgress.IsIndeterminate = true;
-            lock (allArchiveProgresses)
-            {
-                globalProgress.IsIndeterminate = allArchiveProgresses.All(e => e.IsFinished || e.IsIndeterminate);
-            }
+            var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
             _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
-            archiveProgress.Description = $"Extracted {download.Product} for {download.Platform}";
-            archiveProgress.Value = archiveProgress.MaxValue;
+            progress.ReportCompleted();
         }
 
         private async Task<FileInfo> DownloadArchiveAsync(Archive archive, IProgress<ICopyProgress> progress, CancellationToken cancellationToken)
