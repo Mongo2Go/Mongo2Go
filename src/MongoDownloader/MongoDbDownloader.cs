@@ -8,14 +8,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using ByteSizeLib;
 using HttpProgress;
-using ShellProgressBar;
+using Spectre.Console;
 
 namespace MongoDownloader
 {
     internal class MongoDbDownloader
     {
-        private static readonly IEnumerable<Platform> SupportedPlatforms = new[] { Platform.Linux, Platform.macOS, Platform.Windows };
-
         private readonly ArchiveExtractor _extractor;
         private readonly Options _options;
 
@@ -25,56 +23,75 @@ namespace MongoDownloader
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task RunAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken = default)
+        public async Task RunAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
-            var progressBarOptions = new ProgressBarOptions
-            {
-                ProgressCharacter = '─',
-                ProgressBarOnBottom = true,
-                ForegroundColor = Console.BackgroundColor switch
-                {
-                    ConsoleColor.Black => ConsoleColor.White,
-                    ConsoleColor.White => ConsoleColor.Black,
-                    _ => ConsoleColor.Green,
-                },
-            };
-            const int ticks = 6; // 3 (Linux + macOS + Windows) * 2 (CommunityServer + DatabaseTools)
-            using var progressBar = new ProgressBar(ticks, "Downloading MongoDB", progressBarOptions);
-
-            var (communityServerVersion, communityServerDownloads) = await GetCommunityServerDownloadsAsync(cancellationToken);
-            progressBar.Message = $"Downloading MongoDB Community Server {communityServerVersion.Number}";
-
-            var (databaseToolsVersion, databaseToolsDownloads) = await GetDatabaseToolsDownloadsAsync(cancellationToken);
-            progressBar.Message = $"Downloading MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number}";
-
-            var tasks = new List<Task>();
-            foreach (var download in communityServerDownloads.Concat(databaseToolsDownloads))
-            {
-                using var downloadProgressBar = progressBar.Spawn(1000, $"Downloading {download.Product} for {download.Platform} archive from {download.Archive.Url}");
-                var directoryName = $"mongodb-{download.Platform.ToString().ToLowerInvariant()}-{communityServerVersion.Number}-database-tools-{databaseToolsVersion.Number}";
-                var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
-                tasks.Add(ProcessArchiveAsync(download, extractDirectory, progressBar, downloadProgressBar, cancellationToken));
-            }
-
-            await Task.WhenAll(tasks);
+            await AnsiConsole
+                .Progress()
+                .Columns(
+                    new ProgressBarColumn(),
+                    new PercentageColumn(),
+                    new RemainingTimeColumn(),
+                    new DownloadedColumn(),
+                    new TaskDescriptionColumn { Alignment = Justify.Left }
+                )
+                .StartAsync(async context => await RunAsync(context, toolsDirectory, cancellationToken));
         }
 
-        private async Task ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, ProgressBar mainProgressBar, ChildProgressBar archiveProgressBar, CancellationToken cancellationToken)
+        private async Task RunAsync(ProgressContext context, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+        {
+            const double initialMaxValue = double.Epsilon;
+            var globalProgress = context.AddTask("Downloading MongoDB", maxValue: initialMaxValue);
+
+            var (communityServerVersion, communityServerDownloads) = await GetCommunityServerDownloadsAsync(cancellationToken);
+            globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion.Number}";
+
+            var (databaseToolsVersion, databaseToolsDownloads) = await GetDatabaseToolsDownloadsAsync(cancellationToken);
+            globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number}";
+
+            var tasks = new List<Task>();
+            var allArchiveProgresses = new HashSet<ProgressTask>();
+            foreach (var download in communityServerDownloads.Concat(databaseToolsDownloads))
+            {
+                var archiveProgress = context.AddTask($"Downloading {download.Product} for {download.Platform} from {download.Archive.Url}", maxValue: initialMaxValue);
+                var directoryName = $"mongodb-{download.Platform.ToString().ToLowerInvariant()}-{communityServerVersion.Number}-database-tools-{databaseToolsVersion.Number}";
+                var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
+                tasks.Add(ProcessArchiveAsync(download, extractDirectory, globalProgress, archiveProgress, allArchiveProgresses, cancellationToken));
+            }
+            await Task.WhenAll(tasks);
+            globalProgress.Description = $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}";
+            globalProgress.Value = globalProgress.MaxValue;
+        }
+
+        private async Task ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, ProgressTask globalProgress, ProgressTask archiveProgress, ISet<ProgressTask> allArchiveProgresses, CancellationToken cancellationToken)
         {
             string Message(ICopyProgress progress)
             {
                 var speed = ByteSize.FromBytes(progress.BytesTransferred / progress.TransferTime.TotalSeconds);
-                return $"Downloading {download.Product} for {download.Platform} archive from {download.Archive.Url} at {speed.ToString("0.0")}/s";
+                return $"Downloading {download.Product} for {download.Platform} from {download.Archive.Url} at {speed.ToString("0.0")}/s";
             }
-            double? Percentage(ICopyProgress progress) => _options.DownloadExtractRatio * progress.PercentComplete;
-            var archiveProgress = archiveProgressBar.AsProgress<ICopyProgress>(Message, Percentage);
-            var archiveFileInfo = await DownloadArchiveAsync(download.Archive, archiveProgress, cancellationToken);
+            double? Percentage(ICopyProgress progress)
+            {
+                lock (allArchiveProgresses)
+                {
+                    allArchiveProgresses.Add(archiveProgress);
+                    globalProgress.Value = allArchiveProgresses.Sum(e => e.Value);
+                    globalProgress.MaxValue = allArchiveProgresses.Sum(e => e.MaxValue);
+                }
+                archiveProgress.MaxValue = progress.ExpectedBytes;
+                return _options.DownloadExtractRatio * progress.PercentComplete;
+            }
+            var downloadProgress = archiveProgress.AsProgress<ICopyProgress>(Message, Percentage);
+            var archiveFileInfo = await DownloadArchiveAsync(download.Archive, downloadProgress, cancellationToken);
 
-            archiveProgressBar.Message = $"Extracting {archiveFileInfo.FullName}";
-            var extractProgress = archiveProgressBar.AsProgress<double>(percentage: f => _options.DownloadExtractRatio + (1 - _options.DownloadExtractRatio) * f);
-            _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, extractProgress, cancellationToken);
-
-            mainProgressBar.Tick();
+            archiveProgress.Description = $"Extracting {download.Product} for {download.Platform}";
+            archiveProgress.IsIndeterminate = true;
+            lock (allArchiveProgresses)
+            {
+                globalProgress.IsIndeterminate = allArchiveProgresses.All(e => e.IsFinished || e.IsIndeterminate);
+            }
+            _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
+            archiveProgress.Description = $"Extracted {download.Product} for {download.Platform}";
+            archiveProgress.Value = archiveProgress.MaxValue;
         }
 
         private async Task<FileInfo> DownloadArchiveAsync(Archive archive, IProgress<ICopyProgress> progress, CancellationToken cancellationToken)
@@ -96,7 +113,7 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.CommunityServerUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found");
-            var downloads = SupportedPlatforms.Select(e => GetDownload(e, Product.CommunityServer, version, _options.PlatformIdentifiers[e], _options.Architecture, _options.Edition));
+            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.CommunityServer, version, _options.PlatformIdentifiers[e], _options.Architecture, _options.Edition));
             return (version, downloads);
         }
 
@@ -104,7 +121,7 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.DatabaseToolsUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found");
-            var downloads = SupportedPlatforms.Select(e => GetDownload(e, Product.DatabaseTools, version, _options.PlatformIdentifiers[e], _options.Architecture));
+            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.DatabaseTools, version, _options.PlatformIdentifiers[e], _options.Architecture));
             return (version, downloads);
         }
 

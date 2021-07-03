@@ -20,22 +20,22 @@ namespace MongoDownloader
             _requiredBinaries.UnionWith(requiredBinaries.Select(e => Path.ChangeExtension(e, "exe")));
         }
 
-        public void ExtractArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, IProgress<double> progress, CancellationToken cancellationToken)
+        public void ExtractArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
             switch (Path.GetExtension(archive.Name))
             {
                 case ".zip":
-                    ExtractZipArchive(download, archive, extractDirectory, progress, cancellationToken);
+                    ExtractZipArchive(download, archive, extractDirectory, cancellationToken);
                     break;
                 case ".tgz":
-                    ExtractTarGzipArchive(download, archive, extractDirectory, progress, cancellationToken);
+                    ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
                     break;
                 default:
                     throw new NotSupportedException($"Only .zip and .tgz archives are currently supported. \"{archive.FullName}\" can not be extracted.");
             }
         }
 
-        private void ExtractZipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, IProgress<double> progress, CancellationToken cancellationToken)
+        private void ExtractZipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
             // See https://github.com/icsharpcode/SharpZipLib/wiki/FastZip#-how-to-extract-a-zip-file-using-fastzip
             var extractedFileNames = new List<string>();
@@ -46,7 +46,6 @@ namespace MongoDownloader
                     cancellationToken.ThrowIfCancellationRequested();
                     extractedFileNames.Add(args.Name);
                 },
-                Progress = (_, args) => progress.Report((double) args.Processed / args.Target),
             };
             var fastZip = new FastZip(events);
             // Do not extract pdb files at all it saves considerable time, see https://github.com/icsharpcode/SharpZipLib/wiki/FastZip#-using-the-filefilter-parameter for the filter specification
@@ -70,7 +69,7 @@ namespace MongoDownloader
             }
         }
 
-        private void ExtractTarGzipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, IProgress<double> progress, CancellationToken cancellationToken)
+        private void ExtractTarGzipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
             // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-simple-full-extract-from-a-tgz-targz
             using var archiveStream = archive.OpenRead();
@@ -84,7 +83,6 @@ namespace MongoDownloader
             };
             tarArchive.ExtractContents(extractDirectory.FullName);
             CleanupExtractedFiles(download, extractDirectory, extractedFileNames);
-            progress.Report(1);
         }
 
         private void CleanupExtractedFiles(Download download, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)

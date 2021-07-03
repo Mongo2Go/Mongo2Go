@@ -52,6 +52,6 @@ namespace MongoDownloader
         /// <summary>
         /// The estimated ratio between download time and extraction time for the progress bar.
         /// </summary>
-        public double DownloadExtractRatio { get; init; } = 0.95;
+        public double DownloadExtractRatio { get; init; } = 0.99;
     }
 }
