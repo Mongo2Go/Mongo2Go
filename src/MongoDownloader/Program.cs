@@ -27,8 +27,9 @@ namespace MongoDownloader
                     eventArgs.Cancel = !cancellationTokenSource.IsCancellationRequested;
                     cancellationTokenSource.Cancel();
                 };
-                var archiveExtractor = new ArchiveExtractor("mongod", "mongoexport", "mongoimport");
-                var downloader = new MongoDbDownloader(archiveExtractor, new Options());
+                var options = new Options();
+                var archiveExtractor = new ArchiveExtractor(options);
+                var downloader = new MongoDbDownloader(archiveExtractor, options);
                 await downloader.RunAsync(toolsDirectory, cancellationTokenSource.Token);
                 return 0;
             }

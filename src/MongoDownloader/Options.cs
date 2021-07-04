@@ -48,5 +48,38 @@ namespace MongoDownloader
             [Platform.macOS] = new(@"macOS", RegexOptions.IgnoreCase),
             [Platform.Windows] = new(@"windows", RegexOptions.IgnoreCase),
         };
+
+        /// <summary>
+        /// A dictionary describing how to match MongoDB binaries inside the zip archives.
+        /// <para/>
+        /// The key is a tuple with the <see cref="Product"/>/<see cref="Platform"/> and the
+        /// value is a regular expressions to match against the zip file name entry.
+        /// </summary>
+        public IReadOnlyDictionary<(Product, Platform), Regex> Binaries { get; init; } = new Dictionary<(Product, Platform), Regex>
+        {
+            [(Product.CommunityServer, Platform.Linux)]   = new(@"bin/mongod"),
+            [(Product.CommunityServer, Platform.macOS)]   = new(@"bin/mongod"),
+            [(Product.CommunityServer, Platform.Windows)] = new(@"bin/mongod\.exe"),
+            [(Product.DatabaseTools,   Platform.Linux)]   = new(@"bin/(mongoexport|mongoimport)"),
+            [(Product.DatabaseTools,   Platform.macOS)]   = new(@"bin/(mongoexport|mongoimport)"),
+            [(Product.DatabaseTools,   Platform.Windows)] = new(@"bin/(mongoexport|mongoimport)\.exe"),
+        };
+
+        /// <summary>
+        /// A dictionary describing how to match licence files inside the zip archives.
+        /// <para/>
+        /// The key is a tuple with the <see cref="Product"/>/<see cref="Platform"/> and the
+        /// value is a regular expressions to match against the zip file name entry.
+        /// </summary>
+        public IReadOnlyDictionary<(Product, Platform), Regex> Licenses { get; init; } = new Dictionary<(Product, Platform), Regex>
+        {
+            // The regular expression matches anything at the zip top level, i.e. does not contain any slash (/) character
+            [(Product.CommunityServer, Platform.Linux)]   = new(@"^[^/]+$"),
+            [(Product.CommunityServer, Platform.macOS)]   = new(@"^[^/]+$"),
+            [(Product.CommunityServer, Platform.Windows)] = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   Platform.Linux)]   = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   Platform.macOS)]   = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   Platform.Windows)] = new(@"^[^/]+$"),
+        };
     }
 }

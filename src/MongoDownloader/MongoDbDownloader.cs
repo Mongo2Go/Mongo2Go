@@ -63,8 +63,16 @@ namespace MongoDownloader
 
         private async Task ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, DownloadProgress progress, CancellationToken cancellationToken)
         {
-            var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
-            _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
+            var archiveExtension = Path.GetExtension(download.Archive.Url.AbsolutePath);
+            if (archiveExtension == ".zip")
+            {
+                await _extractor.DownloadExtractZipArchiveAsync(download, extractDirectory, progress, cancellationToken);
+            }
+            else
+            {
+                var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
+                _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
+            }
             progress.ReportCompleted();
         }
 

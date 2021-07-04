@@ -1,9 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using ByteSizeLib;
+using Espresso3389.HttpStream;
+using HttpProgress;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
@@ -12,12 +18,49 @@ namespace MongoDownloader
 {
     internal class ArchiveExtractor
     {
-        private readonly HashSet<string> _requiredBinaries;
+        private static readonly int CachePageSize = Convert.ToInt32(ByteSize.FromMebiBytes(4).Bytes);
 
-        public ArchiveExtractor(params string[] requiredBinaries)
+        private readonly Options _options;
+
+        public ArchiveExtractor(Options options)
         {
-            _requiredBinaries = new HashSet<string>(requiredBinaries);
-            _requiredBinaries.UnionWith(requiredBinaries.Select(e => Path.ChangeExtension(e, "exe")));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+        }
+
+        public async Task DownloadExtractZipArchiveAsync(Download download, DirectoryInfo extractDirectory, DownloadProgress progress, CancellationToken cancellationToken)
+        {
+            var bytesTransferred = 0L;
+            using var headResponse = await _options.HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, download.Archive.Url), cancellationToken);
+            var contentLength = headResponse.Content.Headers.ContentLength ?? 0;
+            var cacheFile = new FileInfo(Path.Combine(_options.CacheDirectory.FullName, download.Archive.Url.Segments.Last()));
+            await using var cacheStream = new FileStream(cacheFile.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            var stopwatch = Stopwatch.StartNew();
+            await using var httpStream = new HttpStream(download.Archive.Url, cacheStream, ownStream: false, CachePageSize, cached: null);
+            httpStream.RangeDownloaded += (_, args) =>
+            {
+                bytesTransferred += args.Length;
+                progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, contentLength));
+            };
+            using var zipFile = new ZipFile(httpStream);
+            var binaryRegex = _options.Binaries[(download.Product, download.Platform)];
+            var licenseRegex = _options.Licenses[(download.Product, download.Platform)];
+            foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
+            {
+                var nameParts = entry.Name.Split('\\', '/').Skip(1).ToList();
+                var zipEntryPath = string.Join('/', nameParts);
+                var isBinaryFile = binaryRegex.IsMatch(zipEntryPath);
+                var isLicenseFile = licenseRegex.IsMatch(zipEntryPath);
+                if (isBinaryFile || isLicenseFile)
+                {
+                    var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(download.Product)) : nameParts;
+                    var destinationPath = Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray());
+                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                    await using var destinationStream = File.Create(destinationPath);
+                    await using var inputStream = zipFile.GetInputStream(entry);
+                    await inputStream.CopyToAsync(destinationStream, cancellationToken);
+                }
+            }
+            progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, bytesTransferred));
         }
 
         public void ExtractArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
@@ -88,20 +131,22 @@ namespace MongoDownloader
         private void CleanupExtractedFiles(Download download, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
         {
             var rootDirectoryToDelete = new HashSet<string>();
+            var binaryRegex = _options.Binaries[(download.Product, download.Platform)];
+            var licenseRegex = _options.Licenses[(download.Product, download.Platform)];
             foreach (var extractedFileName in extractedFileNames.Select(e => e.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
             {
                 var extractedFile = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName));
                 var parts = extractedFileName.Split(Path.DirectorySeparatorChar);
+                var entryFileName = string.Join("/", parts.Skip(1));
                 rootDirectoryToDelete.Add(parts[0]);
-                var isBinary = parts.Length > 1 && parts[^2] == "bin";
-                if (isBinary && !_requiredBinaries.Contains(parts.Last()))
+                if (!(binaryRegex.IsMatch(entryFileName) || licenseRegex.IsMatch(entryFileName)))
                 {
                     extractedFile.Delete();
                 }
                 else
                 {
                     var destinationPathParts = parts.Skip(1);
-                    if (!isBinary)
+                    if (licenseRegex.IsMatch(entryFileName))
                     {
                         destinationPathParts = destinationPathParts.Prepend(ProductDirectoryName(download.Product));
                     }
