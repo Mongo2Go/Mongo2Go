@@ -67,48 +67,11 @@ namespace MongoDownloader
         {
             switch (Path.GetExtension(archive.Name))
             {
-                case ".zip":
-                    ExtractZipArchive(download, archive, extractDirectory, cancellationToken);
-                    break;
                 case ".tgz":
                     ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
                     break;
                 default:
-                    throw new NotSupportedException($"Only .zip and .tgz archives are currently supported. \"{archive.FullName}\" can not be extracted.");
-            }
-        }
-
-        private void ExtractZipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
-        {
-            // See https://github.com/icsharpcode/SharpZipLib/wiki/FastZip#-how-to-extract-a-zip-file-using-fastzip
-            var extractedFileNames = new List<string>();
-            var events = new FastZipEvents
-            {
-                ProcessFile = (_, args) =>
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    extractedFileNames.Add(args.Name);
-                },
-            };
-            var fastZip = new FastZip(events);
-            // Do not extract pdb files at all it saves considerable time, see https://github.com/icsharpcode/SharpZipLib/wiki/FastZip#-using-the-filefilter-parameter for the filter specification
-            fastZip.ExtractZip(archive.FullName, extractDirectory.FullName, fileFilter: @"-.*\.pdb");
-            FixNonCompliantZip(extractDirectory, extractedFileNames);
-            CleanupExtractedFiles(download, extractDirectory, extractedFileNames);
-        }
-
-        // The database tools Windows zip has \ instead of / in zip entries
-        private static void FixNonCompliantZip(DirectoryInfo extractDirectory, List<string> extractedFileNames)
-        {
-            if (Path.DirectorySeparatorChar != '\\')
-            {
-                foreach (var extractedFileName in extractedFileNames.Where(e => e.Contains(@"\")))
-                {
-                    var extractedPath = Path.Combine(extractDirectory.FullName, extractedFileName);
-                    var unixPathInfo = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName.Replace('\\', Path.DirectorySeparatorChar)));
-                    unixPathInfo.Directory?.Create();
-                    File.Move(extractedPath, unixPathInfo.FullName);
-                }
+                    throw new NotSupportedException($"Only .tgz archives are currently supported. \"{archive.FullName}\" can not be extracted.");
             }
         }
 
