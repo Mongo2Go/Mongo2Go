@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Spectre.Console;
 
 namespace MongoDownloader
 {
@@ -26,18 +27,17 @@ namespace MongoDownloader
                     eventArgs.Cancel = !cancellationTokenSource.IsCancellationRequested;
                     cancellationTokenSource.Cancel();
                 };
-                var archiveExtractor = new ArchiveExtractor("mongod", "mongoexport", "mongoimport");
-                var downloader = new MongoDbDownloader(archiveExtractor, new Options());
+                var options = new Options();
+                var archiveExtractor = new ArchiveExtractor(options);
+                var downloader = new MongoDbDownloader(archiveExtractor, options);
                 await downloader.RunAsync(toolsDirectory, cancellationTokenSource.Token);
-                Console.WriteLine();
-                Console.WriteLine($"✅ Downloaded and extracted MongoDB archives into {toolsDirectory.FullName}");
                 return 0;
             }
             catch (Exception exception)
             {
-                if (!(exception is OperationCanceledException))
+                if (exception is not OperationCanceledException)
                 {
-                    Console.Error.WriteLine(exception);
+                    AnsiConsole.WriteException(exception, ExceptionFormats.ShortenPaths);
                 }
                 return 1;
             }
