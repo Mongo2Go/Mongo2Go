@@ -34,7 +34,7 @@ namespace MongoDownloader
             if (progress.BytesTransferred < progress.ExpectedBytes)
             {
                 var speed = ByteSize.FromBytes(progress.BytesTransferred / progress.TransferTime.TotalSeconds);
-                text = $"Downloading {_download.Product} for {_download.Platform} from {_download.Archive.Url} at {speed.ToString("0.0")}/s";
+                text = $"Downloading {_download.Product} for {_download.Platform} from {_download.Archive.Url} at {speed:0.0)}/s";
                 isIndeterminate = false;
             }
             else
