@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using ByteSizeLib;
 using HttpProgress;
 using Spectre.Console;
 
@@ -22,9 +23,9 @@ namespace MongoDownloader
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task RunAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+        public async Task<ByteSize> RunAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
-            await AnsiConsole
+            var strippedSize = await AnsiConsole
                 .Progress()
                 .Columns(
                     new ProgressBarColumn(),
@@ -34,9 +35,11 @@ namespace MongoDownloader
                     new TaskDescriptionColumn { Alignment = Justify.Left }
                 )
                 .StartAsync(async context => await RunAsync(context, toolsDirectory, cancellationToken));
+
+            return strippedSize;
         }
 
-        private async Task RunAsync(ProgressContext context, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+        private async Task<ByteSize> RunAsync(ProgressContext context, DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
             const double initialMaxValue = double.Epsilon;
             var globalProgress = context.AddTask("Downloading MongoDB", maxValue: initialMaxValue);
@@ -47,7 +50,7 @@ namespace MongoDownloader
             var (databaseToolsVersion, databaseToolsDownloads) = await GetDatabaseToolsDownloadsAsync(cancellationToken);
             globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number}";
 
-            var tasks = new List<Task>();
+            var tasks = new List<Task<ByteSize>>();
             var allArchiveProgresses = new List<ProgressTask>();
             foreach (var download in communityServerDownloads.Concat(databaseToolsDownloads))
             {
@@ -55,25 +58,31 @@ namespace MongoDownloader
                 var directoryName = $"mongodb-{download.Platform.ToString().ToLowerInvariant()}-{communityServerVersion.Number}-database-tools-{databaseToolsVersion.Number}";
                 var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
                 allArchiveProgresses.Add(archiveProgress);
-                var progress = new DownloadProgress(archiveProgress, globalProgress, allArchiveProgresses, download, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
+                var progress = new ArchiveProgress(archiveProgress, globalProgress, allArchiveProgresses, download, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
                 tasks.Add(ProcessArchiveAsync(download, extractDirectory, progress, cancellationToken));
             }
-            await Task.WhenAll(tasks);
+            var strippedSizes = await Task.WhenAll(tasks);
+            return strippedSizes.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
         }
 
-        private async Task ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, DownloadProgress progress, CancellationToken cancellationToken)
+        private async Task<ByteSize> ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
         {
+            IEnumerable<Task<ByteSize>> stripTasks;
             var archiveExtension = Path.GetExtension(download.Archive.Url.AbsolutePath);
             if (archiveExtension == ".zip")
             {
-                await _extractor.DownloadExtractZipArchiveAsync(download, extractDirectory, progress, cancellationToken);
+                stripTasks = await _extractor.DownloadExtractZipArchiveAsync(download, extractDirectory, progress, cancellationToken);
             }
             else
             {
                 var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
-                _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
+                stripTasks = _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
             }
-            progress.ReportCompleted();
+            progress.Report("Stripping binaries");
+            var completedStripTasks = await Task.WhenAll(stripTasks);
+            var totalStrippedSize = completedStripTasks.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
+            progress.ReportCompleted(totalStrippedSize);
+            return totalStrippedSize;
         }
 
         private async Task<FileInfo> DownloadArchiveAsync(Archive archive, IProgress<ICopyProgress> progress, CancellationToken cancellationToken)

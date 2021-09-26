@@ -21,13 +21,15 @@ namespace MongoDownloader
         private static readonly int CachePageSize = Convert.ToInt32(ByteSize.FromMebiBytes(4).Bytes);
 
         private readonly Options _options;
+        private readonly BinaryStripper? _binaryStripper;
 
-        public ArchiveExtractor(Options options)
+        public ArchiveExtractor(Options options, BinaryStripper? binaryStripper)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            _binaryStripper = binaryStripper;
         }
 
-        public async Task DownloadExtractZipArchiveAsync(Download download, DirectoryInfo extractDirectory, DownloadProgress progress, CancellationToken cancellationToken)
+        public async Task<IEnumerable<Task<ByteSize>>> DownloadExtractZipArchiveAsync(Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
         {
             var bytesTransferred = 0L;
             using var headResponse = await _options.HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, download.Archive.Url), cancellationToken);
@@ -44,6 +46,7 @@ namespace MongoDownloader
             using var zipFile = new ZipFile(httpStream);
             var binaryRegex = _options.Binaries[(download.Product, download.Platform)];
             var licenseRegex = _options.Licenses[(download.Product, download.Platform)];
+            var stripTasks = new List<Task<ByteSize>>();
             foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
             {
                 var nameParts = entry.Name.Split('\\', '/').Skip(1).ToList();
@@ -53,66 +56,33 @@ namespace MongoDownloader
                 if (isBinaryFile || isLicenseFile)
                 {
                     var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(download.Product)) : nameParts;
-                    var destinationPath = Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray());
-                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
-                    await using var destinationStream = File.Create(destinationPath);
+                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    destinationFile.Directory?.Create();
+                    await using var destinationStream = destinationFile.OpenWrite();
                     await using var inputStream = zipFile.GetInputStream(entry);
                     await inputStream.CopyToAsync(destinationStream, cancellationToken);
+                    if (isBinaryFile && _binaryStripper is not null)
+                    {
+                        stripTasks.Add(_binaryStripper.StripAsync(destinationFile, cancellationToken));
+                    }
                 }
             }
             progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, bytesTransferred));
+            return stripTasks;
         }
 
-        public void ExtractArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
+        public IEnumerable<Task<ByteSize>> ExtractArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
             switch (Path.GetExtension(archive.Name))
             {
-                case ".zip":
-                    ExtractZipArchive(download, archive, extractDirectory, cancellationToken);
-                    break;
                 case ".tgz":
-                    ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
-                    break;
+                    return ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
                 default:
-                    throw new NotSupportedException($"Only .zip and .tgz archives are currently supported. \"{archive.FullName}\" can not be extracted.");
+                    throw new NotSupportedException($"Only .tgz archives are currently supported. \"{archive.FullName}\" can not be extracted.");
             }
         }
 
-        private void ExtractZipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
-        {
-            // See https://github.com/icsharpcode/SharpZipLib/wiki/FastZip#-how-to-extract-a-zip-file-using-fastzip
-            var extractedFileNames = new List<string>();
-            var events = new FastZipEvents
-            {
-                ProcessFile = (_, args) =>
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    extractedFileNames.Add(args.Name);
-                },
-            };
-            var fastZip = new FastZip(events);
-            // Do not extract pdb files at all it saves considerable time, see https://github.com/icsharpcode/SharpZipLib/wiki/FastZip#-using-the-filefilter-parameter for the filter specification
-            fastZip.ExtractZip(archive.FullName, extractDirectory.FullName, fileFilter: @"-.*\.pdb");
-            FixNonCompliantZip(extractDirectory, extractedFileNames);
-            CleanupExtractedFiles(download, extractDirectory, extractedFileNames);
-        }
-
-        // The database tools Windows zip has \ instead of / in zip entries
-        private static void FixNonCompliantZip(DirectoryInfo extractDirectory, List<string> extractedFileNames)
-        {
-            if (Path.DirectorySeparatorChar != '\\')
-            {
-                foreach (var extractedFileName in extractedFileNames.Where(e => e.Contains(@"\")))
-                {
-                    var extractedPath = Path.Combine(extractDirectory.FullName, extractedFileName);
-                    var unixPathInfo = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName.Replace('\\', Path.DirectorySeparatorChar)));
-                    unixPathInfo.Directory?.Create();
-                    File.Move(extractedPath, unixPathInfo.FullName);
-                }
-            }
-        }
-
-        private void ExtractTarGzipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
+        private IEnumerable<Task<ByteSize>> ExtractTarGzipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
             // See https://github.com/icsharpcode/SharpZipLib/wiki/GZip-and-Tar-Samples#-simple-full-extract-from-a-tgz-targz
             using var archiveStream = archive.OpenRead();
@@ -125,40 +95,48 @@ namespace MongoDownloader
                 extractedFileNames.Add(entry.Name);
             };
             tarArchive.ExtractContents(extractDirectory.FullName);
-            CleanupExtractedFiles(download, extractDirectory, extractedFileNames);
+            return CleanupExtractedFiles(download, extractDirectory, extractedFileNames);
         }
 
-        private void CleanupExtractedFiles(Download download, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
+        private IEnumerable<Task<ByteSize>> CleanupExtractedFiles(Download download, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
         {
             var rootDirectoryToDelete = new HashSet<string>();
             var binaryRegex = _options.Binaries[(download.Product, download.Platform)];
             var licenseRegex = _options.Licenses[(download.Product, download.Platform)];
+            var stripTasks = new List<Task<ByteSize>>();
             foreach (var extractedFileName in extractedFileNames.Select(e => e.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
             {
                 var extractedFile = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName));
                 var parts = extractedFileName.Split(Path.DirectorySeparatorChar);
                 var entryFileName = string.Join("/", parts.Skip(1));
                 rootDirectoryToDelete.Add(parts[0]);
-                if (!(binaryRegex.IsMatch(entryFileName) || licenseRegex.IsMatch(entryFileName)))
+                var isBinaryFile = binaryRegex.IsMatch(entryFileName);
+                var isLicenseFile = licenseRegex.IsMatch(entryFileName);
+                if (!(isBinaryFile || isLicenseFile))
                 {
                     extractedFile.Delete();
                 }
                 else
                 {
                     var destinationPathParts = parts.Skip(1);
-                    if (licenseRegex.IsMatch(entryFileName))
+                    if (isLicenseFile)
                     {
                         destinationPathParts = destinationPathParts.Prepend(ProductDirectoryName(download.Product));
                     }
-                    var destinationPath = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
-                    destinationPath.Directory?.Create();
-                    extractedFile.MoveTo(destinationPath.FullName);
+                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    destinationFile.Directory?.Create();
+                    extractedFile.MoveTo(destinationFile.FullName);
+                    if (isBinaryFile && _binaryStripper is not null)
+                    {
+                        stripTasks.Add(_binaryStripper.StripAsync(destinationFile));
+                    }
                 }
             }
             var rootArchiveDirectory = new DirectoryInfo(Path.Combine(extractDirectory.FullName, rootDirectoryToDelete.Single()));
             var binDirectory = new DirectoryInfo(Path.Combine(rootArchiveDirectory.FullName, "bin"));
             binDirectory.Delete(recursive: false);
             rootArchiveDirectory.Delete(recursive: false);
+            return stripTasks;
         }
 
         private static string ProductDirectoryName(Product product)
