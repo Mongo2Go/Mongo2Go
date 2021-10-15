@@ -104,7 +104,7 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.CommunityServerUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found");
-            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.CommunityServer, version, _options.PlatformIdentifiers[e], _options.Architecture, _options.Edition));
+            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.CommunityServer, version, _options.PlatformIdentifiers[e], _options.Architecture[e], _options.Edition));
             return (version, downloads);
         }
 
@@ -112,12 +112,15 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.DatabaseToolsUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found");
-            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.DatabaseTools, version, _options.PlatformIdentifiers[e], _options.Architecture));
+            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.DatabaseTools, version, _options.PlatformIdentifiers[e], _options.Architecture[e]));
             return (version, downloads);
         }
 
         private static Download GetDownload(Platform platform, Product product, Version version, Regex platformRegex, Regex architectureRegex, Regex? editionRegex = null)
         {
+            //For some reason, mongo set the name of the architecture different for the database tools than the server
+            if (product == Product.DatabaseTools && platform == Platform.LinuxARM64) 
+                architectureRegex = new Regex("arm64");
             var download = version.Downloads.LastOrDefault(e => (platformRegex.IsMatch(e.Target) || platformRegex.IsMatch(e.Name)) && architectureRegex.IsMatch(e.Architecture) && (editionRegex?.IsMatch(e.Edition) ?? true));
             if (download == null)
             {

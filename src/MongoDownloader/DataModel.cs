@@ -14,6 +14,8 @@ namespace MongoDownloader
         // ReSharper disable once InconsistentNaming
         macOS,
         Windows,
+        // ReSharper disable once InconsistentNaming
+        LinuxARM64
     }
 
     public enum Product

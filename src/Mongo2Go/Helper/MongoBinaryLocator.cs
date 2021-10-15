@@ -13,7 +13,8 @@ namespace Mongo2Go.Helper
         private readonly string _nugetCachePrefix = Path.Combine("packages", "mongo2go", "*");
         private readonly string _nugetCacheBasePrefix = Path.Combine("mongo2go", "*");
         public const string DefaultWindowsSearchPattern = @"tools\mongodb-windows*\bin";
-        public const string DefaultLinuxSearchPattern = "*/tools/mongodb-linux*/bin";
+        public const string DefaultLinuxSearchPattern = "*/tools/mongodb-linux-*/bin";
+        public const string DefaultLinuxArmSearchPattern = "*/tools/mongodb-linuxarm64*/bin";
         public const string DefaultOsxSearchPattern = "tools/mongodb-macos*/bin";
         public const string WindowsNugetCacheLocation = @"%USERPROFILE%\.nuget\packages";
         public static readonly string OsxAndLinuxNugetCacheLocation = Environment.GetEnvironmentVariable("HOME") + "/.nuget/packages/mongo2go";
@@ -34,7 +35,8 @@ namespace Mongo2Go.Helper
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                _searchPattern = DefaultLinuxSearchPattern;
+                _searchPattern = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? 
+                    DefaultLinuxArmSearchPattern : DefaultLinuxSearchPattern;
                 _nugetCacheDirectory = _nugetCacheDirectory ?? OsxAndLinuxNugetCacheLocation;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -31,7 +31,13 @@ namespace MongoDownloader
         /// <summary>
         /// The architecture of the archive to download.
         /// </summary>
-        public Regex Architecture { get; init; } = new("x86_64");
+        public IReadOnlyDictionary<Platform, Regex> Architecture { get; init; } = new Dictionary<Platform, Regex>
+        {
+            [Platform.Linux] = new("x86_64", RegexOptions.IgnoreCase),
+            [Platform.Windows] = new ("x86_64", RegexOptions.IgnoreCase),
+            [Platform.macOS] = new("x86_64", RegexOptions.IgnoreCase),
+            [Platform.LinuxARM64]= new("aarch64", RegexOptions.IgnoreCase)
+        };
 
         /// <summary>
         /// The edition of the archive to download.
@@ -47,6 +53,7 @@ namespace MongoDownloader
             [Platform.Linux] = new(@"ubuntu2004", RegexOptions.IgnoreCase),
             [Platform.macOS] = new(@"macOS", RegexOptions.IgnoreCase),
             [Platform.Windows] = new(@"windows", RegexOptions.IgnoreCase),
+            [Platform.LinuxARM64] = new(@"ubuntu2004", RegexOptions.IgnoreCase)
         };
 
         /// <summary>
@@ -57,12 +64,14 @@ namespace MongoDownloader
         /// </summary>
         public IReadOnlyDictionary<(Product, Platform), Regex> Binaries { get; init; } = new Dictionary<(Product, Platform), Regex>
         {
-            [(Product.CommunityServer, Platform.Linux)]   = new(@"bin/mongod"),
-            [(Product.CommunityServer, Platform.macOS)]   = new(@"bin/mongod"),
-            [(Product.CommunityServer, Platform.Windows)] = new(@"bin/mongod\.exe"),
-            [(Product.DatabaseTools,   Platform.Linux)]   = new(@"bin/(mongoexport|mongoimport)"),
-            [(Product.DatabaseTools,   Platform.macOS)]   = new(@"bin/(mongoexport|mongoimport)"),
-            [(Product.DatabaseTools,   Platform.Windows)] = new(@"bin/(mongoexport|mongoimport)\.exe"),
+            [(Product.CommunityServer, Platform.Linux)]      = new(@"bin/mongod"),
+            [(Product.CommunityServer, Platform.macOS)]      = new(@"bin/mongod"),
+            [(Product.CommunityServer, Platform.Windows)]    = new(@"bin/mongod\.exe"),
+            [(Product.CommunityServer, Platform.LinuxARM64)] = new(@"bin/mongod"),
+            [(Product.DatabaseTools,   Platform.Linux)]      = new(@"bin/(mongoexport|mongoimport)"),
+            [(Product.DatabaseTools,   Platform.macOS)]      = new(@"bin/(mongoexport|mongoimport)"),
+            [(Product.DatabaseTools,   Platform.Windows)]    = new(@"bin/(mongoexport|mongoimport)\.exe"),
+            [(Product.DatabaseTools,   Platform.LinuxARM64)] = new(@"bin/(mongoexport|mongoimport)"),
         };
 
         /// <summary>
@@ -74,12 +83,14 @@ namespace MongoDownloader
         public IReadOnlyDictionary<(Product, Platform), Regex> Licenses { get; init; } = new Dictionary<(Product, Platform), Regex>
         {
             // The regular expression matches anything at the zip top level, i.e. does not contain any slash (/) character
-            [(Product.CommunityServer, Platform.Linux)]   = new(@"^[^/]+$"),
-            [(Product.CommunityServer, Platform.macOS)]   = new(@"^[^/]+$"),
-            [(Product.CommunityServer, Platform.Windows)] = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.Linux)]   = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.macOS)]   = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.Windows)] = new(@"^[^/]+$"),
+            [(Product.CommunityServer, Platform.Linux)]      = new(@"^[^/]+$"),
+            [(Product.CommunityServer, Platform.macOS)]      = new(@"^[^/]+$"),
+            [(Product.CommunityServer, Platform.Windows)]    = new(@"^[^/]+$"),
+            [(Product.CommunityServer, Platform.LinuxARM64)] = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   Platform.Linux)]      = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   Platform.macOS)]      = new(@"^[^/]+$"),
+            [(Product.DatabaseTools,   Platform.Windows)]    = new(@"^[^/]+$"),
+            [(Product.DatabaseTools, Platform.LinuxARM64)]   = new(@"^[^/]+$"),
         };
     }
 }
