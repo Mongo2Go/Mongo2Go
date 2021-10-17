@@ -34,12 +34,12 @@ namespace MongoDownloader
             if (progress.BytesTransferred < progress.ExpectedBytes)
             {
                 var speed = ByteSize.FromBytes(progress.BytesTransferred / progress.TransferTime.TotalSeconds);
-                text = $"Downloading {_download.Product} for {_download.Platform} from {_download.Archive.Url} at {speed:0.0)}/s";
+                text = $"Downloading {_download} from {_download.Archive.Url} at {speed:0.0}/s";
                 isIndeterminate = false;
             }
             else
             {
-                text = $"Downloaded {_download.Product} for {_download.Platform}";
+                text = $"Downloaded {_download}";
                 isIndeterminate = true;
                 // Cheat by subtracting 1 so that the progress stays at 99% in indeterminate mode for
                 // remaining tasks (stripping) to complete with an indeterminate progress bar
@@ -73,7 +73,7 @@ namespace MongoDownloader
             }
 
             var saved = strippedSize.Bytes > 0 ? $" (saved {strippedSize:#.#} by stripping)" : "";
-            Report($"Extracted {_download.Product} for {_download.Platform}{saved}", isIndeterminate: false);
+            Report($"Extracted {_download}{saved}", isIndeterminate: false);
         }
 
         private void Report(string description, bool isIndeterminate)

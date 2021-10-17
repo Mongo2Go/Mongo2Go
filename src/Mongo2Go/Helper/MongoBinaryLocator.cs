@@ -34,7 +34,7 @@ namespace Mongo2Go.Helper
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                _searchPattern = DefaultLinuxSearchPattern;
+                _searchPattern = $"tools/mongodb-linux-{RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant()}-*/bin";
                 _nugetCacheDirectory = _nugetCacheDirectory ?? OsxAndLinuxNugetCacheLocation;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -58,7 +59,7 @@ namespace MongoDownloader
         public string Name { get; set; } = "";
 
         [JsonPropertyName("arch")]
-        public string Architecture { get; set; } = "";
+        public string Arch { get; set; } = "";
 
         [JsonPropertyName("edition")]
         public string Edition { get; set; } = "";
@@ -66,9 +67,13 @@ namespace MongoDownloader
         [JsonPropertyName("archive")]
         public Archive Archive { get; set; } = new();
 
+        public Product Product { get; set; }
+
         public Platform Platform { get; set; }
 
-        public Product Product { get; set; }
+        public Architecture Architecture { get; set; }
+
+        public override string ToString() => $"{Product} for {Platform}/{Architecture.ToString().ToLowerInvariant()}";
     }
 
     public class Archive

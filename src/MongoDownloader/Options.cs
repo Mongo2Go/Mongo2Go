@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace MongoDownloader
@@ -29,9 +30,14 @@ namespace MongoDownloader
         public DirectoryInfo CacheDirectory { get; init; } = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.InternetCache), nameof(MongoDownloader)));
 
         /// <summary>
-        /// The architecture of the archive to download.
+        /// The architectures to download for a given platform.
         /// </summary>
-        public Regex Architecture { get; init; } = new("x86_64");
+        public IReadOnlyDictionary<Platform, IReadOnlyCollection<Architecture>> Architectures { get; init; } = new Dictionary<Platform, IReadOnlyCollection<Architecture>>
+        {
+            [Platform.Linux] = new[] { Architecture.Arm64, Architecture.X64 },
+            [Platform.macOS] = new[] { Architecture.X64 },
+            [Platform.Windows] = new[] { Architecture.X64 },
+        };
 
         /// <summary>
         /// The edition of the archive to download.
@@ -47,6 +53,15 @@ namespace MongoDownloader
             [Platform.Linux] = new(@"ubuntu2004", RegexOptions.IgnoreCase),
             [Platform.macOS] = new(@"macOS", RegexOptions.IgnoreCase),
             [Platform.Windows] = new(@"windows", RegexOptions.IgnoreCase),
+        };
+
+        /// <summary>
+        /// The regular expressions used to identify architectures to download.
+        /// </summary>
+        public IReadOnlyDictionary<Architecture, Regex> ArchitectureIdentifiers { get; init; } = new Dictionary<Architecture, Regex>
+        {
+            [Architecture.Arm64] = new("arm64|aarch64", RegexOptions.IgnoreCase),
+            [Architecture.X64] = new("x86_64", RegexOptions.IgnoreCase),
         };
 
         /// <summary>

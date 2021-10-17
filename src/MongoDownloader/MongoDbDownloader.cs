@@ -54,8 +54,8 @@ namespace MongoDownloader
             var allArchiveProgresses = new List<ProgressTask>();
             foreach (var download in communityServerDownloads.Concat(databaseToolsDownloads))
             {
-                var archiveProgress = context.AddTask($"Downloading {download.Product} for {download.Platform} from {download.Archive.Url}", maxValue: initialMaxValue);
-                var directoryName = $"mongodb-{download.Platform.ToString().ToLowerInvariant()}-{communityServerVersion.Number}-database-tools-{databaseToolsVersion.Number}";
+                var archiveProgress = context.AddTask($"Downloading {download} from {download.Archive.Url}", maxValue: initialMaxValue);
+                var directoryName = $"mongodb-{download.Platform.ToString().ToLowerInvariant()}-{download.Architecture.ToString().ToLowerInvariant()}-{communityServerVersion.Number}-database-tools-{databaseToolsVersion.Number}";
                 var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
                 allArchiveProgresses.Add(archiveProgress);
                 var progress = new ArchiveProgress(archiveProgress, globalProgress, allArchiveProgresses, download, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
@@ -104,7 +104,7 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.CommunityServerUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found");
-            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.CommunityServer, version, _options.PlatformIdentifiers[e], _options.Architecture, _options.Edition));
+            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.CommunityServer, version, _options, _options.Edition));
             return (version, downloads);
         }
 
@@ -112,20 +112,51 @@ namespace MongoDownloader
         {
             var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.DatabaseToolsUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
             var version = release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found");
-            var downloads = Enum.GetValues<Platform>().Select(e => GetDownload(e, Product.DatabaseTools, version, _options.PlatformIdentifiers[e], _options.Architecture));
+            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.DatabaseTools, version, _options));
             return (version, downloads);
         }
 
-        private static Download GetDownload(Platform platform, Product product, Version version, Regex platformRegex, Regex architectureRegex, Regex? editionRegex = null)
+        private static IEnumerable<Download> GetDownloads(Platform platform, Product product, Version version, Options options, Regex? editionRegex = null)
         {
-            var download = version.Downloads.LastOrDefault(e => (platformRegex.IsMatch(e.Target) || platformRegex.IsMatch(e.Name)) && architectureRegex.IsMatch(e.Architecture) && (editionRegex?.IsMatch(e.Edition) ?? true));
-            if (download == null)
+            var platformRegex = options.PlatformIdentifiers[platform];
+            Func<Download, bool> platformPredicate = product switch
             {
-                throw new InvalidOperationException($"{platformRegex}/{editionRegex}/{architectureRegex} download not found");
+                Product.CommunityServer => download => platformRegex.IsMatch(download.Target),
+                Product.DatabaseTools => download => platformRegex.IsMatch(download.Name),
+                _ => throw new ArgumentOutOfRangeException(nameof(product), product, $"The value of argument '{nameof(product)}' ({product}) is invalid for enum type '{nameof(Product)}'.")
+            };
+
+            foreach (var architecture in options.Architectures[platform])
+            {
+                var architectureRegex = options.ArchitectureIdentifiers[architecture];
+                var matchingDownloads = version.Downloads
+                    .Where(platformPredicate)
+                    .Where(e => architectureRegex.IsMatch(e.Arch))
+                    .Where(e => editionRegex?.IsMatch(e.Edition) ?? true)
+                    .ToList();
+
+                if (matchingDownloads.Count == 0)
+                {
+                    var downloads = version.Downloads.OrderBy(e => e.Target).ThenBy(e => e.Arch);
+                    var messages = Enumerable.Empty<string>()
+                        .Append($"Download not found for {platform}/{architecture}.")
+                        .Append($"  Available downloads for {product} {version.Number}:")
+                        .Concat(downloads.Select(e => $"    - {e.Target}/{e.Arch} ({e.Edition})"));
+                    throw new InvalidOperationException(string.Join(Environment.NewLine, messages));
+                }
+
+                if (matchingDownloads.Count > 1)
+                {
+                    throw new InvalidOperationException($"Found {matchingDownloads.Count} downloads for {platform}/{architecture} but expected to find only one.");
+                }
+
+                var download = matchingDownloads[0];
+                download.Platform = platform;
+                download.Architecture = architecture;
+                download.Product = product;
+
+                yield return download;
             }
-            download.Platform = platform;
-            download.Product = product;
-            return download;
         }
     }
 }
