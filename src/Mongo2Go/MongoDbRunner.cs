@@ -37,7 +37,7 @@ namespace Mongo2Go
         public static MongoDbRunner Start(string dataDirectory = null, string binariesSearchPatternOverride = null, string binariesSearchDirectory = null, bool singleNodeReplSet = false, string additionalMongodArguments = null, ushort singleNodeReplSetWaitTimeout = MongoDbDefaults.SingleNodeReplicaSetWaitTimeout, ILogger logger = null)
         {
             if (dataDirectory == null) {
-                dataDirectory = CreateTemporaryDataDirectory();
+                dataDirectory = GetTemporaryDataDirectory();
             }
 
             // this is required to support multiple instances to run in parallel
@@ -166,7 +166,7 @@ namespace Mongo2Go
             }
 
             if (dataDirectory == null) {
-                dataDirectory = CreateTemporaryDataDirectory();
+                dataDirectory = GetTemporaryDataDirectory();
             }
 
             _fileSystem.CreateFolder(dataDirectory);
@@ -186,7 +186,7 @@ namespace Mongo2Go
             _mongoBin = mongoBin;
 
             if (dataDirectory == null) {
-                dataDirectory = CreateTemporaryDataDirectory();
+                dataDirectory = GetTemporaryDataDirectory();
             }
 
             MakeMongoBinarysExecutable();
@@ -215,10 +215,7 @@ namespace Mongo2Go
             }
         }
 
-        private static string CreateTemporaryDataDirectory() {
-            var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Directory.CreateDirectory(path);
-            return path;
-        }
+
+        private static string GetTemporaryDataDirectory() => Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     }
 }
