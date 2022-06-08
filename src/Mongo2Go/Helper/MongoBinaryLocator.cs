@@ -13,10 +13,10 @@ namespace Mongo2Go.Helper
         private readonly string _nugetCachePrefix = Path.Combine("packages", "mongo2go", "*");
         private readonly string _nugetCacheBasePrefix = Path.Combine("mongo2go", "*");
         public const string DefaultWindowsSearchPattern = @"tools\mongodb-windows*\bin";
-        public const string DefaultLinuxSearchPattern = "*/tools/mongodb-linux*/bin";
+        public const string DefaultLinuxSearchPattern = "tools/mongodb-linux*/bin";
         public const string DefaultOsxSearchPattern = "tools/mongodb-macos*/bin";
         public const string WindowsNugetCacheLocation = @"%USERPROFILE%\.nuget\packages";
-        public static readonly string OsxAndLinuxNugetCacheLocation = Environment.GetEnvironmentVariable("HOME") + "/.nuget/packages/mongo2go";
+        public static readonly string OsxAndLinuxNugetCacheLocation = Environment.GetEnvironmentVariable("HOME") + "/.nuget/packages";
         private string _binFolder = string.Empty;
         private readonly string _searchPattern;
         private readonly string _nugetCacheDirectory;
@@ -93,7 +93,7 @@ namespace Mongo2Go.Helper
                 if (binaryFolder != null) return binaryFolder;
             }
             throw new MonogDbBinariesNotFoundException(
-                $"Could not find Mongo binaries using the search patterns \"{_searchPattern}\", \"{Path.Combine(_nugetPrefix, _searchPattern)}\", and \"{Path.Combine(_nugetCachePrefix, _searchPattern)}\".  " +
+                $"Could not find Mongo binaries using the search patterns \"{_searchPattern}\", \"{Path.Combine(_nugetPrefix, _searchPattern)}\", \"{Path.Combine(_nugetCachePrefix, _searchPattern)}\", and \"{Path.Combine(_nugetCacheBasePrefix, _searchPattern)}\".  " +
                 $"You can override the search pattern and directory when calling MongoDbRunner.Start.  We have detected the OS as {RuntimeInformation.OSDescription}.\n" +
                 $"We walked up to root directory from the following locations.\n {string.Join("\n", searchDirectories)}");
         }
