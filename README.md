@@ -6,6 +6,9 @@ Mongo2Go - MongoDB for integration tests & local debugging
 [![Continuous Integration](https://img.shields.io/github/workflow/status/Mongo2Go/Mongo2Go/Continuous%20Integration?label=Continuous%20Integration&logo=GitHub)](https://github.com/Mongo2Go/Mongo2Go/actions?query=workflow%3A%22Continuous+Integration%22)
 [![NuGet](https://img.shields.io/nuget/v/Mongo2Go.svg?label=NuGet&logo=NuGet)](https://www.nuget.org/packages/Mongo2Go/)
 
+> 👋 Do you need **MongoDB 5 or even 6** for your testing or development needs?
+> Check out [EphemeralMongo](https://github.com/asimmon/ephemeral-mongo), a project based on Mongo2Go.
+> In addition to supporting multiple MongoDB major versions and the same features, it has a faster startup, and better CI support.
 
 Mongo2Go is a managed wrapper around the latest MongoDB binaries.
 It targets **.NET Standard 2.0** (and **.NET 4.6** for legacy environments) and works with Windows, Linux and macOS.
