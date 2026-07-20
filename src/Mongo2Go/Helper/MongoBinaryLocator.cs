@@ -22,9 +22,21 @@ namespace Mongo2Go.Helper
         private readonly string _nugetCacheDirectory;
         private readonly string _additionalSearchDirectory;
 
+        /// <summary>
+        /// Whether binaries found by the search must match the checksums bundled with this build.
+        /// </summary>
+        /// <remarks>
+        /// The search walks upwards from several starting points and can therefore reach directories Mongo2Go does not
+        /// control, so by default we only accept binaries whose contents are the ones we shipped. A caller who names a
+        /// search directory or overrides the search pattern is deliberately supplying their own MongoDB - a supported
+        /// scenario for newer servers or native arm64 builds - and those binaries are used as they are.
+        /// </remarks>
+        private readonly bool _verifyChecksums;
+
         public MongoBinaryLocator(string searchPatternOverride, string additionalSearchDirectory)
         {
             _additionalSearchDirectory = additionalSearchDirectory;
+            _verifyChecksums = string.IsNullOrEmpty(searchPatternOverride) && string.IsNullOrEmpty(additionalSearchDirectory);
             _nugetCacheDirectory = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -79,23 +91,55 @@ namespace Mongo2Go.Helper
 
         private string FindBinariesDirectory(IList<string> searchDirectories)
         {
+            var patterns = new[]
+            {
+                // First try just the search pattern
+                _searchPattern,
+                // Next try the search pattern with nuget installation prefix
+                Path.Combine(_nugetPrefix, _searchPattern),
+                // Then try the search pattern with the nuget cache prefix
+                Path.Combine(_nugetCachePrefix, _searchPattern),
+                // Finally try the search pattern with the basic nuget cache prefix
+                Path.Combine(_nugetCacheBasePrefix, _searchPattern)
+            };
+
+            var rejected = new List<string>();
+
             foreach (var directory in searchDirectories)
             {
-                var binaryFolder =
-                    // First try just the search pattern
-                    directory.FindFolderUpwards(_searchPattern) ??
-                    // Next try the search pattern with nuget installation prefix
-                    directory.FindFolderUpwards(Path.Combine(_nugetPrefix, _searchPattern)) ??
-                    // Finally try the search pattern with the nuget cache prefix
-                    directory.FindFolderUpwards(Path.Combine(_nugetCachePrefix, _searchPattern)) ??
-                    // Finally try the search pattern with the basic nuget cache prefix
-                    directory.FindFolderUpwards(Path.Combine(_nugetCacheBasePrefix, _searchPattern));
-                if (binaryFolder != null) return binaryFolder;
+                foreach (var pattern in patterns)
+                {
+                    foreach (var candidate in directory.FindFoldersUpwards(pattern))
+                    {
+                        if (!_verifyChecksums || MongoBinaryManifest.Matches(candidate))
+                        {
+                            return candidate;
+                        }
+
+                        // Keep searching: a directory that merely looks right must not mask the real one.
+                        if (!rejected.Contains(candidate))
+                        {
+                            rejected.Add(candidate);
+                        }
+                    }
+                }
             }
-            throw new MonogDbBinariesNotFoundException(
+
+            var message =
                 $"Could not find Mongo binaries using the search patterns \"{_searchPattern}\", \"{Path.Combine(_nugetPrefix, _searchPattern)}\", \"{Path.Combine(_nugetCachePrefix, _searchPattern)}\", and \"{Path.Combine(_nugetCacheBasePrefix, _searchPattern)}\".  " +
                 $"You can override the search pattern and directory when calling MongoDbRunner.Start.  We have detected the OS as {RuntimeInformation.OSDescription}.\n" +
-                $"We walked up to root directory from the following locations.\n {string.Join("\n", searchDirectories)}");
+                $"We walked up to root directory from the following locations.\n {string.Join("\n", searchDirectories)}";
+
+            if (rejected.Count > 0)
+            {
+                message +=
+                    $"\n\nThe following directories matched the search pattern but do not contain the MongoDB binaries " +
+                    $"shipped with this version of Mongo2Go, so they were skipped:\n {string.Join("\n ", rejected)}\n" +
+                    $"If you are deliberately using your own MongoDB build, pass it with the binariesSearchDirectory " +
+                    $"parameter of MongoDbRunner.Start and it will be used without this check.";
+            }
+
+            throw new MonogDbBinariesNotFoundException(message);
         }
     }
 }

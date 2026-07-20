@@ -60,6 +60,11 @@ Mongo2Go has two use cases:
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Checksums of the bundled MongoDB binaries, verified at runtime by MongoBinaryManifest -->
+    <EmbeddedResource Include="MongoBinaries.sha256" LogicalName="Mongo2Go.MongoBinaries.sha256" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="packages.lock.json" Visible="false" />
     <None Include="../mongo2go_200_200.png" Visible="false">
       <Pack>true</Pack>

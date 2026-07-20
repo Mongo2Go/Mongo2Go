@@ -79,6 +79,40 @@ jobs:
           fi
           echo "Lockfiles match what nuget.org served."
 
+  # MongoBinaryLocator only accepts binaries matching src/Mongo2Go/MongoBinaries.sha256, so the manifest and the
+  # binaries must never drift apart. Runs on push as well as pull_request, because maintainers update the binaries
+  # by pushing directly (see RULE 1 in CLAUDE.md) and that is exactly when the manifest must be regenerated.
+  verify-binary-manifest:
+    runs-on: ubuntu-latest
+    name: Verify Binary Checksum Manifest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Regenerate the manifest from tools/ and require an exact match
+        run: |
+          {
+            sed -n '1,/^$/p' src/Mongo2Go/MongoBinaries.sha256
+            for plat in linux macos windows; do
+              dir=$(ls -d tools/mongodb-${plat}-* 2>/dev/null | head -1)
+              [ -z "$dir" ] && continue
+              for exe in mongod mongoimport mongoexport; do
+                for f in "$dir/bin/$exe" "$dir/bin/$exe.exe"; do
+                  [ -f "$f" ] || continue
+                  printf '%s/%s  %s\n' "$plat" "$(basename "$f")" "$(sha256sum "$f" | cut -d' ' -f1)"
+                done
+              done
+            done
+          } > /tmp/regenerated.sha256
+          if ! diff -u src/Mongo2Go/MongoBinaries.sha256 /tmp/regenerated.sha256; then
+            echo "::error::MongoBinaries.sha256 does not match the binaries in tools/."
+            echo ""
+            echo "The committed checksum manifest and the vendored binaries have drifted apart."
+            echo "If you updated the binaries, regenerate the manifest in the same commit."
+            echo "If you did not, the binaries in tools/ have been modified unexpectedly."
+            exit 1
+          fi
+          echo "Manifest matches the binaries in tools/."
+
   build:
     strategy:
       matrix:

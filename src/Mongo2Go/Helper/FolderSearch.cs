@@ -63,6 +63,49 @@ namespace Mongo2Go.Helper
             return matchingFolder ?? startPath.RemoveLastPart().FindFolderUpwards(searchPattern);
         }
 
+        /// <summary>
+        /// Enumerates every folder matching <paramref name="searchPattern"/>, starting at <paramref name="startPath"/>
+        /// and walking upwards, nearest match first.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="FindFolderUpwards"/> stops at the first match, which is enough when any match will do. Callers
+        /// that validate what they find - see <see cref="MongoBinaryManifest"/> - need to be able to reject a candidate
+        /// and carry on, otherwise an unusable directory encountered early would mask a valid one further up.
+        /// Unlike <see cref="FindFolder"/>, this yields <em>all</em> siblings matching a pattern part rather than
+        /// collapsing them to one, so a rejected sibling cannot hide a valid one at the same level.
+        /// </remarks>
+        public static IEnumerable<string> FindFoldersUpwards(this string startPath, string searchPattern)
+        {
+            if (searchPattern == null)
+            {
+                yield break;
+            }
+
+            for (string current = startPath; !string.IsNullOrEmpty(current); current = current.RemoveLastPart())
+            {
+                foreach (string match in FindFolders(current, searchPattern))
+                {
+                    yield return match;
+                }
+            }
+        }
+
+        private static IEnumerable<string> FindFolders(string startPath, string searchPattern)
+        {
+            IEnumerable<string> currentPaths = new[] { startPath };
+
+            foreach (var part in searchPattern.Split(_separators, StringSplitOptions.None))
+            {
+                currentPaths = currentPaths
+                    .Where(Directory.Exists)
+                    .SelectMany(path => Directory.GetDirectories(path, part))
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .ToList();
+            }
+
+            return currentPaths;
+        }
+
         internal static string RemoveLastPart(this string path)
         {
             if (!path.Contains(Path.DirectorySeparatorChar))
