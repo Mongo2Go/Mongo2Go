@@ -10,6 +10,13 @@ on:
     branches:
       - '**' # Validate every pull request, including those from forks
 
+# Least privilege by default. The repository default is "write", which is more than any
+# job here needs; only the publish job re-grants what it actually requires. Pull requests
+# from forks execute untrusted contributor code in the build job, so the token that code
+# runs alongside must not be able to write to the repository.
+permissions:
+  contents: read
+
 env:
   Configuration: Release
   ContinuousIntegrationBuild: true
@@ -101,10 +108,17 @@ jobs:
       - name: Run tests
         run: dotnet test --configuration ${{ env.Configuration }} --no-build --verbosity normal
 
+  # This job publishes to nuget.org and creates a GitHub release. It must only ever be
+  # reachable from a version tag pushed by a maintainer. The event_name check is redundant
+  # with the ref check (a pull_request event has ref refs/pull/<n>/merge, which cannot match
+  # refs/tags/) but is kept deliberately: this job spends the NUGET_API_KEY, so it is worth
+  # being structurally impossible rather than merely conditionally unreachable.
   publish:
     runs-on: macos-latest
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write # required to create the GitHub release
     name: Deploy NuGet and GitHub Release
     steps:
       - name: Checkout repository
