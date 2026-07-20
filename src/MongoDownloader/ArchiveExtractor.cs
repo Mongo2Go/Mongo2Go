@@ -56,7 +56,7 @@ namespace MongoDownloader
                 if (isBinaryFile || isLicenseFile)
                 {
                     var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(download.Product)) : nameParts;
-                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    var destinationFile = ResolveContainedFile(extractDirectory, destinationPathParts);
                     destinationFile.Directory?.Create();
                     await using var destinationStream = destinationFile.OpenWrite();
                     await using var inputStream = zipFile.GetInputStream(entry);
@@ -106,7 +106,9 @@ namespace MongoDownloader
             var stripTasks = new List<Task<ByteSize>>();
             foreach (var extractedFileName in extractedFileNames.Select(e => e.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
             {
-                var extractedFile = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName));
+                // Tar entry names may be absolute (SharpZipLib re-roots them on extraction but reports them verbatim),
+                // in which case an unchecked Path.Combine would discard extractDirectory and target a real host path.
+                var extractedFile = ResolveContainedFile(extractDirectory, new[] { extractedFileName });
                 var parts = extractedFileName.Split(Path.DirectorySeparatorChar);
                 var entryFileName = string.Join("/", parts.Skip(1));
                 rootDirectoryToDelete.Add(parts[0]);
@@ -123,7 +125,7 @@ namespace MongoDownloader
                     {
                         destinationPathParts = destinationPathParts.Prepend(ProductDirectoryName(download.Product));
                     }
-                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    var destinationFile = ResolveContainedFile(extractDirectory, destinationPathParts);
                     destinationFile.Directory?.Create();
                     extractedFile.MoveTo(destinationFile.FullName);
                     if (isBinaryFile && _binaryStripper is not null)
@@ -137,6 +139,43 @@ namespace MongoDownloader
             binDirectory.Delete(recursive: false);
             rootArchiveDirectory.Delete(recursive: false);
             return stripTasks;
+        }
+
+        /// <summary>
+        /// Combines <paramref name="pathParts"/> onto <paramref name="extractDirectory"/> and guarantees the result stays
+        /// inside it.
+        /// </summary>
+        /// <remarks>
+        /// Archive entry names are attacker-controlled data: they arrive from a downloaded archive and are not validated
+        /// by the archive libraries. Two distinct escapes are possible without this check:
+        /// <list type="bullet">
+        /// <item>a relative entry containing <c>..</c> segments, because <see cref="Path.Combine(string[])"/> does not
+        /// normalise or reject them ("zip slip");</item>
+        /// <item>a rooted entry such as <c>/etc/passwd</c>, because <see cref="Path.Combine(string[])"/> discards every
+        /// preceding segment as soon as one is rooted.</item>
+        /// </list>
+        /// Both are resolved by <see cref="Path.GetFullPath(string)"/> and then rejected by the prefix comparison.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The entry resolves outside <paramref name="extractDirectory"/>.</exception>
+        private static FileInfo ResolveContainedFile(DirectoryInfo extractDirectory, IEnumerable<string> pathParts)
+        {
+            var root = Path.GetFullPath(extractDirectory.FullName);
+            var rootWithSeparator = root.EndsWith(Path.DirectorySeparatorChar)
+                ? root
+                : root + Path.DirectorySeparatorChar;
+
+            var combined = Path.Combine(pathParts.Prepend(root).ToArray());
+            var resolved = Path.GetFullPath(combined);
+
+            if (!resolved.StartsWith(rootWithSeparator, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Refusing to extract an archive entry that escapes the extraction directory. " +
+                    $"The entry resolves to \"{resolved}\" which is outside \"{root}\". " +
+                    $"This indicates a malicious or corrupted archive.");
+            }
+
+            return new FileInfo(resolved);
         }
 
         private static string ProductDirectoryName(Product product)
