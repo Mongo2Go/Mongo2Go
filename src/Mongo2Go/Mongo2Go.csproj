@@ -4,7 +4,7 @@
     <TargetFrameworks>net472;netstandard2.1</TargetFrameworks>
     <Authors>Johannes Hoppe and many contributors</Authors>
     <Description>Mongo2Go is a managed wrapper around MongoDB binaries. It targets .NET Framework 4.7.2 and .NET Standard 2.1.
-This Nuget package contains the executables of mongod, mongoimport and mongoexport v4.4.4 for Windows, Linux and macOS.
+This Nuget package contains the executables of mongod, mongoimport and mongoexport v4.4.4 for Windows (x64), Linux (x64 and arm64) and macOS (x64).
 
 
 Mongo2Go has two use cases:
@@ -12,7 +12,7 @@ Mongo2Go has two use cases:
 1. Providing multiple, temporary and isolated MongoDB databases for integration tests
 2. Providing a quick to set up MongoDB database for a local developer environment</Description>
     <Company>HAUS HOPPE - ITS</Company>
-    <Copyright>Copyright © 2012-2025 Johannes Hoppe and many ❤️ contributors</Copyright>
+    <Copyright>Copyright © 2012-2026 Johannes Hoppe and many ❤️ contributors</Copyright>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

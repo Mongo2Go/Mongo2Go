@@ -315,6 +315,14 @@ public class MongoIntegrationTest
 Changelog
 -------------------------------------
 
+### Mongo2Go 4.2.0
+
+- **NEW: Linux ARM64 support** — the package now bundles native `mongod`, `mongoimport` and `mongoexport` for Linux arm64 in addition to the existing x64 binaries. Binary resolution is now architecture-aware, so the correct build is selected automatically (fixes [#127](https://github.com/Mongo2Go/Mongo2Go/issues/127)). On Apple Silicon the x64 macOS binaries continue to run under Rosetta 2, since MongoDB 4.4 has no macOS arm64 build.
+- Updated all NuGet dependencies, most notably **MongoDB.Driver** from 3.1.0 to 3.9.0. This resolves the vulnerable transitive dependencies (SharpCompress, Snappier) reported in [#160](https://github.com/Mongo2Go/Mongo2Go/issues/160) (PR [#159](https://github.com/Mongo2Go/Mongo2Go/pull/159) — many thanks to [Simon Schmid](https://github.com/schms27)).
+- **Smaller package**: the bundled MongoDB binaries are now stripped, reducing the package by roughly 22%. Even with the added arm64 binaries the package is smaller than before.
+- Internal: the `MongoDownloader` tool now verifies every downloaded archive against MongoDB's published SHA-256 before extraction, and the bundled binaries are verified against a committed checksum manifest at runtime. This strengthens the supply-chain guarantees of the package.
+- Please note that the bundled version of MongoDB included with this package remains **v4.4.4**.
+
 ### Mongo2Go 4.1.0, January 30 2025  
 
 - Updated **MongoDB.Driver** to version **3.1.0**, ensuring compatibility with the latest MongoDB client features (PR [#156](https://github.com/Mongo2Go/Mongo2Go/pull/156), fixes [#154](https://github.com/Mongo2Go/Mongo2Go/issues/154) - many thanks to [Teneko](https://github.com/teneko))  
