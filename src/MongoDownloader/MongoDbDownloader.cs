@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,22 +68,56 @@ namespace MongoDownloader
 
         private async Task<ByteSize> ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
         {
-            IEnumerable<Task<ByteSize>> stripTasks;
-            var archiveExtension = Path.GetExtension(download.Archive.Url.AbsolutePath);
-            if (archiveExtension == ".zip")
-            {
-                stripTasks = await _extractor.DownloadExtractZipArchiveAsync(download, extractDirectory, progress, cancellationToken);
-            }
-            else
-            {
-                var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
-                stripTasks = _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
-            }
+            var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
+
+            progress.Report("Verifying checksum");
+            VerifyChecksum(archiveFileInfo, download);
+
+            var stripTasks = await _extractor.ExtractArchiveAsync(download, archiveFileInfo, extractDirectory, cancellationToken);
             progress.Report("Stripping binaries");
             var completedStripTasks = await Task.WhenAll(stripTasks);
             var totalStrippedSize = completedStripTasks.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
             progress.ReportCompleted(totalStrippedSize);
             return totalStrippedSize;
+        }
+
+        /// <summary>
+        /// Verifies a downloaded archive against the SHA-256 checksum published by MongoDB alongside its download URL.
+        /// </summary>
+        /// <remarks>
+        /// The binaries committed to <c>tools/</c> are stripped derivatives and therefore cannot themselves be checked
+        /// against anything MongoDB publishes. This is the only point in the chain where upstream provenance can be
+        /// established, so a mismatch is fatal rather than a warning: continuing would produce binaries that are then
+        /// committed, packaged, and executed on every consumer's machine.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The checksum is missing or does not match.</exception>
+        private static void VerifyChecksum(FileInfo archiveFile, Download download)
+        {
+            var expected = download.Archive.Sha256;
+            if (string.IsNullOrWhiteSpace(expected))
+            {
+                throw new InvalidOperationException(
+                    $"MongoDB published no SHA-256 checksum for {download} ({download.Archive.Url}). " +
+                    $"Refusing to use an archive whose integrity cannot be established.");
+            }
+
+            string actual;
+            using (var sha256 = SHA256.Create())
+            using (var stream = archiveFile.OpenRead())
+            {
+                actual = Convert.ToHexString(sha256.ComputeHash(stream));
+            }
+
+            if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+            {
+                // Leaving the file in place would let a cached copy be reused on the next run.
+                archiveFile.Delete();
+                throw new InvalidOperationException(
+                    $"Checksum mismatch for {download} downloaded from {download.Archive.Url}.{Environment.NewLine}" +
+                    $"  expected (published by MongoDB): {expected.ToLowerInvariant()}{Environment.NewLine}" +
+                    $"  actual   (what we received):     {actual.ToLowerInvariant()}{Environment.NewLine}" +
+                    $"The downloaded file has been deleted. Do not use these binaries.");
+            }
         }
 
         private async Task<FileInfo> DownloadArchiveAsync(Archive archive, IProgress<ICopyProgress> progress, CancellationToken cancellationToken)
@@ -95,8 +130,11 @@ namespace MongoDownloader
                 progress.Report(new CopyProgress(TimeSpan.Zero, 0, 1, 1));
                 return destinationFile;
             }
-            await using var destinationStream = destinationFile.OpenWrite();
+            // FileMode.Create rather than OpenWrite: OpenWrite does not truncate, so a shorter download would be
+            // left with trailing bytes from a longer previous one, and the checksum would fail for a confusing reason.
+            await using var destinationStream = new FileStream(destinationFile.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
             await _options.HttpClient.GetAsync(archive.Url.AbsoluteUri, destinationStream, progress, cancellationToken);
+            destinationFile.Refresh();
             return destinationFile;
         }
 

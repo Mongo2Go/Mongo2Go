@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ByteSizeLib;
-using Espresso3389.HttpStream;
-using HttpProgress;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
@@ -18,8 +14,6 @@ namespace MongoDownloader
 {
     internal class ArchiveExtractor
     {
-        private static readonly int CachePageSize = Convert.ToInt32(ByteSize.FromMebiBytes(4).Bytes);
-
         private readonly Options _options;
         private readonly BinaryStripper? _binaryStripper;
 
@@ -29,26 +23,37 @@ namespace MongoDownloader
             _binaryStripper = binaryStripper;
         }
 
-        public async Task<IEnumerable<Task<ByteSize>>> DownloadExtractZipArchiveAsync(Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
+        /// <summary>
+        /// Extracts the binaries and licence files from an archive that has already been downloaded and verified.
+        /// </summary>
+        /// <remarks>
+        /// ZIP archives were previously read directly over HTTP with range requests, which never held the whole
+        /// archive and so left nothing to checksum. Both formats are now extracted from a local file, so the archive
+        /// can be verified against MongoDB's published SHA-256 before a single entry is read.
+        /// </remarks>
+        public async Task<IEnumerable<Task<ByteSize>>> ExtractArchiveAsync(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
-            var bytesTransferred = 0L;
-            using var headResponse = await _options.HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, download.Archive.Url), cancellationToken);
-            var contentLength = headResponse.Content.Headers.ContentLength ?? 0;
-            var cacheFile = new FileInfo(Path.Combine(_options.CacheDirectory.FullName, download.Archive.Url.Segments.Last()));
-            await using var cacheStream = new FileStream(cacheFile.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-            var stopwatch = Stopwatch.StartNew();
-            await using var httpStream = new HttpStream(download.Archive.Url, cacheStream, ownStream: false, CachePageSize, cached: null);
-            httpStream.RangeDownloaded += (_, args) =>
+            switch (Path.GetExtension(archive.Name))
             {
-                bytesTransferred += args.Length;
-                progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, contentLength));
-            };
-            using var zipFile = new ZipFile(httpStream);
+                case ".tgz":
+                    return ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
+                case ".zip":
+                    return await ExtractZipArchiveAsync(download, archive, extractDirectory, cancellationToken);
+                default:
+                    throw new NotSupportedException($"Only .tgz and .zip archives are currently supported. \"{archive.FullName}\" can not be extracted.");
+            }
+        }
+
+        private async Task<IEnumerable<Task<ByteSize>>> ExtractZipArchiveAsync(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
+        {
+            await using var archiveStream = archive.OpenRead();
+            using var zipFile = new ZipFile(archiveStream);
             var binaryRegex = _options.Binaries[(download.Product, download.Platform)];
             var licenseRegex = _options.Licenses[(download.Product, download.Platform)];
             var stripTasks = new List<Task<ByteSize>>();
             foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var nameParts = entry.Name.Split('\\', '/').Skip(1).ToList();
                 var zipEntryPath = string.Join('/', nameParts);
                 var isBinaryFile = binaryRegex.IsMatch(zipEntryPath);
@@ -58,7 +63,7 @@ namespace MongoDownloader
                     var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(download.Product)) : nameParts;
                     var destinationFile = ResolveContainedFile(extractDirectory, destinationPathParts);
                     destinationFile.Directory?.Create();
-                    await using var destinationStream = destinationFile.OpenWrite();
+                    await using var destinationStream = new FileStream(destinationFile.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
                     await using var inputStream = zipFile.GetInputStream(entry);
                     await inputStream.CopyToAsync(destinationStream, cancellationToken);
                     if (isBinaryFile && _binaryStripper is not null)
@@ -67,19 +72,7 @@ namespace MongoDownloader
                     }
                 }
             }
-            progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, bytesTransferred));
             return stripTasks;
-        }
-
-        public IEnumerable<Task<ByteSize>> ExtractArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
-        {
-            switch (Path.GetExtension(archive.Name))
-            {
-                case ".tgz":
-                    return ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
-                default:
-                    throw new NotSupportedException($"Only .tgz archives are currently supported. \"{archive.FullName}\" can not be extracted.");
-            }
         }
 
         private IEnumerable<Task<ByteSize>> ExtractTarGzipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)

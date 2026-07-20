@@ -11,7 +11,6 @@
     <PackageReference Include="bloomtom.HttpProgress" Version="2.3.2" />
     <PackageReference Include="ByteSize" Version="2.1.2" />
     <PackageReference Include="CliWrap" Version="3.10.1" />
-    <PackageReference Include="Espresso3389.HttpStream" Version="2.0.76" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="Spectre.Console" Version="0.55.2" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
