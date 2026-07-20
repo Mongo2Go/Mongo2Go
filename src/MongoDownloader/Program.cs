@@ -41,7 +41,15 @@ namespace MongoDownloader
                     eventArgs.Cancel = !cancellationTokenSource.IsCancellationRequested;
                     cancellationTokenSource.Cancel();
                 };
-                var options = new Options();
+                var options = new Options
+                {
+                    CommunityServerVersion = GetOptionValue(args, "--server-version"),
+                    DatabaseToolsVersion = GetOptionValue(args, "--tools-version"),
+                };
+                if (!string.IsNullOrEmpty(options.CommunityServerVersion) || !string.IsNullOrEmpty(options.DatabaseToolsVersion))
+                {
+                    AnsiConsole.WriteLine($"Pinned versions - Community Server: {options.CommunityServerVersion ?? "latest"}, Database Tools: {options.DatabaseToolsVersion ?? "latest"}");
+                }
                 var performStrip = args.All(e => e != "--no-strip");
                 var binaryStripper = performStrip ? await GetBinaryStripperAsync(cancellationTokenSource.Token) : null;
                 var archiveExtractor = new ArchiveExtractor(options, binaryStripper);
@@ -82,6 +90,19 @@ namespace MongoDownloader
                 $"Could not determine the MongoDB and Database Tools versions from the directory names in " +
                 $"\"{toolsDirectory.FullName}\". Expected a directory such as " +
                 $"\"mongodb-linux-x64-8.0.0-database-tools-100.14.0\".");
+        }
+
+        /// <summary>
+        /// Reads the value of a <c>--key value</c> command-line option, or <c>null</c> if the option is absent.
+        /// </summary>
+        private static string? GetOptionValue(string[] args, string optionName)
+        {
+            var index = Array.IndexOf(args, optionName);
+            if (index < 0 || index + 1 >= args.Length)
+            {
+                return null;
+            }
+            return args[index + 1];
         }
 
         private static DirectoryInfo GetToolsDirectory()

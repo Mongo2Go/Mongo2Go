@@ -149,16 +149,29 @@ namespace MongoDownloader
 
         private async Task<(Version version, IEnumerable<Download> downloads)> GetCommunityServerDownloadsAsync(CancellationToken cancellationToken)
         {
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.CommunityServerUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
-            var version = release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found");
+            var pinned = _options.CommunityServerVersion;
+            // The current-releases feed only lists recent versions, so pinning an older one requires the full feed.
+            var url = string.IsNullOrEmpty(pinned) ? _options.CommunityServerUrl : _options.CommunityServerFullUrl;
+            var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
+
+            var version = string.IsNullOrEmpty(pinned)
+                ? release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found")
+                : release.Versions.FirstOrDefault(e => e.Number == pinned) ?? throw new InvalidOperationException($"Community Server version \"{pinned}\" was not found in {url}");
+
             var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.CommunityServer, version, _options, _options.Edition));
             return (version, downloads);
         }
 
         private async Task<(Version version, IEnumerable<Download> downloads)> GetDatabaseToolsDownloadsAsync(CancellationToken cancellationToken)
         {
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.DatabaseToolsUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
-            var version = release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found");
+            var pinned = _options.DatabaseToolsVersion;
+            var url = string.IsNullOrEmpty(pinned) ? _options.DatabaseToolsUrl : _options.DatabaseToolsFullUrl;
+            var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
+
+            var version = string.IsNullOrEmpty(pinned)
+                ? release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found")
+                : release.Versions.FirstOrDefault(e => e.Number == pinned) ?? throw new InvalidOperationException($"Database Tools version \"{pinned}\" was not found in {url}");
+
             var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.DatabaseTools, version, _options));
             return (version, downloads);
         }

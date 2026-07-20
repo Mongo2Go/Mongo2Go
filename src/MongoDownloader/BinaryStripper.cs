@@ -69,11 +69,35 @@ namespace MongoDownloader
 
         public async Task<ByteSize> StripAsync(FileInfo executable, CancellationToken cancellationToken = default)
         {
-            var sizeBefore = ByteSize.FromBytes(executable.Length);
-            await Cli.Wrap(_llvmStripPath).WithArguments(executable.FullName).ExecuteAsync(cancellationToken);
-            executable.Refresh();
-            var sizeAfter = ByteSize.FromBytes(executable.Length);
-            return sizeBefore - sizeAfter;
+            var bytesBefore = executable.Length;
+
+            // Keep a copy of the original so stripping can be undone if it turns out not to help.
+            var backup = new FileInfo(executable.FullName + ".orig");
+            File.Copy(executable.FullName, backup.FullName, overwrite: true);
+
+            try
+            {
+                await Cli.Wrap(_llvmStripPath).WithArguments(executable.FullName).ExecuteAsync(cancellationToken);
+                executable.Refresh();
+
+                // Some binaries carry no removable symbols - notably Windows mongod.exe, whose debug info lives in a
+                // separate PDB. There llvm-strip rewrites the file to the same size while changing its bytes: no benefit,
+                // and it needlessly breaks provenance against MongoDB's published binary. When stripping does not make
+                // the file smaller, restore the original so the bundled binary stays byte-identical to what MongoDB
+                // published and the whole tools/ directory remains reproducible by re-running this tool.
+                if (executable.Length >= bytesBefore)
+                {
+                    File.Copy(backup.FullName, executable.FullName, overwrite: true);
+                    executable.Refresh();
+                    return new ByteSize(0);
+                }
+
+                return ByteSize.FromBytes(bytesBefore - executable.Length);
+            }
+            finally
+            {
+                backup.Delete();
+            }
         }
 
         private static async Task<string> GetLlvmStripPathAsync(CancellationToken cancellationToken)

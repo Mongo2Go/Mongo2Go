@@ -15,14 +15,44 @@ namespace MongoDownloader
         public HttpClient HttpClient { get; init; } = new();
 
         /// <summary>
-        /// The URL of the MongoDB Community Server download information JSON.
+        /// The URL of the MongoDB Community Server download information JSON, listing the current production releases.
         /// </summary>
         public string CommunityServerUrl { get; init; } = "https://s3.amazonaws.com/downloads.mongodb.org/current.json";
 
         /// <summary>
-        /// The URL of the MongoDB Database Tools download information JSON.
+        /// The URL of the MongoDB Database Tools download information JSON, listing the current releases.
         /// </summary>
         public string DatabaseToolsUrl { get; init; } = "https://s3.amazonaws.com/downloads.mongodb.org/tools/db/release.json";
+
+        /// <summary>
+        /// The URL of the MongoDB Community Server download information JSON listing <em>every</em> release, used when a
+        /// specific <see cref="CommunityServerVersion"/> is pinned because the current-releases feed only lists recent
+        /// versions.
+        /// </summary>
+        public string CommunityServerFullUrl { get; init; } = "https://s3.amazonaws.com/downloads.mongodb.org/full.json";
+
+        /// <summary>
+        /// The URL of the MongoDB Database Tools download information JSON listing <em>every</em> release, used when a
+        /// specific <see cref="DatabaseToolsVersion"/> is pinned.
+        /// </summary>
+        public string DatabaseToolsFullUrl { get; init; } = "https://s3.amazonaws.com/downloads.mongodb.org/tools/db/full.json";
+
+        /// <summary>
+        /// The exact MongoDB Community Server version to download, e.g. <c>4.4.4</c>. When <c>null</c> or empty, the
+        /// latest production release is used.
+        /// </summary>
+        /// <remarks>
+        /// Server and Database Tools have independent version numbers (for example 4.4.4 and 100.3.1), so they are
+        /// pinned separately. Pinning is what lets a maintainer re-download an exact past version and confirm the
+        /// bundled binaries reproduce byte-for-byte.
+        /// </remarks>
+        public string? CommunityServerVersion { get; init; }
+
+        /// <summary>
+        /// The exact MongoDB Database Tools version to download, e.g. <c>100.3.1</c>. When <c>null</c> or empty, the
+        /// latest release is used.
+        /// </summary>
+        public string? DatabaseToolsVersion { get; init; }
 
         /// <summary>
         /// The directory to store the downloaded archive files.
