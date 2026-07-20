@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -31,15 +32,40 @@ namespace Mongo2Go.Helper
         private const string ResourceName = "Mongo2Go.MongoBinaries.sha256";
 
         /// <summary>
-        /// Accepted checksums for the current platform, keyed by file name.
+        /// Accepted checksums for the current platform, keyed by architecture and then file name.
         /// </summary>
         /// <remarks>
-        /// A file name maps to a <em>set</em> of checksums rather than one, because a platform can ship more than one
-        /// architecture - Linux ships x64 and arm64 - and both are legitimately ours. The question being answered is
-        /// "is this one of the binaries we shipped?", not "is this the single binary we expected here?".
+        /// Architecture has to be part of the key because a platform can ship more than one - Linux ships x64 and
+        /// arm64 - and unlike two copies of the same binary, these are not interchangeable. Running the wrong one
+        /// fails with "Exec format error", which is the symptom reported in issue #127.
         /// </remarks>
-        private static readonly Lazy<IDictionary<string, HashSet<string>>> ExpectedChecksums =
-            new Lazy<IDictionary<string, HashSet<string>>>(LoadForCurrentPlatform);
+        private static readonly Lazy<IDictionary<string, IDictionary<string, HashSet<string>>>> ExpectedChecksums =
+            new Lazy<IDictionary<string, IDictionary<string, HashSet<string>>>>(LoadForCurrentPlatform);
+
+        /// <summary>
+        /// The manifest name for the architecture this machine runs natively.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="RuntimeInformation.OSArchitecture"/> rather than <c>ProcessArchitecture</c>: what matters is what
+        /// the operating system can execute, not what this particular process was built for. A .NET process running
+        /// under emulation should still prefer binaries native to the machine.
+        /// </remarks>
+        private static string NativeArchitecture
+        {
+            get
+            {
+                // A switch expression would be neater, but the net472 target compiles as C# 7.3.
+                switch (RuntimeInformation.OSArchitecture)
+                {
+                    case Architecture.Arm64:
+                        return "arm64";
+                    case Architecture.X64:
+                        return "x64";
+                    default:
+                        return RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+                }
+            }
+        }
 
         /// <summary>
         /// Caches verification results per directory. Hashing the bundled binaries costs roughly 40 ms, which is
@@ -64,35 +90,44 @@ namespace Mongo2Go.Helper
         }
 
         /// <summary>
-        /// Returns <c>true</c> if <paramref name="binariesDirectory"/> contains exactly the binaries shipped with this
-        /// build of Mongo2Go. A directory missing any of them, or containing a modified copy, is rejected.
+        /// Returns <c>true</c> if <paramref name="binariesDirectory"/> contains binaries shipped with this build of
+        /// Mongo2Go. A directory missing any of them, or containing a modified copy, is rejected.
         /// </summary>
-        public static bool Matches(string binariesDirectory)
+        /// <param name="binariesDirectory">The candidate directory.</param>
+        /// <param name="nativeArchitectureOnly">
+        /// When <c>true</c>, only binaries built for this machine's architecture are accepted. Callers should search
+        /// once with <c>true</c> and, if nothing matches, search again with <c>false</c>: shipping x64 binaries to an
+        /// arm64 machine is correct on macOS, where Rosetta 2 runs them, and remains the only option on any platform
+        /// for which no native build exists.
+        /// </param>
+        public static bool Matches(string binariesDirectory, bool nativeArchitectureOnly)
         {
             if (string.IsNullOrEmpty(binariesDirectory))
             {
                 return false;
             }
 
+            var cacheKey = (nativeArchitectureOnly ? "native:" : "any:") + binariesDirectory;
+
             lock (CacheLock)
             {
-                if (VerificationCache.TryGetValue(binariesDirectory, out var cached))
+                if (VerificationCache.TryGetValue(cacheKey, out var cached))
                 {
                     return cached;
                 }
             }
 
-            var result = Verify(binariesDirectory);
+            var result = Verify(binariesDirectory, nativeArchitectureOnly);
 
             lock (CacheLock)
             {
-                VerificationCache[binariesDirectory] = result;
+                VerificationCache[cacheKey] = result;
             }
 
             return result;
         }
 
-        private static bool Verify(string binariesDirectory)
+        private static bool Verify(string binariesDirectory, bool nativeArchitectureOnly)
         {
             // No manifest means this build cannot verify anything. Fail open rather than making the library unusable:
             // a missing manifest is a packaging fault on our side, not evidence that the user's binaries are bad.
@@ -101,9 +136,23 @@ namespace Mongo2Go.Helper
                 return true;
             }
 
+            var architectures = nativeArchitectureOnly
+                ? new[] { NativeArchitecture }
+                : ExpectedChecksums.Value.Keys.ToArray();
+
             foreach (var fileName in ExpectedFileNames)
             {
-                if (!ExpectedChecksums.Value.TryGetValue(fileName, out var accepted) || accepted.Count == 0)
+                var accepted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var architecture in architectures)
+                {
+                    if (ExpectedChecksums.Value.TryGetValue(architecture, out var byFileName)
+                        && byFileName.TryGetValue(fileName, out var checksums))
+                    {
+                        accepted.UnionWith(checksums);
+                    }
+                }
+
+                if (accepted.Count == 0)
                 {
                     return false;
                 }
@@ -155,9 +204,9 @@ namespace Mongo2Go.Helper
         /// <summary>
         /// Reads the embedded manifest and returns the entries for the current platform, keyed by file name.
         /// </summary>
-        private static IDictionary<string, HashSet<string>> LoadForCurrentPlatform()
+        private static IDictionary<string, IDictionary<string, HashSet<string>>> LoadForCurrentPlatform()
         {
-            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            var result = new Dictionary<string, IDictionary<string, HashSet<string>>>(StringComparer.OrdinalIgnoreCase);
 
             string platform;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) platform = "windows";
@@ -183,30 +232,39 @@ namespace Mongo2Go.Helper
                             continue;
                         }
 
-                        // "<platform>/<fileName>  <sha256>"
+                        // "<platform>/<architecture>/<fileName>  <sha256>"
                         var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length != 2)
                         {
                             continue;
                         }
 
-                        var separator = parts[0].IndexOf('/');
-                        if (separator <= 0)
+                        var key = parts[0].Split('/');
+                        if (key.Length != 3)
                         {
                             continue;
                         }
 
-                        if (!string.Equals(parts[0].Substring(0, separator), platform, StringComparison.OrdinalIgnoreCase))
+                        if (!string.Equals(key[0], platform, StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
                         }
 
-                        var fileName = parts[0].Substring(separator + 1);
-                        if (!result.TryGetValue(fileName, out var checksums))
+                        var architecture = key[1];
+                        var fileName = key[2];
+
+                        if (!result.TryGetValue(architecture, out var byFileName))
+                        {
+                            byFileName = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+                            result[architecture] = byFileName;
+                        }
+
+                        if (!byFileName.TryGetValue(fileName, out var checksums))
                         {
                             checksums = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                            result[fileName] = checksums;
+                            byFileName[fileName] = checksums;
                         }
+
                         checksums.Add(parts[1]);
                     }
                 }

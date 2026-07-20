@@ -70,7 +70,7 @@ namespace MongoDownloader
 
             foreach (var entry in entries)
             {
-                builder.AppendLine($"{entry.Platform}/{entry.FileName}  {entry.Checksum}");
+                builder.AppendLine($"{entry.Platform}/{entry.Architecture}/{entry.FileName}  {entry.Checksum}");
             }
 
             // Written with LF regardless of host, so the file does not churn between contributors.
@@ -102,9 +102,9 @@ namespace MongoDownloader
             return null;
         }
 
-        private static async Task<List<(string Platform, string FileName, string Checksum)>> CollectEntriesAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+        private static async Task<List<(string Platform, string Architecture, string FileName, string Checksum)>> CollectEntriesAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
         {
-            var entries = new List<(string Platform, string FileName, string Checksum)>();
+            var entries = new List<(string Platform, string Architecture, string FileName, string Checksum)>();
 
             foreach (var executable in toolsDirectory
                          .EnumerateFiles("*", SearchOption.AllDirectories)
@@ -112,41 +112,61 @@ namespace MongoDownloader
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var platform = PlatformOf(executable, toolsDirectory);
-                if (platform == null)
+                var (platform, architecture) = DescribeOf(executable, toolsDirectory);
+                if (platform == null || architecture == null)
                 {
-                    continue;
+                    throw new InvalidOperationException(
+                        $"Cannot determine the platform and architecture of \"{executable.FullName}\" from its directory " +
+                        $"name. Directories under tools/ are expected to be named like " +
+                        $"\"mongodb-linux-x64-8.0.0-database-tools-100.14.0\".");
                 }
 
-                entries.Add((platform, executable.Name, await ComputeSha256Async(executable, cancellationToken)));
+                entries.Add((platform, architecture, executable.Name, await ComputeSha256Async(executable, cancellationToken)));
             }
 
             // Stable ordering, so an unchanged tools/ always produces a byte-identical manifest.
             return entries
                 .OrderBy(e => e.Platform, StringComparer.Ordinal)
+                .ThenBy(e => e.Architecture, StringComparer.Ordinal)
                 .ThenBy(e => e.FileName, StringComparer.Ordinal)
                 .ThenBy(e => e.Checksum, StringComparer.Ordinal)
                 .ToList();
         }
 
         /// <summary>
-        /// Derives the platform from the top-level directory name under <c>tools/</c>, for example
+        /// Derives the platform and architecture from the top-level directory name under <c>tools/</c>, for example
         /// <c>mongodb-linux-x64-8.0.0-database-tools-100.14.0</c>.
         /// </summary>
-        private static string? PlatformOf(FileInfo executable, DirectoryInfo toolsDirectory)
+        /// <remarks>
+        /// The architecture matters at runtime, not merely for bookkeeping: a Linux machine may have both an x64 and
+        /// an arm64 directory available and the two are not interchangeable, so the manifest has to say which is which.
+        /// </remarks>
+        private static (string? Platform, string? Architecture) DescribeOf(FileInfo executable, DirectoryInfo toolsDirectory)
         {
             var relative = executable.FullName.Substring(toolsDirectory.FullName.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var topLevel = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).FirstOrDefault() ?? "";
 
-            foreach (var platform in new[] { "linux", "macos", "windows" })
+            string? platform = null;
+            foreach (var candidate in new[] { "linux", "macos", "windows" })
             {
-                if (topLevel.Contains($"-{platform}-", StringComparison.OrdinalIgnoreCase))
+                if (topLevel.Contains($"-{candidate}-", StringComparison.OrdinalIgnoreCase))
                 {
-                    return platform;
+                    platform = candidate;
+                    break;
                 }
             }
 
-            return null;
+            string? architecture = null;
+            foreach (var candidate in new[] { "arm64", "x64" })
+            {
+                if (topLevel.Contains($"-{candidate}-", StringComparison.OrdinalIgnoreCase))
+                {
+                    architecture = candidate;
+                    break;
+                }
+            }
+
+            return (platform, architecture);
         }
 
         private static async Task<string> ComputeSha256Async(FileInfo file, CancellationToken cancellationToken)

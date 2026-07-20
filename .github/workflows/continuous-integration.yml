@@ -96,6 +96,7 @@ jobs:
           EXECUTABLES = {"mongod", "mongoimport", "mongoexport",
                          "mongod.exe", "mongoimport.exe", "mongoexport.exe"}
           PLATFORMS = ("linux", "macos", "windows")
+          ARCHITECTURES = ("arm64", "x64")
 
           # Compared as sets rather than as text, so reordering or an edited comment header cannot
           # fail the build, and no entry can be added, removed or altered without failing it.
@@ -105,28 +106,32 @@ jobs:
               if not line or line.startswith("#"):
                   continue
               key, _, digest = line.partition("  ")
-              platform, _, name = key.partition("/")
-              declared.add((platform, name, digest.strip().lower()))
+              parts = key.split("/")
+              if len(parts) != 3:
+                  print(f"::error::Malformed manifest entry '{key}'. Expected <platform>/<architecture>/<file>.")
+                  sys.exit(1)
+              declared.add((parts[0], parts[1], parts[2], digest.strip().lower()))
 
           actual = set()
           for path in sorted(pathlib.Path("tools").rglob("*")):
               if not path.is_file() or path.name not in EXECUTABLES:
                   continue
-              top = path.relative_to("tools").parts[0]
-              platform = next((p for p in PLATFORMS if f"-{p}-" in top.lower()), None)
-              if platform is None:
-                  print(f"::error::Cannot determine the platform for {path} from directory name '{top}'.")
+              top = path.relative_to("tools").parts[0].lower()
+              platform = next((p for p in PLATFORMS if f"-{p}-" in top), None)
+              architecture = next((a for a in ARCHITECTURES if f"-{a}-" in top), None)
+              if platform is None or architecture is None:
+                  print(f"::error::Cannot determine platform/architecture for {path} from directory name '{top}'.")
                   sys.exit(1)
-              actual.add((platform, path.name, hashlib.sha256(path.read_bytes()).hexdigest()))
+              actual.add((platform, architecture, path.name, hashlib.sha256(path.read_bytes()).hexdigest()))
 
           if declared == actual:
               print(f"Manifest describes all {len(actual)} bundled binaries exactly.")
               sys.exit(0)
 
           for entry in sorted(actual - declared):
-              print(f"::error::In tools/ but not in the manifest (or checksum differs): {entry[0]}/{entry[1]} {entry[2]}")
+              print(f"::error::In tools/ but not in the manifest (or checksum differs): {entry[0]}/{entry[1]}/{entry[2]} {entry[3]}")
           for entry in sorted(declared - actual):
-              print(f"::error::In the manifest but not in tools/: {entry[0]}/{entry[1]} {entry[2]}")
+              print(f"::error::In the manifest but not in tools/: {entry[0]}/{entry[1]}/{entry[2]} {entry[3]}")
           print("")
           print("The checksum manifest and the vendored binaries have drifted apart.")
           print("Mongo2Go verifies binaries against this manifest at runtime, so a mismatch means")
@@ -138,15 +143,26 @@ jobs:
 
   build:
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        # ubuntu-24.04-arm exercises the bundled linux/arm64 binaries. Without it the matrix proves less than it
+        # appears to: macos-latest is Apple Silicon but runs the x64 binaries under Rosetta 2, so before arm64 was
+        # bundled every job passed for a different reason and none of them would have caught issue #127.
+        os: [macos-latest, ubuntu-latest, ubuntu-24.04-arm, windows-latest]
     runs-on: ${{ matrix.os }}
     name: Build and Test
     steps:
       - name: Install libssl1.1 (restores libcrypto.so.1.1 which is required by MongoDB binaries v4.4.4)
         if: runner.os == 'Linux'
         run: |
-          echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+          # security.ubuntu.com carries amd64/i386 only; arm64 packages live on ports.ubuntu.com.
+          ARCH=$(dpkg --print-architecture)
+          if [ "$ARCH" = "arm64" ]; then
+            REPO="http://ports.ubuntu.com/ubuntu-ports"
+          else
+            REPO="http://security.ubuntu.com/ubuntu"
+          fi
+          echo "deb [arch=$ARCH] $REPO focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
           sudo apt update
           sudo apt install -y libssl1.1
       - name: Checkout repository

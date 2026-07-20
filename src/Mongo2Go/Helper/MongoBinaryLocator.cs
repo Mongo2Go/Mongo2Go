@@ -100,7 +100,7 @@ namespace Mongo2Go.Helper
 
         private string FindBinariesDirectory(IList<string> searchDirectories)
         {
-            var patterns = new[]
+            var patterns = new List<string>
             {
                 // First try just the search pattern
                 _searchPattern,
@@ -114,31 +114,54 @@ namespace Mongo2Go.Helper
 
             var rejected = new List<string>();
 
-            foreach (var directory in searchDirectories)
+            if (!_verifyChecksums)
             {
-                foreach (var pattern in patterns)
+                foreach (var candidate in EnumerateCandidates(searchDirectories, patterns))
                 {
-                    foreach (var candidate in directory.FindFoldersUpwards(pattern))
+                    return candidate;
+                }
+            }
+            else
+            {
+                // First pass accepts only binaries built for this machine's architecture. A Linux machine can have
+                // both an x64 and an arm64 directory available and they are not interchangeable - picking the wrong
+                // one fails with "Exec format error" (issue #127).
+                foreach (var candidate in EnumerateCandidates(searchDirectories, patterns))
+                {
+                    if (MongoBinaryManifest.Matches(candidate, nativeArchitectureOnly: true))
                     {
-                        if (!_verifyChecksums || MongoBinaryManifest.Matches(candidate))
-                        {
-                            return candidate;
-                        }
+                        return candidate;
+                    }
+                }
 
-                        // Keep searching: a directory that merely looks right must not mask the real one.
-                        // Recovering from this is deliberately not silent - a directory that matches the search
-                        // pattern but holds different binaries is worth knowing about whether it is a stale copy
-                        // or a planted one, and the checksum cannot be forged, so there is nothing to keep quiet.
-                        if (!rejected.Contains(candidate))
-                        {
-                            rejected.Add(candidate);
-                            _logger?.LogWarning(
-                                "Ignoring MongoDB binaries at \"{BinariesDirectory}\": they match the search pattern " +
-                                "but are not the binaries shipped with this version of Mongo2Go. Continuing to search. " +
-                                "If these are your own binaries, pass the directory to MongoDbRunner.Start using the " +
-                                "binariesSearchDirectory parameter and it will be used without this check.",
-                                candidate);
-                        }
+                // Second pass accepts any architecture we ship. This is not a fallback for broken setups but the
+                // normal path on Apple Silicon, where no native arm64 build of MongoDB 4.4 exists and the x64
+                // binaries run under Rosetta 2.
+                foreach (var candidate in EnumerateCandidates(searchDirectories, patterns))
+                {
+                    if (MongoBinaryManifest.Matches(candidate, nativeArchitectureOnly: false))
+                    {
+                        _logger?.LogInformation(
+                            "Using MongoDB binaries at \"{BinariesDirectory}\", which are not built for this machine's " +
+                            "architecture ({Architecture}). This is expected where no native build is bundled and the " +
+                            "platform can emulate them.",
+                            candidate, RuntimeInformation.OSArchitecture);
+                        return candidate;
+                    }
+
+                    // Keep searching: a directory that merely looks right must not mask the real one.
+                    // Recovering from this is deliberately not silent - a directory that matches the search
+                    // pattern but holds different binaries is worth knowing about whether it is a stale copy
+                    // or a planted one, and the checksum cannot be forged, so there is nothing to keep quiet.
+                    if (!rejected.Contains(candidate))
+                    {
+                        rejected.Add(candidate);
+                        _logger?.LogWarning(
+                            "Ignoring MongoDB binaries at \"{BinariesDirectory}\": they match the search pattern " +
+                            "but are not the binaries shipped with this version of Mongo2Go. Continuing to search. " +
+                            "If these are your own binaries, pass the directory to MongoDbRunner.Start using the " +
+                            "binariesSearchDirectory parameter and it will be used without this check.",
+                            candidate);
                     }
                 }
             }
@@ -158,6 +181,24 @@ namespace Mongo2Go.Helper
             }
 
             throw new MonogDbBinariesNotFoundException(message);
+        }
+
+        /// <summary>
+        /// Yields every directory matching any of <paramref name="patterns"/>, searched from each of
+        /// <paramref name="searchDirectories"/> in turn and walking upwards from each.
+        /// </summary>
+        private static IEnumerable<string> EnumerateCandidates(IList<string> searchDirectories, IList<string> patterns)
+        {
+            foreach (var directory in searchDirectories)
+            {
+                foreach (var pattern in patterns)
+                {
+                    foreach (var candidate in directory.FindFoldersUpwards(pattern))
+                    {
+                        yield return candidate;
+                    }
+                }
+            }
         }
     }
 }
