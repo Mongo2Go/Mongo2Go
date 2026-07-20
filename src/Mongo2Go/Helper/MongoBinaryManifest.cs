@@ -30,8 +30,16 @@ namespace Mongo2Go.Helper
     {
         private const string ResourceName = "Mongo2Go.MongoBinaries.sha256";
 
-        private static readonly Lazy<IDictionary<string, string>> ExpectedChecksums =
-            new Lazy<IDictionary<string, string>>(LoadForCurrentPlatform);
+        /// <summary>
+        /// Accepted checksums for the current platform, keyed by file name.
+        /// </summary>
+        /// <remarks>
+        /// A file name maps to a <em>set</em> of checksums rather than one, because a platform can ship more than one
+        /// architecture - Linux ships x64 and arm64 - and both are legitimately ours. The question being answered is
+        /// "is this one of the binaries we shipped?", not "is this the single binary we expected here?".
+        /// </remarks>
+        private static readonly Lazy<IDictionary<string, HashSet<string>>> ExpectedChecksums =
+            new Lazy<IDictionary<string, HashSet<string>>>(LoadForCurrentPlatform);
 
         /// <summary>
         /// Caches verification results per directory. Hashing the bundled binaries costs roughly 40 ms, which is
@@ -95,7 +103,7 @@ namespace Mongo2Go.Helper
 
             foreach (var fileName in ExpectedFileNames)
             {
-                if (!ExpectedChecksums.Value.TryGetValue(fileName, out var expected))
+                if (!ExpectedChecksums.Value.TryGetValue(fileName, out var accepted) || accepted.Count == 0)
                 {
                     return false;
                 }
@@ -120,7 +128,7 @@ namespace Mongo2Go.Helper
                     return false;
                 }
 
-                if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+                if (!accepted.Contains(actual))
                 {
                     return false;
                 }
@@ -147,9 +155,9 @@ namespace Mongo2Go.Helper
         /// <summary>
         /// Reads the embedded manifest and returns the entries for the current platform, keyed by file name.
         /// </summary>
-        private static IDictionary<string, string> LoadForCurrentPlatform()
+        private static IDictionary<string, HashSet<string>> LoadForCurrentPlatform()
         {
-            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
             string platform;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) platform = "windows";
@@ -193,7 +201,13 @@ namespace Mongo2Go.Helper
                             continue;
                         }
 
-                        result[parts[0].Substring(separator + 1)] = parts[1];
+                        var fileName = parts[0].Substring(separator + 1);
+                        if (!result.TryGetValue(fileName, out var checksums))
+                        {
+                            checksums = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            result[fileName] = checksums;
+                        }
+                        checksums.Add(parts[1]);
                     }
                 }
             }

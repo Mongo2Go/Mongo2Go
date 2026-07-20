@@ -63,6 +63,15 @@ namespace MongoDownloader
                 tasks.Add(ProcessArchiveAsync(download, extractDirectory, progress, cancellationToken));
             }
             var strippedSizes = await Task.WhenAll(tasks);
+
+            // Written here, after every archive has been extracted and stripped, so the manifest describes the
+            // binaries exactly as they will be committed and packaged. Doing this automatically is the point: a
+            // manifest that disagrees with tools/ makes Mongo2Go reject its own binaries at the consumer's end.
+            var manifestProgress = context.AddTask("Writing checksum manifest", maxValue: 1);
+            var manifestFile = await BinaryManifestWriter.WriteAsync(toolsDirectory, communityServerVersion.Number, databaseToolsVersion.Number, cancellationToken);
+            manifestProgress.Increment(1);
+            manifestProgress.Description = $"✅ Wrote checksum manifest to {new Uri(manifestFile.FullName).AbsoluteUri}";
+
             return strippedSizes.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
         }
 

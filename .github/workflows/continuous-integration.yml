@@ -88,30 +88,53 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Regenerate the manifest from tools/ and require an exact match
+      - name: Require the manifest to describe tools/ exactly
+        shell: python
         run: |
-          {
-            sed -n '1,/^$/p' src/Mongo2Go/MongoBinaries.sha256
-            for plat in linux macos windows; do
-              dir=$(ls -d tools/mongodb-${plat}-* 2>/dev/null | head -1)
-              [ -z "$dir" ] && continue
-              for exe in mongod mongoimport mongoexport; do
-                for f in "$dir/bin/$exe" "$dir/bin/$exe.exe"; do
-                  [ -f "$f" ] || continue
-                  printf '%s/%s  %s\n' "$plat" "$(basename "$f")" "$(sha256sum "$f" | cut -d' ' -f1)"
-                done
-              done
-            done
-          } > /tmp/regenerated.sha256
-          if ! diff -u src/Mongo2Go/MongoBinaries.sha256 /tmp/regenerated.sha256; then
-            echo "::error::MongoBinaries.sha256 does not match the binaries in tools/."
-            echo ""
-            echo "The committed checksum manifest and the vendored binaries have drifted apart."
-            echo "If you updated the binaries, regenerate the manifest in the same commit."
-            echo "If you did not, the binaries in tools/ have been modified unexpectedly."
-            exit 1
-          fi
-          echo "Manifest matches the binaries in tools/."
+          import hashlib, pathlib, sys
+
+          EXECUTABLES = {"mongod", "mongoimport", "mongoexport",
+                         "mongod.exe", "mongoimport.exe", "mongoexport.exe"}
+          PLATFORMS = ("linux", "macos", "windows")
+
+          # Compared as sets rather than as text, so reordering or an edited comment header cannot
+          # fail the build, and no entry can be added, removed or altered without failing it.
+          declared = set()
+          for raw in pathlib.Path("src/Mongo2Go/MongoBinaries.sha256").read_text().splitlines():
+              line = raw.strip()
+              if not line or line.startswith("#"):
+                  continue
+              key, _, digest = line.partition("  ")
+              platform, _, name = key.partition("/")
+              declared.add((platform, name, digest.strip().lower()))
+
+          actual = set()
+          for path in sorted(pathlib.Path("tools").rglob("*")):
+              if not path.is_file() or path.name not in EXECUTABLES:
+                  continue
+              top = path.relative_to("tools").parts[0]
+              platform = next((p for p in PLATFORMS if f"-{p}-" in top.lower()), None)
+              if platform is None:
+                  print(f"::error::Cannot determine the platform for {path} from directory name '{top}'.")
+                  sys.exit(1)
+              actual.add((platform, path.name, hashlib.sha256(path.read_bytes()).hexdigest()))
+
+          if declared == actual:
+              print(f"Manifest describes all {len(actual)} bundled binaries exactly.")
+              sys.exit(0)
+
+          for entry in sorted(actual - declared):
+              print(f"::error::In tools/ but not in the manifest (or checksum differs): {entry[0]}/{entry[1]} {entry[2]}")
+          for entry in sorted(declared - actual):
+              print(f"::error::In the manifest but not in tools/: {entry[0]}/{entry[1]} {entry[2]}")
+          print("")
+          print("The checksum manifest and the vendored binaries have drifted apart.")
+          print("Mongo2Go verifies binaries against this manifest at runtime, so a mismatch means")
+          print("the shipped package would reject its own binaries on a consumer's machine.")
+          print("")
+          print("Regenerate it in the same commit as the binary change:")
+          print("  dotnet run --project src/MongoDownloader -- --write-manifest")
+          sys.exit(1)
 
   build:
     strategy:
