@@ -6,6 +6,9 @@ on:
       - '**' # Trigger on all branches for commits
     tags:
       - 'v*' # Trigger only on version tags for deployments
+  pull_request:
+    branches:
+      - '**' # Validate every pull request, including those from forks
 
 env:
   Configuration: Release
@@ -14,6 +17,61 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
+  # Mongo2Go ships executable MongoDB binaries to every consumer. We never accept those
+  # bytes from a contributor - maintainers re-download them with src/MongoDownloader.
+  # See RULE 1 in CLAUDE.md. Do not weaken or bypass this job.
+  guard-binaries:
+    runs-on: ubuntu-latest
+    name: Zero-Trust Binary Guard
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject pull requests that touch vendored binaries
+        run: |
+          CHANGED=$(git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" -- tools/)
+          if [ -n "$CHANGED" ]; then
+            echo "::error::This pull request modifies files under tools/."
+            echo "$CHANGED" | while read -r f; do echo "::error file=$f::Vendored binary modified: $f"; done
+            echo ""
+            echo "Mongo2Go ships these executables to every consumer of the NuGet package."
+            echo "We do not accept binaries from pull requests - not even well-intentioned ones,"
+            echo "because no code review can detect a backdoored stripped executable."
+            echo ""
+            echo "To propose a MongoDB version change, open an issue describing the target"
+            echo "version. A maintainer will re-download the binaries with src/MongoDownloader"
+            echo "and push them directly."
+            exit 1
+          fi
+          echo "No files under tools/ were modified."
+
+  # packages.lock.json is a trust anchor: CI restores with --locked-mode and pins to whatever
+  # contentHash values it contains. We never trust contributor-supplied hashes - we regenerate
+  # them from nuget.org and require an exact match. See RULE 2 in CLAUDE.md.
+  verify-lockfile:
+    runs-on: ubuntu-latest
+    name: Verify Lockfile Integrity
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Regenerate lockfiles from nuget.org
+        run: dotnet restore --force-evaluate
+      - name: Require regenerated lockfiles to match exactly
+        run: |
+          if ! git diff --exit-code -- '**/packages.lock.json'; then
+            echo "::error::Regenerated lockfile does not match the committed one."
+            echo ""
+            echo "The contentHash values in this pull request differ from what nuget.org"
+            echo "served when we regenerated them independently. Investigate before merging."
+            exit 1
+          fi
+          echo "Lockfiles match what nuget.org served."
+
   build:
     strategy:
       matrix:
