@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 
 namespace Mongo2Go.Helper
 {
@@ -33,8 +34,16 @@ namespace Mongo2Go.Helper
         /// </remarks>
         private readonly bool _verifyChecksums;
 
+        private readonly ILogger _logger;
+
         public MongoBinaryLocator(string searchPatternOverride, string additionalSearchDirectory)
+            : this(searchPatternOverride, additionalSearchDirectory, null)
         {
+        }
+
+        public MongoBinaryLocator(string searchPatternOverride, string additionalSearchDirectory, ILogger logger)
+        {
+            _logger = logger;
             _additionalSearchDirectory = additionalSearchDirectory;
             _verifyChecksums = string.IsNullOrEmpty(searchPatternOverride) && string.IsNullOrEmpty(additionalSearchDirectory);
             _nugetCacheDirectory = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
@@ -117,9 +126,18 @@ namespace Mongo2Go.Helper
                         }
 
                         // Keep searching: a directory that merely looks right must not mask the real one.
+                        // Recovering from this is deliberately not silent - a directory that matches the search
+                        // pattern but holds different binaries is worth knowing about whether it is a stale copy
+                        // or a planted one, and the checksum cannot be forged, so there is nothing to keep quiet.
                         if (!rejected.Contains(candidate))
                         {
                             rejected.Add(candidate);
+                            _logger?.LogWarning(
+                                "Ignoring MongoDB binaries at \"{BinariesDirectory}\": they match the search pattern " +
+                                "but are not the binaries shipped with this version of Mongo2Go. Continuing to search. " +
+                                "If these are your own binaries, pass the directory to MongoDbRunner.Start using the " +
+                                "binariesSearchDirectory parameter and it will be used without this check.",
+                                candidate);
                         }
                     }
                 }
