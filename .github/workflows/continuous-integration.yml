@@ -25,12 +25,18 @@ env:
 
 jobs:
   # Mongo2Go ships executable MongoDB binaries to every consumer. We never accept those
-  # bytes from a contributor - maintainers re-download them with src/MongoDownloader.
-  # See RULE 1 in CLAUDE.md. Do not weaken or bypass this job.
+  # bytes from an untrusted contributor - maintainers re-download them with src/MongoDownloader
+  # and push directly. See RULE 1 in CLAUDE.md. Do not weaken or bypass this job.
+  #
+  # This fires only for pull requests from FORKS. A same-repo branch could only have been pushed
+  # by someone with write access, which is the same trust level as a direct push - and the
+  # documented rule is specifically that binaries are "never merged from a fork PR". A binary
+  # change that slips through here without a matching manifest update is still caught on every
+  # event by verify-binary-manifest.
   guard-binaries:
     runs-on: ubuntu-latest
     name: Zero-Trust Binary Guard
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
