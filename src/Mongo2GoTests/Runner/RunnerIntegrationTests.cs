@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Machine.Specifications;
 using MELT;
 using MongoDB.Driver;

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
-using FluentAssertions;
+using AwesomeAssertions;
 using Machine.Specifications;
 using Mongo2Go.Helper;
 using MongoDB.Driver;

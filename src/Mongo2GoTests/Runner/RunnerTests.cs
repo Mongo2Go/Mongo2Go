@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Machine.Specifications;
 using Mongo2Go;
 using Mongo2Go.Helper;
