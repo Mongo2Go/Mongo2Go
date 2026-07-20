@@ -23,7 +23,8 @@ namespace MongoDownloader
                 if (args.Any(e => e == "--write-manifest"))
                 {
                     var (server, tools) = ReadVersionsFromDirectoryNames(toolsDirectory);
-                    var file = await BinaryManifestWriter.WriteAsync(toolsDirectory, server, tools, CancellationToken.None);
+                    // No stripping happens here, so the recorded tool version is carried over from the existing manifest.
+                    var file = await BinaryManifestWriter.WriteAsync(toolsDirectory, server, tools, stripToolVersion: null, CancellationToken.None);
                     AnsiConsole.WriteLine($"Wrote checksum manifest for the binaries in {toolsDirectory.FullName} to {file.FullName}");
                     return 0;
                 }

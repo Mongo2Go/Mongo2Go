@@ -1,7 +1,9 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ByteSizeLib;
@@ -15,15 +17,54 @@ namespace MongoDownloader
 
         private readonly string _llvmStripPath;
 
-        private BinaryStripper(string llvmStripPath)
+        /// <summary>
+        /// The version of <c>llvm-strip</c> that produced the stripped binaries, e.g. <c>Ubuntu LLVM version 18.1.3</c>.
+        /// </summary>
+        /// <remarks>
+        /// Recorded in the checksum manifest. Stripping is deterministic for a given tool version - llvm-strip 14, 15
+        /// and 18 were all observed to produce byte-identical output from the same input, on both x64 and arm64 hosts -
+        /// but that is an observation, not a guarantee across future releases. Recording the version is what makes
+        /// "download it again and check you get the same bytes" a diagnosable comparison rather than a coin toss: if
+        /// two people disagree, the first thing to check is whether they stripped with the same tool.
+        /// </remarks>
+        public string ToolVersion { get; }
+
+        private BinaryStripper(string llvmStripPath, string toolVersion)
         {
             _llvmStripPath = llvmStripPath ?? throw new ArgumentNullException(nameof(llvmStripPath));
+            ToolVersion = toolVersion;
         }
 
         public static async Task<BinaryStripper> CreateAsync(CancellationToken cancellationToken)
         {
             var llvmStripPath = await GetLlvmStripPathAsync(cancellationToken);
-            return new BinaryStripper(llvmStripPath);
+            var toolVersion = await GetToolVersionAsync(llvmStripPath, cancellationToken);
+            return new BinaryStripper(llvmStripPath, toolVersion);
+        }
+
+        private static async Task<string> GetToolVersionAsync(string llvmStripPath, CancellationToken cancellationToken)
+        {
+            var output = new StringBuilder();
+            try
+            {
+                await Cli.Wrap(llvmStripPath)
+                    .WithArguments("--version")
+                    .WithStandardOutputPipe(PipeTarget.ToStringBuilder(output))
+                    .ExecuteAsync(cancellationToken);
+            }
+            catch (Exception)
+            {
+                return "unknown";
+            }
+
+            // llvm-strip prints two lines: a "compatible with GNU strip" banner and the actual version.
+            var versionLine = output.ToString()
+                .Split('\n')
+                .Select(line => line.Trim())
+                .FirstOrDefault(line => line.Contains("version", StringComparison.OrdinalIgnoreCase)
+                                        && !line.Contains("GNU strip", StringComparison.OrdinalIgnoreCase));
+
+            return string.IsNullOrWhiteSpace(versionLine) ? "unknown" : versionLine;
         }
 
         public async Task<ByteSize> StripAsync(FileInfo executable, CancellationToken cancellationToken = default)

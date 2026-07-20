@@ -68,7 +68,7 @@ namespace MongoDownloader
             // binaries exactly as they will be committed and packaged. Doing this automatically is the point: a
             // manifest that disagrees with tools/ makes Mongo2Go reject its own binaries at the consumer's end.
             var manifestProgress = context.AddTask("Writing checksum manifest", maxValue: 1);
-            var manifestFile = await BinaryManifestWriter.WriteAsync(toolsDirectory, communityServerVersion.Number, databaseToolsVersion.Number, cancellationToken);
+            var manifestFile = await BinaryManifestWriter.WriteAsync(toolsDirectory, communityServerVersion.Number, databaseToolsVersion.Number, _extractor.StripToolVersion, cancellationToken);
             manifestProgress.Increment(1);
             manifestProgress.Description = $"✅ Wrote checksum manifest to {new Uri(manifestFile.FullName).AbsoluteUri}";
 

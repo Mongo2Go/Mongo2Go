@@ -35,10 +35,16 @@ namespace MongoDownloader
             "mongod.exe", "mongoimport.exe", "mongoexport.exe"
         };
 
-        public static async Task<FileInfo> WriteAsync(DirectoryInfo toolsDirectory, string communityServerVersion, string databaseToolsVersion, CancellationToken cancellationToken)
+        private const string StripToolPrefix = "# Stripped with: ";
+
+        public static async Task<FileInfo> WriteAsync(DirectoryInfo toolsDirectory, string communityServerVersion, string databaseToolsVersion, string? stripToolVersion, CancellationToken cancellationToken)
         {
             var manifestFile = LocateManifestFile(toolsDirectory);
             var entries = await CollectEntriesAsync(toolsDirectory, cancellationToken);
+
+            // When regenerating without stripping (--write-manifest), keep whatever the previous manifest recorded:
+            // the binaries have not changed, so neither has the tool that produced them.
+            stripToolVersion ??= ReadPreviousStripToolVersion(manifestFile);
 
             if (entries.Count == 0)
             {
@@ -56,6 +62,10 @@ namespace MongoDownloader
             builder.AppendLine("# binariesSearchPatternOverride) are accepted without verification.");
             builder.AppendLine("#");
             builder.AppendLine($"# MongoDB Community Server {communityServerVersion} / Database Tools {databaseToolsVersion}");
+            builder.AppendLine($"{StripToolPrefix}{(string.IsNullOrWhiteSpace(stripToolVersion) ? "not stripped" : stripToolVersion)}");
+            builder.AppendLine("#");
+            builder.AppendLine("# To reproduce these checksums: download the same MongoDB release, verify it against the");
+            builder.AppendLine("# SHA-256 MongoDB publishes, then strip with the tool version recorded above.");
             builder.AppendLine();
 
             foreach (var entry in entries)
@@ -67,6 +77,29 @@ namespace MongoDownloader
             await File.WriteAllTextAsync(manifestFile.FullName, builder.ToString().Replace("\r\n", "\n"), cancellationToken);
             manifestFile.Refresh();
             return manifestFile;
+        }
+
+        /// <summary>
+        /// Recovers the recorded strip-tool version from an existing manifest, so regenerating without stripping does
+        /// not silently discard it.
+        /// </summary>
+        private static string? ReadPreviousStripToolVersion(FileInfo manifestFile)
+        {
+            if (!manifestFile.Exists)
+            {
+                return null;
+            }
+
+            foreach (var line in File.ReadLines(manifestFile.FullName))
+            {
+                if (line.StartsWith(StripToolPrefix, StringComparison.Ordinal))
+                {
+                    var value = line.Substring(StripToolPrefix.Length).Trim();
+                    return value.Equals("not stripped", StringComparison.OrdinalIgnoreCase) ? null : value;
+                }
+            }
+
+            return null;
         }
 
         private static async Task<List<(string Platform, string FileName, string Checksum)>> CollectEntriesAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken)

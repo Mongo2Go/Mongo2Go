@@ -24,6 +24,11 @@ namespace MongoDownloader
         }
 
         /// <summary>
+        /// The version of <c>llvm-strip</c> applied to the extracted binaries, or <c>null</c> when stripping is disabled.
+        /// </summary>
+        public string? StripToolVersion => _binaryStripper?.ToolVersion;
+
+        /// <summary>
         /// Extracts the binaries and licence files from an archive that has already been downloaded and verified.
         /// </summary>
         /// <remarks>

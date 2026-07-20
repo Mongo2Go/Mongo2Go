@@ -6,13 +6,17 @@
 # binariesSearchPatternOverride) are accepted without verification.
 #
 # MongoDB Community Server 4.4.4 / Database Tools 100.3.1
+# Stripped with: Ubuntu LLVM version 18.1.3
+#
+# To reproduce these checksums: download the same MongoDB release, verify it against the
+# SHA-256 MongoDB publishes, then strip with the tool version recorded above.
 
-linux/mongod  230e22c6c93684d3966770cf47f20cb3cb7f4bd6f23007338d07d196109baba1
-linux/mongoexport  e7a4b623dcafacfeae37aaf916b6fa5b2f15b537b2121042e48ca1e45953dd12
-linux/mongoimport  3acad51f74d109a19be136fbeac32fdaee3098912f08a75c1ed6819b517f83c1
-macos/mongod  107bec004db249950c5d64fb7d93daa38b00288b05adb65150833ebf3f8e0042
-macos/mongoexport  d73e2e8e0e78d3720a4951f2ff31234b298cf5efc878f6aa0e6a707bd9aaaf44
-macos/mongoimport  2118e743e9f7e32abed786e4dd39aca5af0c50a113190b31c352fde8173d4d81
+linux/mongod  7b6ac831bc0ce6676b1130c4a9290f09836e573171e6b181ea6b8f6e05b08fd4
+linux/mongoexport  c82ddd44379846ba1c348aa8991e91ae6b4785508ece229a26b1000230243dae
+linux/mongoimport  44e9edbb72edb5ff3ba9cba2f8178a0394108376370c34252599340a2c6433c9
+macos/mongod  404497b2e20afca31fe15e8cdc9f032f78c968dfdf3f8d7cfb7186dbb0b990ae
+macos/mongoexport  b17180914738c052742eeedc16b2ed3c8c1801b2cd78cdeea9e28ddc25e34eb3
+macos/mongoimport  3e9ca13c11421694ff41063dbffe00202ed356eaa87e894b10952498bded4bef
 windows/mongod.exe  8e8609cee6c05875f8b202e466ba978ff937bae81dda7a90d4b985d12b921c39
-windows/mongoexport.exe  eb9a0130820624891ca7617aa13f2493f95de7ee5abc2d3ac342d9b24b6bd3d1
-windows/mongoimport.exe  2b8053a1147c08a8ecf813d7361dfe9f572ac75e7b5242f59f0cef466c3feebb
+windows/mongoexport.exe  abcf94b77a3a34e43f6bd4f8ae5a69476cc78069d0ddde0306a24d7a73919339
+windows/mongoimport.exe  45cb8248422b2037463c19e05f9f2b0c14d77a6f450373e9476d77999da3edce
