@@ -38,11 +38,11 @@ namespace MongoDownloader
         public string DatabaseToolsFullUrl { get; init; } = "https://s3.amazonaws.com/downloads.mongodb.org/tools/db/full.json";
 
         /// <summary>
-        /// The exact MongoDB Community Server version to download, e.g. <c>4.4.4</c>. When <c>null</c> or empty, the
+        /// The exact MongoDB Community Server version to download, e.g. <c>8.0.26</c>. When <c>null</c> or empty, the
         /// latest production release is used.
         /// </summary>
         /// <remarks>
-        /// Server and Database Tools have independent version numbers (for example 4.4.4 and 100.3.1), so they are
+        /// Server and Database Tools have independent version numbers (for example 8.0.26 and 100.14.0), so they are
         /// pinned separately. Pinning is what lets a maintainer re-download an exact past version and confirm the
         /// bundled binaries reproduce byte-for-byte.
         /// </remarks>
@@ -65,7 +65,7 @@ namespace MongoDownloader
         public IReadOnlyDictionary<Platform, IReadOnlyCollection<Architecture>> Architectures { get; init; } = new Dictionary<Platform, IReadOnlyCollection<Architecture>>
         {
             [Platform.Linux] = new[] { Architecture.Arm64, Architecture.X64 },
-            [Platform.macOS] = new[] { Architecture.X64 },
+            [Platform.macOS] = new[] { Architecture.Arm64, Architecture.X64 },
             [Platform.Windows] = new[] { Architecture.X64 },
         };
 
@@ -80,7 +80,12 @@ namespace MongoDownloader
         /// </summary>
         public IReadOnlyDictionary<Platform, Regex> PlatformIdentifiers { get; init; } = new Dictionary<Platform, Regex>
         {
-            [Platform.Linux] = new(@"ubuntu2004", RegexOptions.IgnoreCase),
+            // ubuntu2204, not ubuntu2004: the Ubuntu 20.04 build of MongoDB 8.x links OpenSSL 1.1 (libssl.so.1.1),
+            // which is absent on modern distributions and is exactly the "cannot open shared object file
+            // libcrypto.so.1.1 / libssl.so.1.1" failure this upgrade set out to fix (#149, #135). The 22.04 build
+            // links OpenSSL 3, which ships on every currently supported distribution. The floor this sets is glibc
+            // 2.35 (Ubuntu 22.04, Debian 12, RHEL 9, Amazon Linux 2023).
+            [Platform.Linux] = new(@"ubuntu2204", RegexOptions.IgnoreCase),
             [Platform.macOS] = new(@"macOS", RegexOptions.IgnoreCase),
             [Platform.Windows] = new(@"windows", RegexOptions.IgnoreCase),
         };
@@ -118,13 +123,20 @@ namespace MongoDownloader
         /// </summary>
         public IReadOnlyDictionary<(Product, Platform), Regex> Licenses { get; init; } = new Dictionary<(Product, Platform), Regex>
         {
-            // The regular expression matches anything at the zip top level, i.e. does not contain any slash (/) character
-            [(Product.CommunityServer, Platform.Linux)]   = new(@"^[^/]+$"),
-            [(Product.CommunityServer, Platform.macOS)]   = new(@"^[^/]+$"),
-            [(Product.CommunityServer, Platform.Windows)] = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.Linux)]   = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.macOS)]   = new(@"^[^/]+$"),
-            [(Product.DatabaseTools,   Platform.Windows)] = new(@"^[^/]+$"),
+            // The vendored tree ships only the three executables per platform (mongod, mongoimport, mongoexport) and
+            // nothing else - no per-platform LICENSE/README/THIRD-PARTY-NOTICES copies. Those upstream notices are
+            // instead carried once at the tools/ root, which keeps five near-identical copies of MongoDB's ~0.4 MB
+            // THIRD-PARTY-NOTICES out of a package that is right against the 250 MiB nuget.org limit. NeverMatches
+            // captures nothing, so ExtractArchiveAsync keeps only the binaries.
+            [(Product.CommunityServer, Platform.Linux)]   = NeverMatches,
+            [(Product.CommunityServer, Platform.macOS)]   = NeverMatches,
+            [(Product.CommunityServer, Platform.Windows)] = NeverMatches,
+            [(Product.DatabaseTools,   Platform.Linux)]   = NeverMatches,
+            [(Product.DatabaseTools,   Platform.macOS)]   = NeverMatches,
+            [(Product.DatabaseTools,   Platform.Windows)] = NeverMatches,
         };
+
+        // An empty negative look-ahead can never succeed, so this matches no entry at all.
+        private static readonly Regex NeverMatches = new(@"(?!)");
     }
 }

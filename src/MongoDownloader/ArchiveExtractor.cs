@@ -68,9 +68,15 @@ namespace MongoDownloader
                     var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(download.Product)) : nameParts;
                     var destinationFile = ResolveContainedFile(extractDirectory, destinationPathParts);
                     destinationFile.Directory?.Create();
-                    await using var destinationStream = new FileStream(destinationFile.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
-                    await using var inputStream = zipFile.GetInputStream(entry);
-                    await inputStream.CopyToAsync(destinationStream, cancellationToken);
+                    // Scope the streams so the extracted file's handle is closed before stripping begins. The stream is
+                    // opened FileShare.None, which .NET enforces on Unix with an flock; llvm-strip's first act is to copy
+                    // the file, and that copy fails with "used by another process" if the write handle is still open -
+                    // which it is when StripAsync runs synchronously (a free throttle slot doesn't yield) inside this block.
+                    await using (var destinationStream = new FileStream(destinationFile.FullName, FileMode.Create, FileAccess.Write, FileShare.None))
+                    await using (var inputStream = zipFile.GetInputStream(entry))
+                    {
+                        await inputStream.CopyToAsync(destinationStream, cancellationToken);
+                    }
                     if (isBinaryFile && _binaryStripper is not null)
                     {
                         stripTasks.Add(_binaryStripper.StripAsync(destinationFile, cancellationToken));
@@ -98,7 +104,7 @@ namespace MongoDownloader
 
         private IEnumerable<Task<ByteSize>> CleanupExtractedFiles(Download download, DirectoryInfo extractDirectory, IEnumerable<string> extractedFileNames)
         {
-            var rootDirectoryToDelete = new HashSet<string>();
+            var rootDirectoriesToDelete = new HashSet<string>();
             var binaryRegex = _options.Binaries[(download.Product, download.Platform)];
             var licenseRegex = _options.Licenses[(download.Product, download.Platform)];
             var stripTasks = new List<Task<ByteSize>>();
@@ -107,16 +113,24 @@ namespace MongoDownloader
                 // Tar entry names may be absolute (SharpZipLib re-roots them on extraction but reports them verbatim),
                 // in which case an unchecked Path.Combine would discard extractDirectory and target a real host path.
                 var extractedFile = ResolveContainedFile(extractDirectory, new[] { extractedFileName });
-                var parts = extractedFileName.Split(Path.DirectorySeparatorChar);
+                var parts = extractedFileName.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0)
+                {
+                    rootDirectoriesToDelete.Add(parts[0]);
+                }
+
+                // Tar archives contain directory entries too; FileInfo.Delete on a directory throws "Operation not
+                // permitted". Only the wanted binaries/licenses (which are files) are moved out below; everything else -
+                // files and directories alike - is removed wholesale by the recursive delete afterwards.
+                if (!extractedFile.Exists)
+                {
+                    continue;
+                }
+
                 var entryFileName = string.Join("/", parts.Skip(1));
-                rootDirectoryToDelete.Add(parts[0]);
                 var isBinaryFile = binaryRegex.IsMatch(entryFileName);
                 var isLicenseFile = licenseRegex.IsMatch(entryFileName);
-                if (!(isBinaryFile || isLicenseFile))
-                {
-                    extractedFile.Delete();
-                }
-                else
+                if (isBinaryFile || isLicenseFile)
                 {
                     var destinationPathParts = parts.Skip(1);
                     if (isLicenseFile)
@@ -132,10 +146,17 @@ namespace MongoDownloader
                     }
                 }
             }
-            var rootArchiveDirectory = new DirectoryInfo(Path.Combine(extractDirectory.FullName, rootDirectoryToDelete.Single()));
-            var binDirectory = new DirectoryInfo(Path.Combine(rootArchiveDirectory.FullName, "bin"));
-            binDirectory.Delete(recursive: false);
-            rootArchiveDirectory.Delete(recursive: false);
+
+            // The wanted files have been moved out to the extraction root, so the archive's own top-level directory
+            // (e.g. mongodb-linux-x64-8.0.0/) can be removed recursively along with everything still inside it.
+            foreach (var rootDirectory in rootDirectoriesToDelete)
+            {
+                var directory = new DirectoryInfo(Path.Combine(extractDirectory.FullName, rootDirectory));
+                if (directory.Exists)
+                {
+                    directory.Delete(recursive: true);
+                }
+            }
             return stripTasks;
         }
 

@@ -96,9 +96,10 @@ namespace Mongo2Go.Helper
         /// <param name="binariesDirectory">The candidate directory.</param>
         /// <param name="nativeArchitectureOnly">
         /// When <c>true</c>, only binaries built for this machine's architecture are accepted. Callers should search
-        /// once with <c>true</c> and, if nothing matches, search again with <c>false</c>: shipping x64 binaries to an
-        /// arm64 machine is correct on macOS, where Rosetta 2 runs them, and remains the only option on any platform
-        /// for which no native build exists.
+        /// once with <c>true</c> and, if nothing matches, search again with <c>false</c>: running a binary of another
+        /// architecture is correct on any platform that can emulate it, for which no native build is bundled. Since
+        /// MongoDB 8.x this no longer includes Apple Silicon (a native macOS arm64 build now ships and matches the
+        /// first pass); it is the safety net for any other such host.
         /// </param>
         public static bool Matches(string binariesDirectory, bool nativeArchitectureOnly)
         {

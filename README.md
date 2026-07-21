@@ -312,8 +312,30 @@ public class MongoIntegrationTest
 ```
 </details>
 
+Bundled MongoDB binaries & licenses
+-------------------------------------
+
+This package redistributes the official MongoDB binaries, unmodified except for symbol stripping (to keep the
+package small) and, on Apple Silicon, an ad-hoc code signature so the stripped binary will run. To keep the
+package under the 250 MiB nuget.org limit, only the three executables are bundled — the upstream license and
+notice files are not, so their terms are reproduced here by reference:
+
+- **MongoDB Community Server** (`mongod`) — [Server Side Public License (SSPL) v1](https://www.mongodb.com/licensing/server-side-public-license). © MongoDB, Inc.
+- **MongoDB Database Tools** (`mongoimport`, `mongoexport`) — [Apache License 2.0](https://github.com/mongodb/mongo-tools/blob/master/LICENSE.md). © MongoDB, Inc.
+
+Mongo2Go itself is [MIT-licensed](LICENSE); the licenses above apply only to the bundled MongoDB binaries.
+
 Changelog
 -------------------------------------
+
+### Mongo2Go 5.0.0, July 21 2026
+
+- **BREAKING — MongoDB upgraded from 4.4.4 to 8.0.26** (the 8.0 LTS line), and the MongoDB Database Tools from 100.3.1 to 100.14.0 (fixes [#132](https://github.com/Mongo2Go/Mongo2Go/issues/132)). This is why the major version is bumped: MongoDB 8.0 raises the minimum operating-system requirements for consumers. In particular the Linux binaries need **glibc 2.35 or newer** (Ubuntu 22.04+, Debian 12+, RHEL 9+, Amazon Linux 2023+) — these builds link OpenSSL 3, which is what removes the old `libcrypto.so.1.1`/`libssl.so.1.1` dependency. See [MongoDB's platform support matrix](https://www.mongodb.com/docs/manual/administration/production-notes/#platform-support) for the exact supported versions of each OS.
+- **NEW: native macOS arm64 (Apple Silicon)** — the package now bundles a native `mongod`/`mongoimport`/`mongoexport` for Apple Silicon, so there is **no more Rosetta 2**. Together with the Linux arm64 support added in 4.2.0 this completes [#127](https://github.com/Mongo2Go/Mongo2Go/issues/127). Intel macs continue to use the x64 binaries. Bundled platforms are now: Windows x64, Linux x64 & arm64, macOS x64 & arm64.
+- **`libcrypto.so.1.1` is no longer required** — MongoDB 8.x links OpenSSL 3, which ships on all currently supported Linux distributions. The `libssl1.1` workaround previously needed on Ubuntu 22.04+ is gone, which fixes running on modern Ubuntu and in `dotnet/sdk` containers ([#149](https://github.com/Mongo2Go/Mongo2Go/issues/149)) and on GitLab CI ([#135](https://github.com/Mongo2Go/Mongo2Go/issues/135)).
+- **Fixed "too many open files"** ([#147](https://github.com/Mongo2Go/Mongo2Go/issues/147)) — process handles for `chmod`, `mongoimport`/`mongoexport` and the replica-set initialisation client were not being disposed, leaking file descriptors on every runner start and every import/export. They are now released deterministically.
+- **Strong-named assembly** — `Mongo2Go.dll` is now strong-named, so it can be referenced from strong-named / signed consumer projects (fixes [#150](https://github.com/Mongo2Go/Mongo2Go/issues/150)). `MongoDB.Driver` has itself been strong-named since driver 2.28.0, so the separate `MongoDB.Driver.signed` package is no longer needed.
+- Internal: the `MongoDownloader` tool can now pin an exact MongoDB server and tools version (so a release is reproducible), strips and — on Apple Silicon — re-signs binaries with a bounded memory footprint, and regenerates the runtime checksum manifest automatically.
 
 ### Mongo2Go 4.2.0
 

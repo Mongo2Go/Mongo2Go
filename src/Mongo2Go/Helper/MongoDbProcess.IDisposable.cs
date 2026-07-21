@@ -37,6 +37,10 @@ namespace Mongo2Go.Helper
 
             if (_process.DoNotKill)
             {
+                // StartForDebugging leaves mongod running on purpose, and its stdout/stderr pipes must
+                // stay open or the surviving process hits a broken pipe - so we deliberately do NOT dispose
+                // the process here. Mark Disposed so the finalizer does not run this logic again (#147).
+                Disposed = true;
                 return;
             }
 

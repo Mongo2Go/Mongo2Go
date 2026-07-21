@@ -5,6 +5,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- Workstation, non-concurrent GC keeps the heap small. Server GC (per-core heaps, greedy about holding
+         memory) let this download-and-strip tool's RSS climb until it was OOM-killed on a modest machine. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
   
   <ItemGroup>

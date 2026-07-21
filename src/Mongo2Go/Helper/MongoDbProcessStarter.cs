@@ -50,33 +50,38 @@ namespace Mongo2Go.Helper
                 // subscribe to output from mongod process and check for replica set ready message
                 wrappedProcess.OutputDataReceived += (_, args) => replicaSetReady |= !string.IsNullOrWhiteSpace(args.Data) && args.Data.IndexOf(ReplicaSetReadyIdentifier, StringComparison.OrdinalIgnoreCase) >= 0;
 
-                MongoClient client = new MongoClient("mongodb://127.0.0.1:{0}/?directConnection=true&replicaSet={1}".Formatted(port, ReplicaSetName));
-                var admin = client.GetDatabase("admin");
-                var replConfig = new BsonDocument(new List<BsonElement>()
+                // disposed on every exit path (incl. the timeout throws) so the admin cluster's connection
+                // pool and monitoring sockets are released - this client only initiates the replica set;
+                // the mongod server keeps running and the consumer connects via its own client (#147).
+                using (MongoClient client = new MongoClient("mongodb://127.0.0.1:{0}/?directConnection=true&replicaSet={1}".Formatted(port, ReplicaSetName)))
+                {
+                    var admin = client.GetDatabase("admin");
+                    var replConfig = new BsonDocument(new List<BsonElement>()
+                        {
+                            new BsonElement("_id", ReplicaSetName),
+                            new BsonElement("members",
+                                new BsonArray {new BsonDocument {{"_id", 0}, {"host", "127.0.0.1:{0}".Formatted(port)}}})
+                        });
+                    var command = new BsonDocument("replSetInitiate", replConfig);
+                    admin.RunCommand<BsonDocument>(command);
+
+                    // wait until replica set is ready or until the timeout is reached
+                    SpinWait.SpinUntil(() => replicaSetReady, TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
+
+                    if (!replicaSetReady)
                     {
-                        new BsonElement("_id", ReplicaSetName),
-                        new BsonElement("members",
-                            new BsonArray {new BsonDocument {{"_id", 0}, {"host", "127.0.0.1:{0}".Formatted(port)}}})
-                    });
-                var command = new BsonDocument("replSetInitiate", replConfig);
-                admin.RunCommand<BsonDocument>(command);
+                        throw new TimeoutException($"Replica set initialization took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
+                    }
 
-                // wait until replica set is ready or until the timeout is reached
-                SpinWait.SpinUntil(() => replicaSetReady, TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
+                    // wait until transaction is ready or until the timeout is reached
+                    SpinWait.SpinUntil(() =>
+                        client.Cluster.Description.Servers.Any(s => s.State == ServerState.Connected && s.IsDataBearing),
+                        TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
 
-                if (!replicaSetReady)
-                {
-                    throw new TimeoutException($"Replica set initialization took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
-                }
-
-                // wait until transaction is ready or until the timeout is reached
-                SpinWait.SpinUntil(() =>
-                    client.Cluster.Description.Servers.Any(s => s.State == ServerState.Connected && s.IsDataBearing),
-                    TimeSpan.FromSeconds(singleNodeReplSetWaitTimeout));
-
-                if (!client.Cluster.Description.Servers.Any(s => s.State == ServerState.Connected && s.IsDataBearing))
-                {
-                    throw new TimeoutException($"Cluster readiness for transactions took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
+                    if (!client.Cluster.Description.Servers.Any(s => s.State == ServerState.Connected && s.IsDataBearing))
+                    {
+                        throw new TimeoutException($"Cluster readiness for transactions took longer than the specified timeout of {singleNodeReplSetWaitTimeout} seconds. Please consider increasing the value of {nameof(singleNodeReplSetWaitTimeout)}.");
+                    }
                 }
             }
 

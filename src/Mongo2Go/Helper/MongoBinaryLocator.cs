@@ -134,9 +134,10 @@ namespace Mongo2Go.Helper
                     }
                 }
 
-                // Second pass accepts any architecture we ship. This is not a fallback for broken setups but the
-                // normal path on Apple Silicon, where no native arm64 build of MongoDB 4.4 exists and the x64
-                // binaries run under Rosetta 2.
+                // Second pass accepts any architecture we ship, for platforms where we bundle no native build and the
+                // OS can emulate another one. Since MongoDB 8.x this no longer applies to Apple Silicon (a native macOS
+                // arm64 build is now bundled and matched by the first pass); it remains the safety net for any
+                // future host/arch we don't ship a native binary for but which can run one we do.
                 foreach (var candidate in EnumerateCandidates(searchDirectories, patterns))
                 {
                     if (MongoBinaryManifest.Matches(candidate, nativeArchitectureOnly: false))

@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Json;
+using System.Runtime;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -51,6 +55,11 @@ namespace MongoDownloader
             var (databaseToolsVersion, databaseToolsDownloads) = await GetDatabaseToolsDownloadsAsync(cancellationToken);
             globalProgress.Description = $"Downloading MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number}";
 
+            // Bound how many archives are processed at once. Each in-flight archive holds a download stream plus,
+            // during stripping, an llvm-strip process that loads the (up to ~170 MB) binary into memory. Running all
+            // platforms at once peaks at several GB and gets OOM-killed on a modest machine (e.g. a 4 GB CI runner),
+            // so process a couple at a time - the download/extract/strip pipeline still overlaps, just not unbounded.
+            using var throttler = new SemaphoreSlim(MaxConcurrentArchives);
             var tasks = new List<Task<ByteSize>>();
             var allArchiveProgresses = new List<ProgressTask>();
             foreach (var download in communityServerDownloads.Concat(databaseToolsDownloads))
@@ -60,7 +69,7 @@ namespace MongoDownloader
                 var extractDirectory = new DirectoryInfo(Path.Combine(toolsDirectory.FullName, directoryName));
                 allArchiveProgresses.Add(archiveProgress);
                 var progress = new ArchiveProgress(archiveProgress, globalProgress, allArchiveProgresses, download, $"✅ Downloaded and extracted MongoDB Community Server {communityServerVersion.Number} and Database Tools {databaseToolsVersion.Number} into {new Uri(toolsDirectory.FullName).AbsoluteUri}");
-                tasks.Add(ProcessArchiveAsync(download, extractDirectory, progress, cancellationToken));
+                tasks.Add(ProcessArchiveThrottledAsync(throttler, download, extractDirectory, progress, cancellationToken));
             }
             var strippedSizes = await Task.WhenAll(tasks);
 
@@ -72,7 +81,70 @@ namespace MongoDownloader
             manifestProgress.Increment(1);
             manifestProgress.Description = $"✅ Wrote checksum manifest to {new Uri(manifestFile.FullName).AbsoluteUri}";
 
+            // Committed to git as gzip: GitHub rejects any file over 100 MB and the 8.x mongod binaries are larger.
+            // The manifest above records the SHA-256 of the *decompressed* binaries (what actually runs and what the
+            // build unpacks), so this has to run after it. The uncompressed binaries are left in place too - they are
+            // git-ignored, but keeping them means a maintainer can run the tests straight after a download.
+            var compressProgress = context.AddTask("Compressing binaries for git", maxValue: 1);
+            await CompressBinariesForGitAsync(toolsDirectory, cancellationToken);
+            compressProgress.Increment(1);
+            compressProgress.Description = "✅ Wrote gzip-compressed binaries (committed to git; the build unpacks them)";
+
             return strippedSizes.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
+        }
+
+        /// <summary>
+        /// The maximum number of archives downloaded, extracted and stripped concurrently. Kept small so peak memory
+        /// (dominated by concurrent llvm-strip processes on large binaries) stays within a modest machine's limits.
+        /// </summary>
+        private const int MaxConcurrentArchives = 1;
+
+        private async Task<ByteSize> ProcessArchiveThrottledAsync(SemaphoreSlim throttler, Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
+        {
+            await throttler.WaitAsync(cancellationToken);
+            try
+            {
+                return await ProcessArchiveAsync(download, extractDirectory, progress, cancellationToken);
+            }
+            finally
+            {
+                throttler.Release();
+
+                // Each archive churns through hundreds of MB of transient buffers (extraction, hashing). The GC keeps
+                // that memory reserved rather than returning it to the OS, so peak RSS climbs archive after archive and
+                // eventually OOMs a small machine. A compacting collect between archives keeps the footprint flat.
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+            }
+        }
+
+        /// <summary>
+        /// Writes a gzip copy (<c>&lt;binary&gt;.gz</c>) of every extracted binary next to it, so the committed copy stays
+        /// under GitHub's 100 MB per-file limit. The build unpacks these on demand; see the <c>PrepareMongoBinaries</c>
+        /// target in <c>Mongo2Go.csproj</c> and <c>.gitignore</c>.
+        /// </summary>
+        /// <remarks>
+        /// Uses <see cref="System.IO.Compression.GZipStream"/> at <see cref="CompressionLevel.SmallestSize"/> rather than
+        /// the <c>gzip</c> command line: it is deterministic (no embedded modification timestamp), so re-running the
+        /// downloader on unchanged binaries produces byte-identical archives and the committed files do not churn.
+        /// </remarks>
+        private static async Task CompressBinariesForGitAsync(DirectoryInfo toolsDirectory, CancellationToken cancellationToken)
+        {
+            // Only the executables (which live in each platform's bin/ directory) are compressed - not, say, the
+            // hand-written tools/README.md. Materialise the list before writing any .gz, because creating files inside
+            // the tree that is being lazily enumerated is undefined behaviour and throws on some platforms.
+            var binaries = toolsDirectory.EnumerateFiles("*", SearchOption.AllDirectories)
+                .Where(file => file.Extension != ".gz" && string.Equals(file.Directory?.Name, "bin", StringComparison.Ordinal))
+                .ToList();
+            foreach (var binary in binaries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var archivePath = binary.FullName + ".gz";
+                await using var input = binary.OpenRead();
+                await using var output = new FileStream(archivePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await using var gzip = new GZipStream(output, CompressionLevel.SmallestSize);
+                await input.CopyToAsync(gzip, cancellationToken);
+            }
         }
 
         private async Task<ByteSize> ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
@@ -142,7 +214,26 @@ namespace MongoDownloader
             // FileMode.Create rather than OpenWrite: OpenWrite does not truncate, so a shorter download would be
             // left with trailing bytes from a longer previous one, and the checksum would fail for a confusing reason.
             await using var destinationStream = new FileStream(destinationFile.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
-            await _options.HttpClient.GetAsync(archive.Url.AbsoluteUri, destinationStream, progress, cancellationToken);
+
+            // Stream explicitly with ResponseHeadersRead + a small fixed buffer so the archive is copied to disk in
+            // chunks and never held in memory. Some archives are hundreds of MB (the Windows server zip is ~770 MB);
+            // buffering even one - let alone several in parallel - is what pushed the tool over a modest RAM budget.
+            using var response = await _options.HttpClient.GetAsync(archive.Url.AbsoluteUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var totalBytes = response.Content.Headers.ContentLength ?? 0;
+            await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+            var buffer = new byte[81920];
+            long copied = 0;
+            var stopwatch = Stopwatch.StartNew();
+            int read;
+            while ((read = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+            {
+                await destinationStream.WriteAsync(buffer, 0, read, cancellationToken);
+                copied += read;
+                progress.Report(new CopyProgress(stopwatch.Elapsed, 0, copied, totalBytes));
+            }
+
             destinationFile.Refresh();
             return destinationFile;
         }

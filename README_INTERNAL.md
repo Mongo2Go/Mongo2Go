@@ -76,18 +76,24 @@ cd src/MongoDownloader
 dotnet run
 ```
 
-This deletes everything under `tools/`, downloads the current MongoDB release, extracts only the
-three executables plus the licence files, strips them, and writes the checksum manifest. Commit
-`tools/` and `src/Mongo2Go/MongoBinaries.sha256` **together**, then push directly to a branch — the
-CI guard rejects binary changes arriving through a pull request, which is the intended behaviour.
+This deletes everything under `tools/`, downloads the MongoDB release, extracts only the three
+executables (no licence files — those terms are reproduced in `README.md` instead, to keep the
+package under the 250 MiB nuget.org limit), strips them, re-signs the macOS arm64 binary ad-hoc so
+it will run on Apple Silicon, writes the checksum manifest, and finally writes a gzip copy
+(`<binary>.gz`) of each executable. **Only the `.gz` files are committed** — GitHub rejects files
+over 100 MB and the 8.x `mongod` binaries are larger — and the build unpacks them on demand (the
+`PrepareMongoBinaries` target in `Mongo2Go.csproj`); the decompressed executables are git-ignored.
+Commit the `tools/**/*.gz` files and `src/Mongo2Go/MongoBinaries.sha256` **together**, then push
+directly to a branch — the CI guard rejects binary changes arriving through a pull request, which
+is the intended behaviour.
 
 Stripping needs `llvm-strip` (`brew install llvm`, `apt-get install llvm`, `scoop install llvm`).
 Use `--no-strip` to skip it, but note the result is what ships, so the package grows.
 
 Two things to know before running it:
 
-- It always fetches the **latest production release**, so it cannot currently reproduce an older
-  version. Running it today replaces MongoDB 4.4.4 with 8.x.
+- By default it fetches the **latest production release**. To reproduce or pin an exact version —
+  as the 8.0.26 release does — pass `--server-version 8.0.26 --tools-version 100.14.0`.
 - It resolves `tools/` by walking **up from the current working directory**. Run it from inside the
   repository.
 
