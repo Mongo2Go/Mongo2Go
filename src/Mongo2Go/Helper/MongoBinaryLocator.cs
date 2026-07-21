@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 
 namespace Mongo2Go.Helper
 {
@@ -22,9 +23,29 @@ namespace Mongo2Go.Helper
         private readonly string _nugetCacheDirectory;
         private readonly string _additionalSearchDirectory;
 
+        /// <summary>
+        /// Whether binaries found by the search must match the checksums bundled with this build.
+        /// </summary>
+        /// <remarks>
+        /// The search walks upwards from several starting points and can therefore reach directories Mongo2Go does not
+        /// control, so by default we only accept binaries whose contents are the ones we shipped. A caller who names a
+        /// search directory or overrides the search pattern is deliberately supplying their own MongoDB - a supported
+        /// scenario for newer servers or native arm64 builds - and those binaries are used as they are.
+        /// </remarks>
+        private readonly bool _verifyChecksums;
+
+        private readonly ILogger _logger;
+
         public MongoBinaryLocator(string searchPatternOverride, string additionalSearchDirectory)
+            : this(searchPatternOverride, additionalSearchDirectory, null)
         {
+        }
+
+        public MongoBinaryLocator(string searchPatternOverride, string additionalSearchDirectory, ILogger logger)
+        {
+            _logger = logger;
             _additionalSearchDirectory = additionalSearchDirectory;
+            _verifyChecksums = string.IsNullOrEmpty(searchPatternOverride) && string.IsNullOrEmpty(additionalSearchDirectory);
             _nugetCacheDirectory = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -79,23 +100,105 @@ namespace Mongo2Go.Helper
 
         private string FindBinariesDirectory(IList<string> searchDirectories)
         {
-            foreach (var directory in searchDirectories)
+            var patterns = new List<string>
             {
-                var binaryFolder =
-                    // First try just the search pattern
-                    directory.FindFolderUpwards(_searchPattern) ??
-                    // Next try the search pattern with nuget installation prefix
-                    directory.FindFolderUpwards(Path.Combine(_nugetPrefix, _searchPattern)) ??
-                    // Finally try the search pattern with the nuget cache prefix
-                    directory.FindFolderUpwards(Path.Combine(_nugetCachePrefix, _searchPattern)) ??
-                    // Finally try the search pattern with the basic nuget cache prefix
-                    directory.FindFolderUpwards(Path.Combine(_nugetCacheBasePrefix, _searchPattern));
-                if (binaryFolder != null) return binaryFolder;
+                // First try just the search pattern
+                _searchPattern,
+                // Next try the search pattern with nuget installation prefix
+                Path.Combine(_nugetPrefix, _searchPattern),
+                // Then try the search pattern with the nuget cache prefix
+                Path.Combine(_nugetCachePrefix, _searchPattern),
+                // Finally try the search pattern with the basic nuget cache prefix
+                Path.Combine(_nugetCacheBasePrefix, _searchPattern)
+            };
+
+            var rejected = new List<string>();
+
+            if (!_verifyChecksums)
+            {
+                foreach (var candidate in EnumerateCandidates(searchDirectories, patterns))
+                {
+                    return candidate;
+                }
             }
-            throw new MonogDbBinariesNotFoundException(
+            else
+            {
+                // First pass accepts only binaries built for this machine's architecture. A Linux machine can have
+                // both an x64 and an arm64 directory available and they are not interchangeable - picking the wrong
+                // one fails with "Exec format error" (issue #127).
+                foreach (var candidate in EnumerateCandidates(searchDirectories, patterns))
+                {
+                    if (MongoBinaryManifest.Matches(candidate, nativeArchitectureOnly: true))
+                    {
+                        return candidate;
+                    }
+                }
+
+                // Second pass accepts any architecture we ship. This is not a fallback for broken setups but the
+                // normal path on Apple Silicon, where no native arm64 build of MongoDB 4.4 exists and the x64
+                // binaries run under Rosetta 2.
+                foreach (var candidate in EnumerateCandidates(searchDirectories, patterns))
+                {
+                    if (MongoBinaryManifest.Matches(candidate, nativeArchitectureOnly: false))
+                    {
+                        _logger?.LogInformation(
+                            "Using MongoDB binaries at \"{BinariesDirectory}\", which are not built for this machine's " +
+                            "architecture ({Architecture}). This is expected where no native build is bundled and the " +
+                            "platform can emulate them.",
+                            candidate, RuntimeInformation.OSArchitecture);
+                        return candidate;
+                    }
+
+                    // Keep searching: a directory that merely looks right must not mask the real one.
+                    // Recovering from this is deliberately not silent - a directory that matches the search
+                    // pattern but holds different binaries is worth knowing about whether it is a stale copy
+                    // or a planted one, and the checksum cannot be forged, so there is nothing to keep quiet.
+                    if (!rejected.Contains(candidate))
+                    {
+                        rejected.Add(candidate);
+                        _logger?.LogWarning(
+                            "Ignoring MongoDB binaries at \"{BinariesDirectory}\": they match the search pattern " +
+                            "but are not the binaries shipped with this version of Mongo2Go. Continuing to search. " +
+                            "If these are your own binaries, pass the directory to MongoDbRunner.Start using the " +
+                            "binariesSearchDirectory parameter and it will be used without this check.",
+                            candidate);
+                    }
+                }
+            }
+
+            var message =
                 $"Could not find Mongo binaries using the search patterns \"{_searchPattern}\", \"{Path.Combine(_nugetPrefix, _searchPattern)}\", \"{Path.Combine(_nugetCachePrefix, _searchPattern)}\", and \"{Path.Combine(_nugetCacheBasePrefix, _searchPattern)}\".  " +
                 $"You can override the search pattern and directory when calling MongoDbRunner.Start.  We have detected the OS as {RuntimeInformation.OSDescription}.\n" +
-                $"We walked up to root directory from the following locations.\n {string.Join("\n", searchDirectories)}");
+                $"We walked up to root directory from the following locations.\n {string.Join("\n", searchDirectories)}";
+
+            if (rejected.Count > 0)
+            {
+                message +=
+                    $"\n\nThe following directories matched the search pattern but do not contain the MongoDB binaries " +
+                    $"shipped with this version of Mongo2Go, so they were skipped:\n {string.Join("\n ", rejected)}\n" +
+                    $"If you are deliberately using your own MongoDB build, pass it with the binariesSearchDirectory " +
+                    $"parameter of MongoDbRunner.Start and it will be used without this check.";
+            }
+
+            throw new MonogDbBinariesNotFoundException(message);
+        }
+
+        /// <summary>
+        /// Yields every directory matching any of <paramref name="patterns"/>, searched from each of
+        /// <paramref name="searchDirectories"/> in turn and walking upwards from each.
+        /// </summary>
+        private static IEnumerable<string> EnumerateCandidates(IList<string> searchDirectories, IList<string> patterns)
+        {
+            foreach (var directory in searchDirectories)
+            {
+                foreach (var pattern in patterns)
+                {
+                    foreach (var candidate in directory.FindFoldersUpwards(pattern))
+                    {
+                        yield return candidate;
+                    }
+                }
+            }
         }
     }
 }

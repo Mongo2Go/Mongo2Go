@@ -4,7 +4,7 @@
     <TargetFrameworks>net472;netstandard2.1</TargetFrameworks>
     <Authors>Johannes Hoppe and many contributors</Authors>
     <Description>Mongo2Go is a managed wrapper around MongoDB binaries. It targets .NET Framework 4.7.2 and .NET Standard 2.1.
-This Nuget package contains the executables of mongod, mongoimport and mongoexport v4.4.4 for Windows, Linux and macOS.
+This Nuget package contains the executables of mongod, mongoimport and mongoexport v4.4.4 for Windows (x64), Linux (x64 and arm64) and macOS (x64).
 
 
 Mongo2Go has two use cases:
@@ -12,7 +12,7 @@ Mongo2Go has two use cases:
 1. Providing multiple, temporary and isolated MongoDB databases for integration tests
 2. Providing a quick to set up MongoDB database for a local developer environment</Description>
     <Company>HAUS HOPPE - ITS</Company>
-    <Copyright>Copyright © 2012-2025 Johannes Hoppe and many ❤️ contributors</Copyright>
+    <Copyright>Copyright © 2012-2026 Johannes Hoppe and many ❤️ contributors</Copyright>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -60,6 +60,11 @@ Mongo2Go has two use cases:
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Checksums of the bundled MongoDB binaries, verified at runtime by MongoBinaryManifest -->
+    <EmbeddedResource Include="MongoBinaries.sha256" LogicalName="Mongo2Go.MongoBinaries.sha256" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="packages.lock.json" Visible="false" />
     <None Include="../mongo2go_200_200.png" Visible="false">
       <Pack>true</Pack>
@@ -72,11 +77,11 @@ Mongo2Go has two use cases:
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="all" />
-    <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="all" />
-    <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
-    <PackageReference Include="System.Text.Json" Version="6.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="all" />
+    <PackageReference Include="MinVer" Version="7.0.0" PrivateAssets="all" />
+    <PackageReference Include="MongoDB.Driver" Version="3.9.0" />
+    <PackageReference Include="System.Text.Json" Version="10.0.8" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
 

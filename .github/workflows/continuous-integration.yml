@@ -6,6 +6,16 @@ on:
       - '**' # Trigger on all branches for commits
     tags:
       - 'v*' # Trigger only on version tags for deployments
+  pull_request:
+    branches:
+      - '**' # Validate every pull request, including those from forks
+
+# Least privilege by default. The repository default is "write", which is more than any
+# job here needs; only the publish job re-grants what it actually requires. Pull requests
+# from forks execute untrusted contributor code in the build job, so the token that code
+# runs alongside must not be able to write to the repository.
+permissions:
+  contents: read
 
 env:
   Configuration: Release
@@ -14,17 +24,151 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
+  # Mongo2Go ships executable MongoDB binaries to every consumer. We never accept those
+  # bytes from an untrusted contributor - maintainers re-download them with src/MongoDownloader
+  # and push directly. See RULE 1 in CLAUDE.md. Do not weaken or bypass this job.
+  #
+  # This fires only for pull requests from FORKS. A same-repo branch could only have been pushed
+  # by someone with write access, which is the same trust level as a direct push - and the
+  # documented rule is specifically that binaries are "never merged from a fork PR". A binary
+  # change that slips through here without a matching manifest update is still caught on every
+  # event by verify-binary-manifest.
+  guard-binaries:
+    runs-on: ubuntu-latest
+    name: Zero-Trust Binary Guard
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject pull requests that touch vendored binaries
+        run: |
+          CHANGED=$(git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" -- tools/)
+          if [ -n "$CHANGED" ]; then
+            echo "::error::This pull request modifies files under tools/."
+            echo "$CHANGED" | while read -r f; do echo "::error file=$f::Vendored binary modified: $f"; done
+            echo ""
+            echo "Mongo2Go ships these executables to every consumer of the NuGet package."
+            echo "We do not accept binaries from pull requests - not even well-intentioned ones,"
+            echo "because no code review can detect a backdoored stripped executable."
+            echo ""
+            echo "To propose a MongoDB version change, open an issue describing the target"
+            echo "version. A maintainer will re-download the binaries with src/MongoDownloader"
+            echo "and push them directly."
+            exit 1
+          fi
+          echo "No files under tools/ were modified."
+
+  # packages.lock.json is a trust anchor: CI restores with --locked-mode and pins to whatever
+  # contentHash values it contains. We never trust contributor-supplied hashes - we regenerate
+  # them from nuget.org and require an exact match. See RULE 2 in CLAUDE.md.
+  verify-lockfile:
+    runs-on: ubuntu-latest
+    name: Verify Lockfile Integrity
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Regenerate lockfiles from nuget.org
+        run: dotnet restore --force-evaluate
+      - name: Require regenerated lockfiles to match exactly
+        run: |
+          if ! git diff --exit-code -- '**/packages.lock.json'; then
+            echo "::error::Regenerated lockfile does not match the committed one."
+            echo ""
+            echo "The contentHash values in this pull request differ from what nuget.org"
+            echo "served when we regenerated them independently. Investigate before merging."
+            exit 1
+          fi
+          echo "Lockfiles match what nuget.org served."
+
+  # MongoBinaryLocator only accepts binaries matching src/Mongo2Go/MongoBinaries.sha256, so the manifest and the
+  # binaries must never drift apart. Runs on push as well as pull_request, because maintainers update the binaries
+  # by pushing directly (see RULE 1 in CLAUDE.md) and that is exactly when the manifest must be regenerated.
+  verify-binary-manifest:
+    runs-on: ubuntu-latest
+    name: Verify Binary Checksum Manifest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Require the manifest to describe tools/ exactly
+        shell: python
+        run: |
+          import hashlib, pathlib, sys
+
+          EXECUTABLES = {"mongod", "mongoimport", "mongoexport",
+                         "mongod.exe", "mongoimport.exe", "mongoexport.exe"}
+          PLATFORMS = ("linux", "macos", "windows")
+          ARCHITECTURES = ("arm64", "x64")
+
+          # Compared as sets rather than as text, so reordering or an edited comment header cannot
+          # fail the build, and no entry can be added, removed or altered without failing it.
+          declared = set()
+          for raw in pathlib.Path("src/Mongo2Go/MongoBinaries.sha256").read_text().splitlines():
+              line = raw.strip()
+              if not line or line.startswith("#"):
+                  continue
+              key, _, digest = line.partition("  ")
+              parts = key.split("/")
+              if len(parts) != 3:
+                  print(f"::error::Malformed manifest entry '{key}'. Expected <platform>/<architecture>/<file>.")
+                  sys.exit(1)
+              declared.add((parts[0], parts[1], parts[2], digest.strip().lower()))
+
+          actual = set()
+          for path in sorted(pathlib.Path("tools").rglob("*")):
+              if not path.is_file() or path.name not in EXECUTABLES:
+                  continue
+              top = path.relative_to("tools").parts[0].lower()
+              platform = next((p for p in PLATFORMS if f"-{p}-" in top), None)
+              architecture = next((a for a in ARCHITECTURES if f"-{a}-" in top), None)
+              if platform is None or architecture is None:
+                  print(f"::error::Cannot determine platform/architecture for {path} from directory name '{top}'.")
+                  sys.exit(1)
+              actual.add((platform, architecture, path.name, hashlib.sha256(path.read_bytes()).hexdigest()))
+
+          if declared == actual:
+              print(f"Manifest describes all {len(actual)} bundled binaries exactly.")
+              sys.exit(0)
+
+          for entry in sorted(actual - declared):
+              print(f"::error::In tools/ but not in the manifest (or checksum differs): {entry[0]}/{entry[1]}/{entry[2]} {entry[3]}")
+          for entry in sorted(declared - actual):
+              print(f"::error::In the manifest but not in tools/: {entry[0]}/{entry[1]}/{entry[2]} {entry[3]}")
+          print("")
+          print("The checksum manifest and the vendored binaries have drifted apart.")
+          print("Mongo2Go verifies binaries against this manifest at runtime, so a mismatch means")
+          print("the shipped package would reject its own binaries on a consumer's machine.")
+          print("")
+          print("Regenerate it in the same commit as the binary change:")
+          print("  dotnet run --project src/MongoDownloader -- --write-manifest")
+          sys.exit(1)
+
   build:
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        # ubuntu-24.04-arm exercises the bundled linux/arm64 binaries. Without it the matrix proves less than it
+        # appears to: macos-latest is Apple Silicon but runs the x64 binaries under Rosetta 2, so before arm64 was
+        # bundled every job passed for a different reason and none of them would have caught issue #127.
+        os: [macos-latest, ubuntu-latest, ubuntu-24.04-arm, windows-latest]
     runs-on: ${{ matrix.os }}
     name: Build and Test
     steps:
       - name: Install libssl1.1 (restores libcrypto.so.1.1 which is required by MongoDB binaries v4.4.4)
         if: runner.os == 'Linux'
         run: |
-          echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+          # security.ubuntu.com carries amd64/i386 only; arm64 packages live on ports.ubuntu.com.
+          ARCH=$(dpkg --print-architecture)
+          if [ "$ARCH" = "arm64" ]; then
+            REPO="http://ports.ubuntu.com/ubuntu-ports"
+          else
+            REPO="http://security.ubuntu.com/ubuntu"
+          fi
+          echo "deb [arch=$ARCH] $REPO focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
           sudo apt update
           sudo apt install -y libssl1.1
       - name: Checkout repository
@@ -43,10 +187,30 @@ jobs:
       - name: Run tests
         run: dotnet test --configuration ${{ env.Configuration }} --no-build --verbosity normal
 
+  # This job publishes to nuget.org and creates a GitHub release. It must only ever be
+  # reachable from a version tag pushed by a maintainer. The event_name check is redundant
+  # with the ref check (a pull_request event has ref refs/pull/<n>/merge, which cannot match
+  # refs/tags/) but is kept deliberately: this job can publish to nuget.org, so it is worth
+  # being structurally impossible rather than merely conditionally unreachable.
+  #
+  # Publishing uses Trusted Publishing (OIDC): NuGet/login exchanges a short-lived GitHub OIDC
+  # token for a 1-hour nuget.org API key, so there is no long-lived NUGET_API_KEY secret to
+  # store, leak, or let expire. The trust policy is configured on nuget.org and must name this
+  # repository and this workflow file (continuous-integration.yml).
   publish:
     runs-on: macos-latest
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write # required to create the GitHub release
+      id-token: write # required for the GitHub OIDC token that NuGet/login exchanges
+    # Gates the actual publish behind a manual approval. The 'nuget-publish' environment is
+    # configured with a required reviewer, so a tagged build pauses here until a maintainer
+    # approves it - a last human checkpoint before anything reaches nuget.org. The name must
+    # also be set as the Environment on the nuget.org Trusted Publishing policy.
+    environment:
+      name: nuget-publish
+      url: https://www.nuget.org/packages/Mongo2Go
     name: Deploy NuGet and GitHub Release
     steps:
       - name: Checkout repository
@@ -64,8 +228,16 @@ jobs:
         with:
           name: mongo2go-nuget-package
           path: ./artifacts/*.nupkg
+      # Trade the GitHub OIDC token for a short-lived nuget.org API key. Do this immediately before
+      # the push, since the key is only valid for one hour. NUGET_USER is the nuget.org account/profile
+      # name (not an email address) that owns the Trusted Publishing policy.
+      - name: NuGet login (OIDC to short-lived API key)
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
       - name: Publish NuGet package
-        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ secrets.NUGET_API_KEY }}" --skip-duplicate
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --skip-duplicate
       - name: Create GitHub Release
         run: |
           gh release create ${{ github.ref_name }} ./artifacts/*.nupkg \

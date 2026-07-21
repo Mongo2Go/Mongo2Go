@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Machine.Specifications;
 using MELT;
 using MongoDB.Driver;
@@ -109,7 +109,7 @@ namespace Mongo2GoTests.Runner
             .Should().BeGreaterThan(10);
         It should_have_created_collection_statement = () => loggerFactory.Sink.LogEntries
             .Count(l => l.Properties.Any(p => p.Key == "message" && (string)p.Value == "createCollection"))
-            .Should().BeGreaterOrEqualTo(1);
+            .Should().BeGreaterThanOrEqualTo(1);
 
         Cleanup stuff = () => _runner.Dispose();
     }

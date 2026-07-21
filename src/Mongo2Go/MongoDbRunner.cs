@@ -47,7 +47,7 @@ namespace Mongo2Go
                 PortPool.GetInstance,
                 new FileSystem(),
                 new MongoDbProcessStarter(),
-                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory),
+                new MongoBinaryLocator(binariesSearchPatternOverride, binariesSearchDirectory, logger),
                 dataDirectory,
                 singleNodeReplSet,
                 additionalMongodArguments,

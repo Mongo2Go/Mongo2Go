@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,27 +63,70 @@ namespace MongoDownloader
                 tasks.Add(ProcessArchiveAsync(download, extractDirectory, progress, cancellationToken));
             }
             var strippedSizes = await Task.WhenAll(tasks);
+
+            // Written here, after every archive has been extracted and stripped, so the manifest describes the
+            // binaries exactly as they will be committed and packaged. Doing this automatically is the point: a
+            // manifest that disagrees with tools/ makes Mongo2Go reject its own binaries at the consumer's end.
+            var manifestProgress = context.AddTask("Writing checksum manifest", maxValue: 1);
+            var manifestFile = await BinaryManifestWriter.WriteAsync(toolsDirectory, communityServerVersion.Number, databaseToolsVersion.Number, _extractor.StripToolVersion, cancellationToken);
+            manifestProgress.Increment(1);
+            manifestProgress.Description = $"✅ Wrote checksum manifest to {new Uri(manifestFile.FullName).AbsoluteUri}";
+
             return strippedSizes.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
         }
 
         private async Task<ByteSize> ProcessArchiveAsync(Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
         {
-            IEnumerable<Task<ByteSize>> stripTasks;
-            var archiveExtension = Path.GetExtension(download.Archive.Url.AbsolutePath);
-            if (archiveExtension == ".zip")
-            {
-                stripTasks = await _extractor.DownloadExtractZipArchiveAsync(download, extractDirectory, progress, cancellationToken);
-            }
-            else
-            {
-                var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
-                stripTasks = _extractor.ExtractArchive(download, archiveFileInfo, extractDirectory, cancellationToken);
-            }
+            var archiveFileInfo = await DownloadArchiveAsync(download.Archive, progress, cancellationToken);
+
+            progress.Report("Verifying checksum");
+            VerifyChecksum(archiveFileInfo, download);
+
+            var stripTasks = await _extractor.ExtractArchiveAsync(download, archiveFileInfo, extractDirectory, cancellationToken);
             progress.Report("Stripping binaries");
             var completedStripTasks = await Task.WhenAll(stripTasks);
             var totalStrippedSize = completedStripTasks.Aggregate(new ByteSize(0), (current, strippedSize) => current + strippedSize);
             progress.ReportCompleted(totalStrippedSize);
             return totalStrippedSize;
+        }
+
+        /// <summary>
+        /// Verifies a downloaded archive against the SHA-256 checksum published by MongoDB alongside its download URL.
+        /// </summary>
+        /// <remarks>
+        /// The binaries committed to <c>tools/</c> are stripped derivatives and therefore cannot themselves be checked
+        /// against anything MongoDB publishes. This is the only point in the chain where upstream provenance can be
+        /// established, so a mismatch is fatal rather than a warning: continuing would produce binaries that are then
+        /// committed, packaged, and executed on every consumer's machine.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The checksum is missing or does not match.</exception>
+        private static void VerifyChecksum(FileInfo archiveFile, Download download)
+        {
+            var expected = download.Archive.Sha256;
+            if (string.IsNullOrWhiteSpace(expected))
+            {
+                throw new InvalidOperationException(
+                    $"MongoDB published no SHA-256 checksum for {download} ({download.Archive.Url}). " +
+                    $"Refusing to use an archive whose integrity cannot be established.");
+            }
+
+            string actual;
+            using (var sha256 = SHA256.Create())
+            using (var stream = archiveFile.OpenRead())
+            {
+                actual = Convert.ToHexString(sha256.ComputeHash(stream));
+            }
+
+            if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+            {
+                // Leaving the file in place would let a cached copy be reused on the next run.
+                archiveFile.Delete();
+                throw new InvalidOperationException(
+                    $"Checksum mismatch for {download} downloaded from {download.Archive.Url}.{Environment.NewLine}" +
+                    $"  expected (published by MongoDB): {expected.ToLowerInvariant()}{Environment.NewLine}" +
+                    $"  actual   (what we received):     {actual.ToLowerInvariant()}{Environment.NewLine}" +
+                    $"The downloaded file has been deleted. Do not use these binaries.");
+            }
         }
 
         private async Task<FileInfo> DownloadArchiveAsync(Archive archive, IProgress<ICopyProgress> progress, CancellationToken cancellationToken)
@@ -95,25 +139,51 @@ namespace MongoDownloader
                 progress.Report(new CopyProgress(TimeSpan.Zero, 0, 1, 1));
                 return destinationFile;
             }
-            await using var destinationStream = destinationFile.OpenWrite();
+            // FileMode.Create rather than OpenWrite: OpenWrite does not truncate, so a shorter download would be
+            // left with trailing bytes from a longer previous one, and the checksum would fail for a confusing reason.
+            await using var destinationStream = new FileStream(destinationFile.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
             await _options.HttpClient.GetAsync(archive.Url.AbsoluteUri, destinationStream, progress, cancellationToken);
+            destinationFile.Refresh();
             return destinationFile;
         }
 
         private async Task<(Version version, IEnumerable<Download> downloads)> GetCommunityServerDownloadsAsync(CancellationToken cancellationToken)
         {
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.CommunityServerUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
-            var version = release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found");
-            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.CommunityServer, version, _options, _options.Edition));
-            return (version, downloads);
+            var pinned = _options.CommunityServerVersion;
+            // The current-releases feed only lists recent versions, so pinning an older one requires the full feed.
+            var url = string.IsNullOrEmpty(pinned) ? _options.CommunityServerUrl : _options.CommunityServerFullUrl;
+            Func<Version, bool> predicate = string.IsNullOrEmpty(pinned)
+                ? version => version.Production
+                : version => version.Number == pinned;
+
+            // Streamed rather than buffered: the full feed is ~50 MB and we only need one version.
+            await using var stream = await _options.HttpClient.GetStreamAsync(url, cancellationToken);
+            var selected = await MongoReleaseReader.FindVersionAsync(stream, predicate, cancellationToken)
+                ?? throw new InvalidOperationException(string.IsNullOrEmpty(pinned)
+                    ? $"No Community Server production version was found in {url}"
+                    : $"Community Server version \"{pinned}\" was not found in {url}");
+
+            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.CommunityServer, selected, _options, _options.Edition));
+            return (selected, downloads);
         }
 
         private async Task<(Version version, IEnumerable<Download> downloads)> GetDatabaseToolsDownloadsAsync(CancellationToken cancellationToken)
         {
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(_options.DatabaseToolsUrl, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
-            var version = release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found");
-            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.DatabaseTools, version, _options));
-            return (version, downloads);
+            var pinned = _options.DatabaseToolsVersion;
+            var url = string.IsNullOrEmpty(pinned) ? _options.DatabaseToolsUrl : _options.DatabaseToolsFullUrl;
+            // With no version pinned, the first version in the feed is the newest, matching the previous behaviour.
+            Func<Version, bool> predicate = string.IsNullOrEmpty(pinned)
+                ? _ => true
+                : version => version.Number == pinned;
+
+            await using var stream = await _options.HttpClient.GetStreamAsync(url, cancellationToken);
+            var selected = await MongoReleaseReader.FindVersionAsync(stream, predicate, cancellationToken)
+                ?? throw new InvalidOperationException(string.IsNullOrEmpty(pinned)
+                    ? $"No Database Tools version was found in {url}"
+                    : $"Database Tools version \"{pinned}\" was not found in {url}");
+
+            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.DatabaseTools, selected, _options));
+            return (selected, downloads);
         }
 
         private static IEnumerable<Download> GetDownloads(Platform platform, Product product, Version version, Options options, Regex? editionRegex = null)

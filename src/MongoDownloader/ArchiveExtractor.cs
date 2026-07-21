@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ByteSizeLib;
-using Espresso3389.HttpStream;
-using HttpProgress;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
@@ -18,8 +14,6 @@ namespace MongoDownloader
 {
     internal class ArchiveExtractor
     {
-        private static readonly int CachePageSize = Convert.ToInt32(ByteSize.FromMebiBytes(4).Bytes);
-
         private readonly Options _options;
         private readonly BinaryStripper? _binaryStripper;
 
@@ -29,26 +23,42 @@ namespace MongoDownloader
             _binaryStripper = binaryStripper;
         }
 
-        public async Task<IEnumerable<Task<ByteSize>>> DownloadExtractZipArchiveAsync(Download download, DirectoryInfo extractDirectory, ArchiveProgress progress, CancellationToken cancellationToken)
+        /// <summary>
+        /// The version of <c>llvm-strip</c> applied to the extracted binaries, or <c>null</c> when stripping is disabled.
+        /// </summary>
+        public string? StripToolVersion => _binaryStripper?.ToolVersion;
+
+        /// <summary>
+        /// Extracts the binaries and licence files from an archive that has already been downloaded and verified.
+        /// </summary>
+        /// <remarks>
+        /// ZIP archives were previously read directly over HTTP with range requests, which never held the whole
+        /// archive and so left nothing to checksum. Both formats are now extracted from a local file, so the archive
+        /// can be verified against MongoDB's published SHA-256 before a single entry is read.
+        /// </remarks>
+        public async Task<IEnumerable<Task<ByteSize>>> ExtractArchiveAsync(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
         {
-            var bytesTransferred = 0L;
-            using var headResponse = await _options.HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, download.Archive.Url), cancellationToken);
-            var contentLength = headResponse.Content.Headers.ContentLength ?? 0;
-            var cacheFile = new FileInfo(Path.Combine(_options.CacheDirectory.FullName, download.Archive.Url.Segments.Last()));
-            await using var cacheStream = new FileStream(cacheFile.FullName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-            var stopwatch = Stopwatch.StartNew();
-            await using var httpStream = new HttpStream(download.Archive.Url, cacheStream, ownStream: false, CachePageSize, cached: null);
-            httpStream.RangeDownloaded += (_, args) =>
+            switch (Path.GetExtension(archive.Name))
             {
-                bytesTransferred += args.Length;
-                progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, contentLength));
-            };
-            using var zipFile = new ZipFile(httpStream);
+                case ".tgz":
+                    return ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
+                case ".zip":
+                    return await ExtractZipArchiveAsync(download, archive, extractDirectory, cancellationToken);
+                default:
+                    throw new NotSupportedException($"Only .tgz and .zip archives are currently supported. \"{archive.FullName}\" can not be extracted.");
+            }
+        }
+
+        private async Task<IEnumerable<Task<ByteSize>>> ExtractZipArchiveAsync(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
+        {
+            await using var archiveStream = archive.OpenRead();
+            using var zipFile = new ZipFile(archiveStream);
             var binaryRegex = _options.Binaries[(download.Product, download.Platform)];
             var licenseRegex = _options.Licenses[(download.Product, download.Platform)];
             var stripTasks = new List<Task<ByteSize>>();
             foreach (var entry in zipFile.Cast<ZipEntry>().Where(e => e.IsFile))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var nameParts = entry.Name.Split('\\', '/').Skip(1).ToList();
                 var zipEntryPath = string.Join('/', nameParts);
                 var isBinaryFile = binaryRegex.IsMatch(zipEntryPath);
@@ -56,9 +66,9 @@ namespace MongoDownloader
                 if (isBinaryFile || isLicenseFile)
                 {
                     var destinationPathParts = isLicenseFile ? nameParts.Prepend(ProductDirectoryName(download.Product)) : nameParts;
-                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    var destinationFile = ResolveContainedFile(extractDirectory, destinationPathParts);
                     destinationFile.Directory?.Create();
-                    await using var destinationStream = destinationFile.OpenWrite();
+                    await using var destinationStream = new FileStream(destinationFile.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
                     await using var inputStream = zipFile.GetInputStream(entry);
                     await inputStream.CopyToAsync(destinationStream, cancellationToken);
                     if (isBinaryFile && _binaryStripper is not null)
@@ -67,19 +77,7 @@ namespace MongoDownloader
                     }
                 }
             }
-            progress.Report(new CopyProgress(stopwatch.Elapsed, 0, bytesTransferred, bytesTransferred));
             return stripTasks;
-        }
-
-        public IEnumerable<Task<ByteSize>> ExtractArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
-        {
-            switch (Path.GetExtension(archive.Name))
-            {
-                case ".tgz":
-                    return ExtractTarGzipArchive(download, archive, extractDirectory, cancellationToken);
-                default:
-                    throw new NotSupportedException($"Only .tgz archives are currently supported. \"{archive.FullName}\" can not be extracted.");
-            }
         }
 
         private IEnumerable<Task<ByteSize>> ExtractTarGzipArchive(Download download, FileInfo archive, DirectoryInfo extractDirectory, CancellationToken cancellationToken)
@@ -106,7 +104,9 @@ namespace MongoDownloader
             var stripTasks = new List<Task<ByteSize>>();
             foreach (var extractedFileName in extractedFileNames.Select(e => e.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
             {
-                var extractedFile = new FileInfo(Path.Combine(extractDirectory.FullName, extractedFileName));
+                // Tar entry names may be absolute (SharpZipLib re-roots them on extraction but reports them verbatim),
+                // in which case an unchecked Path.Combine would discard extractDirectory and target a real host path.
+                var extractedFile = ResolveContainedFile(extractDirectory, new[] { extractedFileName });
                 var parts = extractedFileName.Split(Path.DirectorySeparatorChar);
                 var entryFileName = string.Join("/", parts.Skip(1));
                 rootDirectoryToDelete.Add(parts[0]);
@@ -123,7 +123,7 @@ namespace MongoDownloader
                     {
                         destinationPathParts = destinationPathParts.Prepend(ProductDirectoryName(download.Product));
                     }
-                    var destinationFile = new FileInfo(Path.Combine(destinationPathParts.Prepend(extractDirectory.FullName).ToArray()));
+                    var destinationFile = ResolveContainedFile(extractDirectory, destinationPathParts);
                     destinationFile.Directory?.Create();
                     extractedFile.MoveTo(destinationFile.FullName);
                     if (isBinaryFile && _binaryStripper is not null)
@@ -137,6 +137,43 @@ namespace MongoDownloader
             binDirectory.Delete(recursive: false);
             rootArchiveDirectory.Delete(recursive: false);
             return stripTasks;
+        }
+
+        /// <summary>
+        /// Combines <paramref name="pathParts"/> onto <paramref name="extractDirectory"/> and guarantees the result stays
+        /// inside it.
+        /// </summary>
+        /// <remarks>
+        /// Archive entry names are attacker-controlled data: they arrive from a downloaded archive and are not validated
+        /// by the archive libraries. Two distinct escapes are possible without this check:
+        /// <list type="bullet">
+        /// <item>a relative entry containing <c>..</c> segments, because <see cref="Path.Combine(string[])"/> does not
+        /// normalise or reject them ("zip slip");</item>
+        /// <item>a rooted entry such as <c>/etc/passwd</c>, because <see cref="Path.Combine(string[])"/> discards every
+        /// preceding segment as soon as one is rooted.</item>
+        /// </list>
+        /// Both are resolved by <see cref="Path.GetFullPath(string)"/> and then rejected by the prefix comparison.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">The entry resolves outside <paramref name="extractDirectory"/>.</exception>
+        private static FileInfo ResolveContainedFile(DirectoryInfo extractDirectory, IEnumerable<string> pathParts)
+        {
+            var root = Path.GetFullPath(extractDirectory.FullName);
+            var rootWithSeparator = root.EndsWith(Path.DirectorySeparatorChar)
+                ? root
+                : root + Path.DirectorySeparatorChar;
+
+            var combined = Path.Combine(pathParts.Prepend(root).ToArray());
+            var resolved = Path.GetFullPath(combined);
+
+            if (!resolved.StartsWith(rootWithSeparator, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Refusing to extract an archive entry that escapes the extraction directory. " +
+                    $"The entry resolves to \"{resolved}\" which is outside \"{root}\". " +
+                    $"This indicates a malicious or corrupted archive.");
+            }
+
+            return new FileInfo(resolved);
         }
 
         private static string ProductDirectoryName(Product product)

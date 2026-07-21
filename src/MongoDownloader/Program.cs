@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Spectre.Console;
@@ -16,9 +17,21 @@ namespace MongoDownloader
             {
                 var toolsDirectory = GetToolsDirectory();
 
+                // Regenerate the checksum manifest from the binaries already present, without downloading anything.
+                // The manifest is normally written as part of a download; this exists so it can be repaired without
+                // re-fetching several hundred megabytes.
+                if (args.Any(e => e == "--write-manifest"))
+                {
+                    var (server, tools) = ReadVersionsFromDirectoryNames(toolsDirectory);
+                    // No stripping happens here, so the recorded tool version is carried over from the existing manifest.
+                    var file = await BinaryManifestWriter.WriteAsync(toolsDirectory, server, tools, stripToolVersion: null, CancellationToken.None);
+                    AnsiConsole.WriteLine($"Wrote checksum manifest for the binaries in {toolsDirectory.FullName} to {file.FullName}");
+                    return 0;
+                }
+
                 foreach (DirectoryInfo dir in toolsDirectory.EnumerateDirectories())
                 {
-                    dir.Delete(true); 
+                    dir.Delete(true);
                 }
 
                 var cancellationTokenSource = new CancellationTokenSource();
@@ -28,7 +41,15 @@ namespace MongoDownloader
                     eventArgs.Cancel = !cancellationTokenSource.IsCancellationRequested;
                     cancellationTokenSource.Cancel();
                 };
-                var options = new Options();
+                var options = new Options
+                {
+                    CommunityServerVersion = GetOptionValue(args, "--server-version"),
+                    DatabaseToolsVersion = GetOptionValue(args, "--tools-version"),
+                };
+                if (!string.IsNullOrEmpty(options.CommunityServerVersion) || !string.IsNullOrEmpty(options.DatabaseToolsVersion))
+                {
+                    AnsiConsole.WriteLine($"Pinned versions - Community Server: {options.CommunityServerVersion ?? "latest"}, Database Tools: {options.DatabaseToolsVersion ?? "latest"}");
+                }
                 var performStrip = args.All(e => e != "--no-strip");
                 var binaryStripper = performStrip ? await GetBinaryStripperAsync(cancellationTokenSource.Token) : null;
                 var archiveExtractor = new ArchiveExtractor(options, binaryStripper);
@@ -48,6 +69,40 @@ namespace MongoDownloader
                 }
                 return 1;
             }
+        }
+
+        /// <summary>
+        /// Recovers the MongoDB and Database Tools versions from the extracted directory names, which follow the
+        /// pattern <c>mongodb-&lt;platform&gt;-&lt;arch&gt;-&lt;server&gt;-database-tools-&lt;tools&gt;</c>.
+        /// </summary>
+        private static (string ServerVersion, string ToolsVersion) ReadVersionsFromDirectoryNames(DirectoryInfo toolsDirectory)
+        {
+            foreach (var directory in toolsDirectory.EnumerateDirectories("mongodb-*"))
+            {
+                var match = Regex.Match(directory.Name, @"-(?<server>\d+\.\d+\.\d+)-database-tools-(?<tools>\d+\.\d+\.\d+)$");
+                if (match.Success)
+                {
+                    return (match.Groups["server"].Value, match.Groups["tools"].Value);
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"Could not determine the MongoDB and Database Tools versions from the directory names in " +
+                $"\"{toolsDirectory.FullName}\". Expected a directory such as " +
+                $"\"mongodb-linux-x64-8.0.0-database-tools-100.14.0\".");
+        }
+
+        /// <summary>
+        /// Reads the value of a <c>--key value</c> command-line option, or <c>null</c> if the option is absent.
+        /// </summary>
+        private static string? GetOptionValue(string[] args, string optionName)
+        {
+            var index = Array.IndexOf(args, optionName);
+            if (index < 0 || index + 1 >= args.Length)
+            {
+                return null;
+            }
+            return args[index + 1];
         }
 
         private static DirectoryInfo GetToolsDirectory()

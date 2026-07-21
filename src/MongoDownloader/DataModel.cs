@@ -23,15 +23,6 @@ namespace MongoDownloader
         DatabaseTools,
     }
 
-    /// <summary>
-    /// The root object of the JSON describing the available releases.
-    /// </summary>
-    public class Release
-    {
-        [JsonPropertyName("versions")]
-        public List<Version> Versions { get; set; } = new();
-    }
-
     public class Version
     {
         [JsonPropertyName("version")]
@@ -80,5 +71,16 @@ namespace MongoDownloader
     {
         [JsonPropertyName("url")]
         public Uri Url { get; set; } = default!;
+
+        /// <summary>
+        /// The SHA-256 checksum published by MongoDB for this archive.
+        /// </summary>
+        /// <remarks>
+        /// Present for every archive in both the Community Server and Database Tools release feeds. Verifying it is
+        /// what makes this tool a provenance mechanism rather than merely a download script: without it, the binaries
+        /// committed to <c>tools/</c> attest only to what we happened to receive.
+        /// </remarks>
+        [JsonPropertyName("sha256")]
+        public string Sha256 { get; set; } = "";
     }
 }

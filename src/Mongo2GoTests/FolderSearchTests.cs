@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using FluentAssertions;
+using AwesomeAssertions;
 using Machine.Specifications;
 using Mongo2Go.Helper;
 
