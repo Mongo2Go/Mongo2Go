@@ -190,14 +190,20 @@ jobs:
   # This job publishes to nuget.org and creates a GitHub release. It must only ever be
   # reachable from a version tag pushed by a maintainer. The event_name check is redundant
   # with the ref check (a pull_request event has ref refs/pull/<n>/merge, which cannot match
-  # refs/tags/) but is kept deliberately: this job spends the NUGET_API_KEY, so it is worth
+  # refs/tags/) but is kept deliberately: this job can publish to nuget.org, so it is worth
   # being structurally impossible rather than merely conditionally unreachable.
+  #
+  # Publishing uses Trusted Publishing (OIDC): NuGet/login exchanges a short-lived GitHub OIDC
+  # token for a 1-hour nuget.org API key, so there is no long-lived NUGET_API_KEY secret to
+  # store, leak, or let expire. The trust policy is configured on nuget.org and must name this
+  # repository and this workflow file (continuous-integration.yml).
   publish:
     runs-on: macos-latest
     needs: build
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write # required to create the GitHub release
+      id-token: write # required for the GitHub OIDC token that NuGet/login exchanges
     name: Deploy NuGet and GitHub Release
     steps:
       - name: Checkout repository
@@ -215,8 +221,16 @@ jobs:
         with:
           name: mongo2go-nuget-package
           path: ./artifacts/*.nupkg
+      # Trade the GitHub OIDC token for a short-lived nuget.org API key. Do this immediately before
+      # the push, since the key is only valid for one hour. NUGET_USER is the nuget.org account/profile
+      # name (not an email address) that owns the Trusted Publishing policy.
+      - name: NuGet login (OIDC to short-lived API key)
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
       - name: Publish NuGet package
-        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ secrets.NUGET_API_KEY }}" --skip-duplicate
+        run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --skip-duplicate
       - name: Create GitHub Release
         run: |
           gh release create ${{ github.ref_name }} ./artifacts/*.nupkg \
