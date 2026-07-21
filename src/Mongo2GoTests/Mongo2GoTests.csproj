@@ -2,6 +2,11 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <!-- Signed with the same key as Mongo2Go so it qualifies as its InternalsVisibleTo friend. This project is never
+         packaged. CS8002 (a referenced test-only assembly is not strong-named) is harmless and not enforced on .NET 8. -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\Mongo2Go\Mongo2Go.snk</AssemblyOriginatorKeyFile>
+    <NoWarn>$(NoWarn);CS8002</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Mongo2Go\Mongo2Go.csproj" />

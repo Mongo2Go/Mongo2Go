@@ -108,14 +108,23 @@ Releases are tag-triggered and **publish straight to nuget.org**. See `README_IN
 Because `main` is one `git tag vX.Y.Z` away from being published, **`main` must always be
 releasable.** Do not merge anything unverified into it.
 
+Every release gets a `README.md` changelog entry. **Match the existing heading format exactly:**
+`### Mongo2Go X.Y.Z, Month DD YYYY` (e.g. `### Mongo2Go 4.1.0, January 30 2025`) — the version and
+the release date, no ordinal on the day. Do not omit the date.
+
 ## Known context
 
-- Shipped MongoDB binaries are **4.4.4**; latest 4.4.x is **4.4.31**. Upgrading within 4.4 is
-  non-breaking and picks up years of security fixes.
-- Upgrading to 8.x is a **major** version bump. It would resolve the `libcrypto.so.1.1` issues
-  (#149, #135) and let the `libssl1.1` workaround be removed from CI.
-- The committed binaries are **stripped derivatives**, so they cannot be checked against
+- Shipped MongoDB binaries are **8.0.26** (the 8.0 LTS line) with Database Tools **100.14.0**, bundled
+  for Windows x64, Linux x64 & arm64, and macOS x64 & arm64. The jump from 4.4.4 was the **5.0.0** major
+  release: MongoDB 8.0 raises consumers' minimum OS (the Linux build needs glibc 2.35+), the breaking change.
+- The Linux binaries are the **ubuntu2204** build (glibc 2.35, Ubuntu 22.04+/Debian 12+/RHEL 9+), which links
+  **OpenSSL 3**. That is what removed the `libcrypto.so.1.1`/`libssl.so.1.1` problem (#149, #135) — the older
+  ubuntu2004 build links OpenSSL 1.1 and reintroduces it — so the `libssl1.1` workaround is gone from CI.
+  macOS arm64 is now a native build (#127), no more Rosetta.
+- The committed binaries are **stripped derivatives** (and the macOS arm64 one is additionally ad-hoc
+  re-signed, which an unsigned arm64 binary needs to run at all), so they cannot be checked against
   MongoDB's published archive checksums directly. Establishing provenance means re-downloading,
   verifying the archive sha256, and comparing.
-- `MongoDownloader` currently always fetches the *latest production* release and **deletes every
-  subdirectory of `tools/` before downloading**. It is destructive; git is the only undo.
+- `MongoDownloader` can pin an exact version (`--server-version` / `--tools-version`) or fetch the
+  *latest production* release by default, and **deletes every subdirectory of `tools/` before
+  downloading**. It is destructive; git is the only undo.

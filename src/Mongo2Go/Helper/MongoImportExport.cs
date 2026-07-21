@@ -22,9 +22,12 @@ namespace Mongo2Go.Helper
             if (drop) { arguments += " --drop"; }
             arguments += MongodArguments.GetValidAdditionalArguments(arguments, additionalMongodArguments);
 
-            Process process = ProcessControl.ProcessFactory(fileName, arguments);
-
-            return ProcessControl.StartAndWaitForExit(process);
+            // disposed after use so the process handle and the two redirected pipes (stdout/stderr) are
+            // released - every Import/Export otherwise leaks a handle + 2 file descriptors (#147).
+            using (Process process = ProcessControl.ProcessFactory(fileName, arguments))
+            {
+                return ProcessControl.StartAndWaitForExit(process);
+            }
         }
 
         /// <summary>
@@ -38,9 +41,10 @@ namespace Mongo2Go.Helper
             string arguments = @"--host localhost --port {0} --db {1} --collection {2} --out ""{3}""".Formatted(port, database, collection, finalPath);
             arguments += MongodArguments.GetValidAdditionalArguments(arguments, additionalMongodArguments);
 
-            Process process = ProcessControl.ProcessFactory(fileName, arguments);
-
-            return ProcessControl.StartAndWaitForExit(process);
+            using (Process process = ProcessControl.ProcessFactory(fileName, arguments))
+            {
+                return ProcessControl.StartAndWaitForExit(process);
+            }
         }
     }
 }

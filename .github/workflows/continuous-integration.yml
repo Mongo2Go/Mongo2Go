@@ -97,7 +97,7 @@ jobs:
       - name: Require the manifest to describe tools/ exactly
         shell: python
         run: |
-          import hashlib, pathlib, sys
+          import gzip, hashlib, pathlib, sys
 
           EXECUTABLES = {"mongod", "mongoimport", "mongoexport",
                          "mongod.exe", "mongoimport.exe", "mongoexport.exe"}
@@ -118,9 +118,12 @@ jobs:
                   sys.exit(1)
               declared.add((parts[0], parts[1], parts[2], digest.strip().lower()))
 
+          # The binaries are committed gzip-compressed (GitHub's 100 MB file limit), but the manifest records the
+          # SHA-256 of the *decompressed* binary that actually runs, so each .gz is decompressed before hashing.
           actual = set()
-          for path in sorted(pathlib.Path("tools").rglob("*")):
-              if not path.is_file() or path.name not in EXECUTABLES:
+          for path in sorted(pathlib.Path("tools").rglob("*.gz")):
+              name = path.name[:-len(".gz")]
+              if not path.is_file() or name not in EXECUTABLES:
                   continue
               top = path.relative_to("tools").parts[0].lower()
               platform = next((p for p in PLATFORMS if f"-{p}-" in top), None)
@@ -128,7 +131,8 @@ jobs:
               if platform is None or architecture is None:
                   print(f"::error::Cannot determine platform/architecture for {path} from directory name '{top}'.")
                   sys.exit(1)
-              actual.add((platform, architecture, path.name, hashlib.sha256(path.read_bytes()).hexdigest()))
+              content = gzip.decompress(path.read_bytes())
+              actual.add((platform, architecture, name, hashlib.sha256(content).hexdigest()))
 
           if declared == actual:
               print(f"Manifest describes all {len(actual)} bundled binaries exactly.")
@@ -151,26 +155,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # ubuntu-24.04-arm exercises the bundled linux/arm64 binaries. Without it the matrix proves less than it
-        # appears to: macos-latest is Apple Silicon but runs the x64 binaries under Rosetta 2, so before arm64 was
-        # bundled every job passed for a different reason and none of them would have caught issue #127.
-        os: [macos-latest, ubuntu-latest, ubuntu-24.04-arm, windows-latest]
+        # One runner per bundled platform/architecture, each on NATIVE hardware so every binary we ship is
+        # actually exercised - no emulation hiding a problem:
+        #   ubuntu-latest    -> linux x64      ubuntu-24.04-arm -> linux arm64
+        #   macos-latest     -> macOS arm64 (Apple Silicon, NATIVE since MongoDB 8.x - no more Rosetta)
+        #   macos-13         -> macOS x64  (Intel)
+        #   windows-latest   -> windows x64
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13, windows-latest]
     runs-on: ${{ matrix.os }}
     name: Build and Test
     steps:
-      - name: Install libssl1.1 (restores libcrypto.so.1.1 which is required by MongoDB binaries v4.4.4)
-        if: runner.os == 'Linux'
-        run: |
-          # security.ubuntu.com carries amd64/i386 only; arm64 packages live on ports.ubuntu.com.
-          ARCH=$(dpkg --print-architecture)
-          if [ "$ARCH" = "arm64" ]; then
-            REPO="http://ports.ubuntu.com/ubuntu-ports"
-          else
-            REPO="http://security.ubuntu.com/ubuntu"
-          fi
-          echo "deb [arch=$ARCH] $REPO focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
-          sudo apt update
-          sudo apt install -y libssl1.1
+      # No libssl1.1 shim any more: MongoDB 8.x links OpenSSL 3, which ships on every supported runner.
+      # (4.4.4 needed libcrypto.so.1.1, absent on Ubuntu 22.04+ - that whole workaround is gone with the upgrade.)
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -223,6 +219,35 @@ jobs:
         run: dotnet build --configuration ${{ env.Configuration }} --verbosity normal
       - name: Create NuGet package
         run: dotnet pack --output ./artifacts --configuration ${{ env.Configuration }} --verbosity normal
+      # `dotnet pack` compresses with NuGet's default (~Deflate level 6). The bundled MongoDB binaries put the
+      # package right against nuget.org's 250 MiB hard limit, so recompress every entry at maximum Deflate
+      # (level 9). Entry names, attributes and content are preserved verbatim - only the compression changes -
+      # so the result is an identical, valid, but ~0.8 MiB smaller package. The step then refuses to publish a
+      # package that is still at or over the limit, so an over-budget build fails here instead of on nuget.org.
+      - name: Recompress package at maximum compression (enforce the 250 MiB limit)
+        shell: python
+        run: |
+          import glob, os, sys, zipfile
+
+          LIMIT = 262144000  # nuget.org's 250 MiB hard limit, in bytes
+
+          for source in glob.glob("./artifacts/*.nupkg"):
+              recompressed = source + ".tmp"
+              with zipfile.ZipFile(source) as original, \
+                   zipfile.ZipFile(recompressed, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as smaller:
+                  for entry in original.infolist():
+                      info = zipfile.ZipInfo(entry.filename, date_time=entry.date_time)
+                      info.external_attr = entry.external_attr
+                      info.compress_type = zipfile.ZIP_DEFLATED
+                      smaller.writestr(info, original.read(entry.filename), compresslevel=9)
+              os.replace(recompressed, source)
+
+              size = os.path.getsize(source)
+              name = os.path.basename(source)
+              print(f"Recompressed {name}: {size} / {LIMIT} bytes ({(LIMIT - size) / 1048576:.2f} MiB headroom)")
+              if size >= LIMIT:
+                  print(f"::error::{name} is {size} bytes, at or over nuget.org's {LIMIT} byte limit. Refusing to publish.")
+                  sys.exit(1)
       - name: Upload NuGet package artifact
         uses: actions/upload-artifact@v4
         with:

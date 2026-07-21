@@ -29,15 +29,19 @@ namespace Mongo2Go.Helper
             }
         }
 
-        public void MakeFileExecutable (string path) 
+        public void MakeFileExecutable (string path)
         {
             //when on linux or osx we must set the executeble flag on mongo binarys
-            var p = Process.Start("chmod", $"+x {path}");
-            p.WaitForExit();
-
-            if (p.ExitCode != 0) 
+            // disposed so the process/OS handle is released - MakeFileExecutable runs three times per
+            // runner start, so leaking the handle contributes to "too many open files" (#147).
+            using (var p = Process.Start("chmod", $"+x {path}"))
             {
-                throw new IOException($"Could not set executable bit for {path}");
+                p.WaitForExit();
+
+                if (p.ExitCode != 0)
+                {
+                    throw new IOException($"Could not set executable bit for {path}");
+                }
             }
         }
     }

@@ -4,7 +4,7 @@
     <TargetFrameworks>net472;netstandard2.1</TargetFrameworks>
     <Authors>Johannes Hoppe and many contributors</Authors>
     <Description>Mongo2Go is a managed wrapper around MongoDB binaries. It targets .NET Framework 4.7.2 and .NET Standard 2.1.
-This Nuget package contains the executables of mongod, mongoimport and mongoexport v4.4.4 for Windows (x64), Linux (x64 and arm64) and macOS (x64).
+This Nuget package contains the executables of mongod, mongoimport and mongoexport v8.0.26 for Windows (x64), Linux (x64 and arm64) and macOS (x64 and arm64).
 
 
 Mongo2Go has two use cases:
@@ -59,6 +59,15 @@ Mongo2Go has two use cases:
     <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
 
+  <!-- Strong-named so the assembly can be referenced from strong-named consumer projects (issue #150). Mongo2Go.snk
+       is an identity key committed on purpose - strong naming is not a security boundary, so the key is not a secret,
+       and committing it lets every build (and CI) produce the same assembly identity. All runtime dependencies
+       (MongoDB.Driver, Microsoft.Extensions.Logging.Abstractions, System.Text.Json) are themselves strong-named. -->
+  <PropertyGroup Label="StrongName">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Mongo2Go.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Checksums of the bundled MongoDB binaries, verified at runtime by MongoBinaryManifest -->
     <EmbeddedResource Include="MongoBinaries.sha256" LogicalName="Mongo2Go.MongoBinaries.sha256" />
@@ -70,10 +79,9 @@ Mongo2Go has two use cases:
       <Pack>true</Pack>
       <PackagePath>icon.png</PackagePath>
     </None>
-    <None Include="../../tools/mongodb*/**" Visible="false">
-      <Pack>true</Pack>
-      <PackagePath>tools</PackagePath>
-    </None>
+    <!-- The MongoDB binaries themselves are added to the package by the PrepareMongoBinaries target below, after it
+         has unpacked them from their committed .gz form. They cannot be a static glob here: on a fresh checkout only
+         the .gz files exist, and a glob evaluated at project-load time would capture nothing (or the .gz). -->
   </ItemGroup>
 
   <ItemGroup>
@@ -86,8 +94,73 @@ Mongo2Go has two use cases:
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Mongo2GoTests" />
+    <InternalsVisibleTo Include="Mongo2GoTests" Key="00240000048000001401000006020000002400005253413100080000010001004B0762A547AA7B4A8D8E29639867B57A29DEE328B9CB5B9E0DE3157B8CEC40DEBEF158D7AF20E9F2AF61A6D42943DBA1A43C290EB719BC6118968C82B728E75D23F84561C3CCAC9C500967DB9BB87B2858982135ECAEC7666936F37EF69F52CDD96DD24FC0A1CFEA2E0254E26BFFD98D1918B4B337716034B6319DAA80C1D78D307E3464C4FBE1EBD8214EC3485A688A4E3A1033384DF4CD6FF69334C407CF300F5FCCC56D7A10FD329B091A18B9C4B01D5AB91C5026415C2D8EC7ED072C1CD7D939A50CD4DCE8A90321CE00DDBF627DDD57C24D37CE95334E5EAF8EA32C039EF26348D5732BDEA2EACA18611D9B8B6C4AB8CC2CC0AB6396FA802CF8703C54A4" />
   </ItemGroup>
+
+  <!-- Unpacks the gzip-compressed MongoDB binaries committed under tools/ (they are stored compressed because GitHub
+       rejects files over 100 MB and the 8.x mongod binaries are larger; see MongoDownloader and .gitignore). This
+       runs on MSBuild's own .NET runtime, so System.IO.Compression is available whatever Mongo2Go itself targets. -->
+  <UsingTask TaskName="DecompressGZipFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Archives ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.IO.Compression" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        foreach (var archive in Archives)
+        {
+            var archivePath = archive.ItemSpec;
+            var binaryPath = archivePath.Substring(0, archivePath.Length - ".gz".Length);
+            var archiveInfo = new FileInfo(archivePath);
+            var binaryInfo = new FileInfo(binaryPath);
+            // Skip if the binary is already unpacked and no older than its archive; only decompress what is missing or stale.
+            if (binaryInfo.Exists && binaryInfo.LastWriteTimeUtc >= archiveInfo.LastWriteTimeUtc)
+            {
+                continue;
+            }
+            // A multi-targeting build runs this task once per target framework, in parallel, so two instances can be
+            // unpacking the same binary at the same time. Decompress to a per-instance temp file and then move it into
+            // place: each writes its own temp, and the first move wins (the loser's move throws because the destination
+            // now exists, and it just discards its copy). This avoids two writers colliding on File.Create(binaryPath).
+            var tempPath = binaryPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            using (var input = File.OpenRead(archivePath))
+            using (var gzip = new GZipStream(input, CompressionMode.Decompress))
+            using (var output = File.Create(tempPath))
+            {
+                gzip.CopyTo(output);
+            }
+            try
+            {
+                File.Move(tempPath, binaryPath);
+                Log.LogMessage(MessageImportance.High, "Unpacked MongoDB binary " + binaryPath);
+            }
+            catch (IOException)
+            {
+                // Another target framework's build unpacked it first; keep theirs and drop ours.
+                File.Delete(tempPath);
+            }
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <!-- Decompress the binaries, then add the decompressed copies to the package. Runs before the build (so the tests
+       find real binaries) and before NuGet's package-file collection (_GetPackageFiles). The tools item list is built
+       inside the target - not as a static ItemGroup - so its glob is evaluated only after decompression has run and
+       therefore captures the freshly unpacked executables, which do not exist yet on a clean checkout. -->
+  <Target Name="PrepareMongoBinaries" BeforeTargets="BeforeBuild;BeforeCompile;_GetPackageFiles">
+    <ItemGroup>
+      <_MongoBinaryArchive Include="../../tools/mongodb*/**/*.gz" />
+    </ItemGroup>
+    <DecompressGZipFiles Archives="@(_MongoBinaryArchive)" Condition="'@(_MongoBinaryArchive)' != ''" />
+    <ItemGroup>
+      <None Include="../../tools/mongodb*/**" Exclude="../../tools/mongodb*/**/*.gz" Visible="false">
+        <Pack>true</Pack>
+        <PackagePath>tools</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
 
   <Target Name="PrintPackageVersionForGitHubActions" AfterTargets="Pack">
     <Message Importance="high" Text="version=$(PackageVersion)" />

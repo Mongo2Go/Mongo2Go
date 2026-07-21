@@ -12,3 +12,14 @@ obj/
 *.nupkg
 **/.vs
 .idea/
+
+# MongoDB binaries are committed gzip-compressed (tools/**/bin/*.gz) because GitHub caps files
+# at 100 MB and the 8.x mongod binaries exceed that. The build decompresses them on demand
+# (see the PrepareMongoBinaries target in src/Mongo2Go/Mongo2Go.csproj), so the decompressed
+# executables are generated artifacts and must not be committed.
+tools/**/bin/mongod
+tools/**/bin/mongoimport
+tools/**/bin/mongoexport
+tools/**/bin/mongod.exe
+tools/**/bin/mongoimport.exe
+tools/**/bin/mongoexport.exe
