@@ -151,6 +151,9 @@ jobs:
           print("  dotnet run --project src/MongoDownloader -- --write-manifest")
           sys.exit(1)
 
+  # These four are the branch-protection required status checks for main, so they stay hard (not
+  # continue-on-error): a real failure here must still block. macOS x64 (Intel) is intentionally not
+  # among them - it is the separate build-intel job below.
   build:
     strategy:
       fail-fast: false
@@ -159,14 +162,41 @@ jobs:
         # actually exercised - no emulation hiding a problem:
         #   ubuntu-latest    -> linux x64      ubuntu-24.04-arm -> linux arm64
         #   macos-latest     -> macOS arm64 (Apple Silicon, NATIVE since MongoDB 8.x - no more Rosetta)
-        #   macos-13         -> macOS x64  (Intel)
         #   windows-latest   -> windows x64
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13, windows-latest]
+        # macOS x64 (Intel) is the separate build-intel job below - see the note there.
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     name: Build and Test
     steps:
       # No libssl1.1 shim any more: MongoDB 8.x links OpenSSL 3, which ships on every supported runner.
       # (4.4.4 needed libcrypto.so.1.1, absent on Ubuntu 22.04+ - that whole workaround is gone with the upgrade.)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Retrieve cached NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+      - name: Restore NuGet packages
+        run: dotnet restore --locked-mode --verbosity normal
+      - name: Build solution
+        run: dotnet build --configuration ${{ env.Configuration }} --verbosity normal
+      - name: Run tests
+        run: dotnet test --configuration ${{ env.Configuration }} --no-build --verbosity normal
+
+  # macOS x64 (Intel). Deliberately its own job and NOT in the publish job's `needs`, and NOT a required
+  # check: GitHub's Intel runners are being retired and routinely sit queued for a long time, and a release
+  # must not wait on runner availability. (continue-on-error only makes a *finished* job non-blocking - it
+  # does not stop `needs` from waiting on a job that is still queued, which is exactly why this cannot just
+  # be another matrix entry.) The x64 macOS binary we ship is MongoDB's official Intel build and is also
+  # exercised under Rosetta on macos-latest, so this job is informational coverage.
+  build-intel:
+    runs-on: macos-13
+    continue-on-error: true
+    name: Build and Test (macOS Intel, non-blocking)
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
