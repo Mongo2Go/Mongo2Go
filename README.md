@@ -69,7 +69,7 @@ To install it via the .NET CLI, simply enter:
 dotnet add package Mongo2Go
 ```
 
-* The new 4.x branch targets __.NET Framework 4.7.2__ and __.NET Standard 2.1__. Please use this version if possible. 
+* The new 4.x and 5.x branches target __.NET Framework 4.7.2__ and __.NET Standard 2.1__. Please use the latest version if possible. 
 * The old 3.x branch targets __.NET Standard 2.0__. No new features will be added, only bugfixes might be made.
 * The old 2.x branch targets __.NET Standard 1.6__. No new features will be added, only bugfixes might be made.
 * The old 1.x branch targets good-old classic __.NET 4.6.1__. This is for legacy environments only. No changes will be made.
@@ -334,10 +334,10 @@ Changelog
 - **NEW: native macOS arm64 (Apple Silicon)** — the package now bundles a native `mongod`/`mongoimport`/`mongoexport` for Apple Silicon, so there is **no more Rosetta 2**. Together with the Linux arm64 support added in 4.2.0 this completes [#127](https://github.com/Mongo2Go/Mongo2Go/issues/127). Intel macs continue to use the x64 binaries. Bundled platforms are now: Windows x64, Linux x64 & arm64, macOS x64 & arm64.
 - **`libcrypto.so.1.1` is no longer required** — MongoDB 8.x links OpenSSL 3, which ships on all currently supported Linux distributions. The `libssl1.1` workaround previously needed on Ubuntu 22.04+ is gone, which fixes running on modern Ubuntu and in `dotnet/sdk` containers ([#149](https://github.com/Mongo2Go/Mongo2Go/issues/149)) and on GitLab CI ([#135](https://github.com/Mongo2Go/Mongo2Go/issues/135)).
 - **Fixed "too many open files"** ([#147](https://github.com/Mongo2Go/Mongo2Go/issues/147)) — process handles for `chmod`, `mongoimport`/`mongoexport` and the replica-set initialisation client were not being disposed, leaking file descriptors on every runner start and every import/export. They are now released deterministically.
-- **Strong-named assembly** — `Mongo2Go.dll` is now strong-named, so it can be referenced from strong-named / signed consumer projects (fixes [#150](https://github.com/Mongo2Go/Mongo2Go/issues/150)). `MongoDB.Driver` has itself been strong-named since driver 2.28.0, so the separate `MongoDB.Driver.signed` package is no longer needed.
+- **Strong-named assembly** — `Mongo2Go.dll` is now strong-named, so it can be referenced from strong-named / signed consumer projects (fixes [#150](https://github.com/Mongo2Go/Mongo2Go/issues/150)).
 - Internal: the `MongoDownloader` tool can now pin an exact MongoDB server and tools version (so a release is reproducible), strips and — on Apple Silicon — re-signs binaries with a bounded memory footprint, and regenerates the runtime checksum manifest automatically.
 
-### Mongo2Go 4.2.0
+### Mongo2Go 4.2.0, July 21 2026
 
 - **NEW: Linux ARM64 support** — the package now bundles native `mongod`, `mongoimport` and `mongoexport` for Linux arm64 in addition to the existing x64 binaries. Binary resolution is now architecture-aware, so the correct build is selected automatically (fixes [#127](https://github.com/Mongo2Go/Mongo2Go/issues/127)). On Apple Silicon the x64 macOS binaries continue to run under Rosetta 2, since MongoDB 4.4 has no macOS arm64 build.
 - Updated all NuGet dependencies, most notably **MongoDB.Driver** from 3.1.0 to 3.9.0. This resolves the vulnerable transitive dependencies (SharpCompress, Snappier) reported in [#160](https://github.com/Mongo2Go/Mongo2Go/issues/160) (PR [#159](https://github.com/Mongo2Go/Mongo2Go/pull/159) — many thanks to [Simon Schmid](https://github.com/schms27)).
