@@ -23,15 +23,6 @@ namespace MongoDownloader
         DatabaseTools,
     }
 
-    /// <summary>
-    /// The root object of the JSON describing the available releases.
-    /// </summary>
-    public class Release
-    {
-        [JsonPropertyName("versions")]
-        public List<Version> Versions { get; set; } = new();
-    }
-
     public class Version
     {
         [JsonPropertyName("version")]

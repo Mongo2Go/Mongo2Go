@@ -152,28 +152,38 @@ namespace MongoDownloader
             var pinned = _options.CommunityServerVersion;
             // The current-releases feed only lists recent versions, so pinning an older one requires the full feed.
             var url = string.IsNullOrEmpty(pinned) ? _options.CommunityServerUrl : _options.CommunityServerFullUrl;
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
+            Func<Version, bool> predicate = string.IsNullOrEmpty(pinned)
+                ? version => version.Production
+                : version => version.Number == pinned;
 
-            var version = string.IsNullOrEmpty(pinned)
-                ? release.Versions.FirstOrDefault(e => e.Production) ?? throw new InvalidOperationException("No Community Server production version was found")
-                : release.Versions.FirstOrDefault(e => e.Number == pinned) ?? throw new InvalidOperationException($"Community Server version \"{pinned}\" was not found in {url}");
+            // Streamed rather than buffered: the full feed is ~50 MB and we only need one version.
+            await using var stream = await _options.HttpClient.GetStreamAsync(url, cancellationToken);
+            var selected = await MongoReleaseReader.FindVersionAsync(stream, predicate, cancellationToken)
+                ?? throw new InvalidOperationException(string.IsNullOrEmpty(pinned)
+                    ? $"No Community Server production version was found in {url}"
+                    : $"Community Server version \"{pinned}\" was not found in {url}");
 
-            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.CommunityServer, version, _options, _options.Edition));
-            return (version, downloads);
+            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.CommunityServer, selected, _options, _options.Edition));
+            return (selected, downloads);
         }
 
         private async Task<(Version version, IEnumerable<Download> downloads)> GetDatabaseToolsDownloadsAsync(CancellationToken cancellationToken)
         {
             var pinned = _options.DatabaseToolsVersion;
             var url = string.IsNullOrEmpty(pinned) ? _options.DatabaseToolsUrl : _options.DatabaseToolsFullUrl;
-            var release = await _options.HttpClient.GetFromJsonAsync<Release>(url, cancellationToken) ?? throw new InvalidOperationException($"Failed to deserialize {nameof(Release)}");
+            // With no version pinned, the first version in the feed is the newest, matching the previous behaviour.
+            Func<Version, bool> predicate = string.IsNullOrEmpty(pinned)
+                ? _ => true
+                : version => version.Number == pinned;
 
-            var version = string.IsNullOrEmpty(pinned)
-                ? release.Versions.FirstOrDefault() ?? throw new InvalidOperationException("No Database Tools version was found")
-                : release.Versions.FirstOrDefault(e => e.Number == pinned) ?? throw new InvalidOperationException($"Database Tools version \"{pinned}\" was not found in {url}");
+            await using var stream = await _options.HttpClient.GetStreamAsync(url, cancellationToken);
+            var selected = await MongoReleaseReader.FindVersionAsync(stream, predicate, cancellationToken)
+                ?? throw new InvalidOperationException(string.IsNullOrEmpty(pinned)
+                    ? $"No Database Tools version was found in {url}"
+                    : $"Database Tools version \"{pinned}\" was not found in {url}");
 
-            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.DatabaseTools, version, _options));
-            return (version, downloads);
+            var downloads = Enum.GetValues<Platform>().SelectMany(platform => GetDownloads(platform, Product.DatabaseTools, selected, _options));
+            return (selected, downloads);
         }
 
         private static IEnumerable<Download> GetDownloads(Platform platform, Product product, Version version, Options options, Regex? editionRegex = null)
