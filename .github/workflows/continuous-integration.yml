@@ -204,6 +204,13 @@ jobs:
     permissions:
       contents: write # required to create the GitHub release
       id-token: write # required for the GitHub OIDC token that NuGet/login exchanges
+    # Gates the actual publish behind a manual approval. The 'nuget-publish' environment is
+    # configured with a required reviewer, so a tagged build pauses here until a maintainer
+    # approves it - a last human checkpoint before anything reaches nuget.org. The name must
+    # also be set as the Environment on the nuget.org Trusted Publishing policy.
+    environment:
+      name: nuget-publish
+      url: https://www.nuget.org/packages/Mongo2Go
     name: Deploy NuGet and GitHub Release
     steps:
       - name: Checkout repository
