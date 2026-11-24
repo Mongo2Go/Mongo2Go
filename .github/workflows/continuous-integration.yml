@@ -187,13 +187,16 @@ jobs:
         run: dotnet test --configuration ${{ env.Configuration }} --no-build --verbosity normal
 
   # macOS x64 (Intel). Deliberately its own job and NOT in the publish job's `needs`, and NOT a required
-  # check: GitHub's Intel runners are being retired and routinely sit queued for a long time, and a release
-  # must not wait on runner availability. (continue-on-error only makes a *finished* job non-blocking - it
-  # does not stop `needs` from waiting on a job that is still queued, which is exactly why this cannot just
-  # be another matrix entry.) The x64 macOS binary we ship is MongoDB's official Intel build and is also
-  # exercised under Rosetta on macos-latest, so this job is informational coverage.
+  # check: GitHub's Intel runners are scarce and can sit queued for a long time, and a release must not wait
+  # on runner availability. (continue-on-error only makes a *finished* job non-blocking - it does not stop
+  # `needs` from waiting on a job that is still queued, which is exactly why this cannot just be another
+  # matrix entry.) This is the only job that runs the shipped macOS x64 binary: Mongo2Go picks binaries by
+  # OSArchitecture, so macos-latest (arm64) always uses the arm64 build.
+  # The runner label must be one GitHub currently lists for Intel macOS (macos-15-intel / macos-26-intel).
+  # A label without any runner behind it never starts, is cancelled after 24h in the queue, and that turns
+  # the whole workflow run red even with continue-on-error.
   build-intel:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     continue-on-error: true
     name: Build and Test (macOS Intel, non-blocking)
     steps:
